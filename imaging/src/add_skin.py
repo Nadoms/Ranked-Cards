@@ -1,13 +1,17 @@
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
+import requests
+from io import BytesIO
 
-def write(card):
-    named_image = ImageDraw.Draw(card)
-    name_font = ImageFont.truetype('minecraft_font.ttf', 140)
-    named_image.text((120, 90), get_name(), font=name_font, fill=(255, 255, 255))
-    
+def write(card, name):
+    skin = get_skin(name)
+    card.paste(skin, (round(960-skin.size[0]/2), 260), skin)
+    card.show()
     return card
 
-def get_name():
-    return "Nadoms"
+def get_skin(name):
+    response = requests.get(f"https://mc-heads.net/body/{name}")
+    skin = Image.open(BytesIO(response.content))
+    skin = skin.resize((round(skin.size[0]*1.6), round(skin.size[1]*1.6)))
+    return skin

@@ -3,25 +3,24 @@ from PIL import ImageDraw
 from PIL import ImageFont
 from . import word_length
 
-def write(card):
+def write(card, name):
     statted_image = ImageDraw.Draw(card)
     stat_font = ImageFont.truetype('minecraft_font.ttf', 40)
     large_stat_font = ImageFont.truetype('minecraft_font.ttf', 60)
 
     minor_stats = get_minor_stats()
 
-    statted_image.text((1200, 100), "Season Stats", font=large_stat_font, fill=(255, 255, 255))
+    statted_image.text((1300, 100), "Season Stats", font=large_stat_font, fill=(255, 255, 255))
     for i in range(0, len(minor_stats[0])):
-        statted_image.text((1200, 190+i*60), minor_stats[0][i], font=stat_font, fill=(255, 255, 255))
+        statted_image.text((1300, 190+i*60), minor_stats[0][i], font=stat_font, fill=(255, 255, 255))
 
     for i in range(0, len(minor_stats[1])):
-        statted_image.text((1677-word_length.calc_length(minor_stats[1][i], 40), 190+i*60), minor_stats[1][i], font=stat_font, fill=(255, 255, 255))
+        statted_image.text((1777-word_length.calc_length(minor_stats[1][i], 40), 190+i*60), minor_stats[1][i], font=stat_font, fill=(255, 255, 255))
 
     major_stats = get_major_stats()
     for i in range(0, len(major_stats)):
-        statted_image.text((120, 900+i*80), major_stats[i], font=large_stat_font, fill=(255, 255, 255))
+        statted_image.text((100, 900+i*80), major_stats[i], font=large_stat_font, fill=(255, 255, 255))
 
-    card.show()
     return card
 
 def get_minor_stats():
