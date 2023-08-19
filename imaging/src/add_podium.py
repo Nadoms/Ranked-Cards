@@ -17,4 +17,4 @@ def get_podium(name):
     return podium
 
 def get_rank(name):
-    return 1
+    return 3

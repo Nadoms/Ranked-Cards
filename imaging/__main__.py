@@ -9,7 +9,7 @@ from pathlib import Path
 
 folder = Path(r"C:\Users\Ntakr\VSCode\Ranked-Cards\imaging\src\pics")
 bg = "dirt.jpg"
-name = "Frewless"
+name = "Nadoms"
 card = Image.open(folder / bg)
 src.add_name.write(card, name)
 src.add_stats.write(card, name)
