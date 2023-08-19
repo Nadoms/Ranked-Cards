@@ -1,13 +1,11 @@
 def calc_length(word, size):
     length = len(word) * 6 - 1
     for letter in word:
-        if letter == " ":
+        if letter in " i.":
             length -= 4
-        elif letter == "I":
-            length -= 2
         elif letter == "l":
             length -= 3
-        elif letter == "i":
-            length -= 4
+        elif letter in "It":
+            length -= 2
     length *= size / 8
     return length

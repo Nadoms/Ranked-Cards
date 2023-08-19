@@ -8,13 +8,10 @@ def write(card, name):
     
 
     named_image = ImageDraw.Draw(card)
-    named_image.text((100, 70), get_name(), font=name_font, fill=(255, 255, 255))
-    named_image.text((100, 250), get_activity(), font=activity_font, fill=(255, 255, 255))
+    named_image.text((100, 50), name, font=name_font, fill=(255, 255, 255))
+    named_image.text((100, 230), get_activity(), font=activity_font, fill=(255, 255, 255))
 
     return card
-
-def get_name():
-    return "Nadoms"
 
 def get_activity():
     last_active = "2 days ago"
