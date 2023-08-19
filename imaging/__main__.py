@@ -3,6 +3,8 @@ import src.add_name
 import src.add_stats
 import src.add_podium
 import src.add_skin
+
+import requests
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
@@ -10,7 +12,8 @@ from pathlib import Path
 
 folder = Path(r"C:\Users\Ntakr\VSCode\Ranked-Cards\imaging\src\pics")
 bg = "dirt.jpg"
-name = "RED_LIME"
+input_name = "nadoms"
+name = (requests.get(f"https://mcsrranked.com/api/users/{input_name}").json())["data"]["nickname"]
 card = Image.open(folder / bg)
 src.add_boxes.write(card, name)
 src.add_name.write(card, name)
