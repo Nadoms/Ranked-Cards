@@ -7,7 +7,6 @@ from io import BytesIO
 def write(card, name):
     skin = get_skin(name)
     card.paste(skin, (round(960-skin.size[0]/2), 240), skin)
-    card.show()
     return card
 
 def get_skin(name):

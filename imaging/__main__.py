@@ -3,6 +3,8 @@ import src.add_name
 import src.add_stats
 import src.add_podium
 import src.add_skin
+import src.add_badge
+import src.add_other
 
 import requests
 from PIL import Image
@@ -10,9 +12,9 @@ from PIL import ImageDraw
 from PIL import ImageFont
 from pathlib import Path
 
-folder = Path(r"C:\Users\Ntakr\VSCode\Ranked-Cards\imaging\src\pics")
+folder = Path(r"C:\Users\Ntakr\VSCode\Ranked-Cards\imaging\src\pics\bgs")
 bg = "dirt.jpg"
-input_name = "nadoms"
+input_name = "couriway"
 response = requests.get(f"https://mcsrranked.com/api/users/{input_name}").json()
 if response["status"] != "error":
     name = response["data"]["nickname"]
@@ -22,5 +24,8 @@ if response["status"] != "error":
     src.add_stats.write(card, name)
     src.add_podium.write(card, name)
     src.add_skin.write(card, name)
+    src.add_badge.write(card, name)
+    src.add_other.write(card, name)
+    card.show()
 else:
     print("Player not found.")

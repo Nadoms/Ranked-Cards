@@ -1,5 +1,7 @@
-def get_podium(elo):
-    if elo < 600:
+def get_rank(elo):
+    if elo < 0:
+        return -1
+    elif elo < 600:
         return 0
     elif elo < 900:
         return 1
@@ -12,7 +14,7 @@ def get_podium(elo):
     elif elo >= 2000:
         return 5
     else:
-        return 0
+        return -1
 
 def get_colour(elo):
     if elo < 600:
