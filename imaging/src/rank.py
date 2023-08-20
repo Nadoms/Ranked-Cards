@@ -31,3 +31,18 @@ def get_colour(elo):
         return ["#3e3a3e", "#fad43d"]
     else:
         return 0
+
+def get_degree(elo):
+    degree = 270
+    if elo < 0:
+        return degree
+    elif elo < 600:
+        degree += round(elo / 600 * 360)
+    elif elo < 1500:
+        degree += round((elo % 300) / 300 * 360)
+    elif elo < 2000:
+        degree += round((elo - 1500) / 500 * 360)
+    elif elo >= 2000:
+        degree -= 1
+    degree %= 360
+    return degree

@@ -20,5 +20,5 @@ def get_boxes(name):
     return boxes
 
 def get_name_box(name):
-    box = [70, 50, 130+word.calc_length(name, 140), 305]
+    box = [70, 50, 130+word.calc_length(name, 140), 310]
     return box
