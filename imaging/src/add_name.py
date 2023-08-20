@@ -2,6 +2,8 @@ from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
 import requests
+from math import floor
+from datetime import datetime
 
 def write(card, name):
     response = requests.get(f"https://mcsrranked.com/api/users/{name}").json()["data"]
@@ -17,4 +19,12 @@ def write(card, name):
 
 def get_activity(response):
     last_active = response["latest_time"]
-    return f"Last Active: {last_active}"
+    active_date = datetime.fromtimestamp(last_active)
+    current_date = datetime.now()
+    delta_date = current_date - active_date
+    if delta_date.days >= 1:
+        return f"Last Active: {delta_date.days} days ago"
+    elif delta_date.total_seconds() / 3600 >= 1:
+        return f"Last Active: {floor(delta_date.total_seconds() / 3600)} hours ago"
+    else:
+        return f"Last Active: {floor(delta_date.total_seconds() / 60)} minutes ago"
