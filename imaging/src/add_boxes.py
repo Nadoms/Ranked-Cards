@@ -6,7 +6,7 @@ from . import word
 def write(card, name):
     boxed_image = ImageDraw.Draw(card)
     for box in get_boxes(name):
-        boxed_image.rectangle(box, fill="#122b30", outline="#000000", width=15) #88cd34
+        boxed_image.rectangle(box, fill="#122b30", outline="#000000", width=10) #88cd34
     
     return card
 

@@ -14,6 +14,9 @@ def write(card, name):
     large_stat_font = ImageFont.truetype('minecraft_font.ttf', 60)
     colour = rank.get_colour(response["elo_rate"])
     best_colour = rank.get_colour(response["best_elo_rate"])
+    rank_colour = ["#888888", "#9dc8e6", "#50fe50", "#0f52ba", "#cd7f32", "#c0c0c0", "#ffd700"]
+    win_loss_colour = ["#888888", "#9dc8e6", "#50fe50", "#0f52ba", "#ffd700"]
+    w_d_l_colour = ["#50fe50", "#ee4b2b", "#ffbf00"]
     white = "#ffffff"
 
     # Season stats
@@ -24,7 +27,17 @@ def write(card, name):
         statted_image.text((1350, 140+i*60), season_stats[0][i], font=stat_font, fill=white)
 
     for i in range(0, len(season_stats[1])):
-        statted_image.text((1827-word.calc_length(season_stats[1][i], 40), 140+i*60), season_stats[1][i], font=stat_font, fill=white)
+        if i == 0:
+            w_d_l_spliced = season_stats[1][i].split("/")
+            letters_placed = ""
+            for j in range(0, len(w_d_l_spliced)):
+                statted_image.text((1827-word.calc_length(season_stats[1][i], 40)+word.calc_length(letters_placed, 40), 140+i*60), w_d_l_spliced[j], font=stat_font, fill=w_d_l_colour[j])
+                letters_placed += w_d_l_spliced[j]
+                if j != len(w_d_l_spliced)-1:
+                    statted_image.text((1827-word.calc_length(season_stats[1][i], 40)+word.calc_length(letters_placed, 40), 140+i*60), "/", font=stat_font, fill=white)
+                    letters_placed += "/"
+        else:
+            statted_image.text((1827-word.calc_length(season_stats[1][i], 40), 140+i*60), season_stats[1][i], font=stat_font, fill=white)
 
     # Lifetime stats
     lifetime_stats = get_lifetime_stats(response)
@@ -48,6 +61,34 @@ def write(card, name):
     for i in range(0, len(major_stats[1])):
         if i == 0:
             statted_image.text((650-word.calc_length(major_stats[1][i], 60), 820+i*80), major_stats[1][i], font=large_stat_font, fill=colour[0], stroke_fill=colour[1], stroke_width=1)
+        elif i == 1:
+            if major_stats[1][i] != "None":
+                rounded_rank = int(major_stats[1][i])
+                if rounded_rank > 500:
+                    rounded_rank = 0
+                elif rounded_rank > 100:
+                    rounded_rank = 1
+                elif rounded_rank > 10:
+                    rounded_rank = 2
+                elif rounded_rank > 3:
+                    rounded_rank = 3
+                elif rounded_rank == 3:
+                    rounded_rank = 4
+                elif rounded_rank == 2:
+                    rounded_rank = 5
+                elif rounded_rank == 1:
+                    rounded_rank = 6
+                major_stats[1][i] = "#" + major_stats[1][i]
+            else:
+                rounded_rank = 0
+            statted_image.text((650-word.calc_length(major_stats[1][i], 60), 820+i*80), major_stats[1][i], font=large_stat_font, fill=rank_colour[rounded_rank])
+        elif i == 2:
+            rounded_win_loss = round(float(major_stats[1][i]) * 2 - 1)
+            if rounded_win_loss < 0:
+                rounded_win_loss = 0
+            elif rounded_win_loss > 4:
+                rounded_win_loss = 4
+            statted_image.text((650-word.calc_length(major_stats[1][i], 60), 820+i*80), major_stats[1][i], font=large_stat_font, fill=win_loss_colour[rounded_win_loss])
         else:
             statted_image.text((650-word.calc_length(major_stats[1][i], 60), 820+i*80), major_stats[1][i], font=large_stat_font, fill=white)
 
@@ -102,6 +143,6 @@ def get_major_stats(response):
              "Win/loss:",
              "PB:"],
             [elo,
-             f"#{rank}",
+             rank,
              win_loss,
              pb]]

@@ -13,8 +13,8 @@ from PIL import ImageFont
 from pathlib import Path
 
 folder = Path(r"C:\Users\Ntakr\VSCode\Ranked-Cards\imaging\src\pics\bgs")
-bg = "dirt.jpg"
-input_name = "parkertwo"
+bg = "grass.jpg"
+input_name = "doogile"
 response = requests.get(f"https://mcsrranked.com/api/users/{input_name}").json()
 if response["status"] != "error":
     name = response["data"]["nickname"]
