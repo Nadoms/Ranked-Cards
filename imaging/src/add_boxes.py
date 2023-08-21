@@ -18,10 +18,10 @@ def write(card, name):
 def get_boxes(name, response):
     boxes = [[1350, 50, 1827, 380], [1350, 500, 1827, 830], [70, 820, 650, 1140], get_name_box(name, response)]
     for box in boxes:
-        box[0] -= 30
-        box[1] -= 20
-        box[2] += 30
-        box[3] += 20
+        box[0] -= 40
+        box[1] -= 30
+        box[2] += 40
+        box[3] += 30
     return boxes
 
 def get_name_box(name, response):

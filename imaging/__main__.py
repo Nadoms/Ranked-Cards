@@ -4,6 +4,7 @@ import src.add_stats
 import src.add_podium
 import src.add_skin
 import src.add_badge
+import src.add_socials
 import src.add_other
 
 import requests
@@ -14,7 +15,7 @@ from pathlib import Path
 
 folder = Path(r"C:\Users\Ntakr\VSCode\Ranked-Cards\imaging\src\pics\bgs")
 bg = "grass.jpg"
-input_name = "nadoms"
+input_name = "feinberg"
 response = requests.get(f"https://mcsrranked.com/api/users/{input_name}").json()
 if response["status"] != "error":
     name = response["data"]["nickname"]
@@ -25,6 +26,7 @@ if response["status"] != "error":
     src.add_podium.write(card, name)
     src.add_skin.write(card, name)
     src.add_badge.write(card, name)
+    src.add_socials.write(card, name)
     src.add_other.write(card, name)
     card.show()
 else:
