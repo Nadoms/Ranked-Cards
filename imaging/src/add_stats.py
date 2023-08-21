@@ -2,6 +2,7 @@ from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
 import requests
+from datetime import datetime, timedelta
 
 from . import word
 from . import rank
@@ -16,6 +17,7 @@ def write(card, name):
     best_colour = rank.get_colour(response["best_elo_rate"])
     rank_colour = ["#888888", "#9dc8e6", "#50fe50", "#0f52ba", "#cd7f32", "#c0c0c0", "#ffd700"]
     win_loss_colour = ["#888888", "#9dc8e6", "#50fe50", "#0f52ba", "#ffd700"]
+    pb_colour = ["#888888", "#9dc8e6", "#50fe50", "#0f52ba", "#ffd700"]
     w_d_l_colour = ["#50fe50", "#ee4b2b", "#ffbf00"]
     white = "#ffffff"
 
@@ -78,6 +80,8 @@ def write(card, name):
                     rounded_rank = 5
                 elif rounded_rank == 1:
                     rounded_rank = 6
+                else:
+                    rounded_rank = 0
                 major_stats[1][i] = "#" + major_stats[1][i]
             else:
                 rounded_rank = 0
@@ -89,6 +93,21 @@ def write(card, name):
             elif rounded_win_loss > 4:
                 rounded_win_loss = 4
             statted_image.text((650-word.calc_length(major_stats[1][i], 60), 820+i*80), major_stats[1][i], font=large_stat_font, fill=win_loss_colour[rounded_win_loss])
+        elif i == 3:
+            rounded_pb = int(major_stats[1][i].split(":")[0])
+            if rounded_pb >= 30:
+                rounded_pb = 0
+            elif rounded_pb >= 20:
+                rounded_pb = 1
+            elif rounded_pb >= 15:
+                rounded_pb = 2
+            elif rounded_pb >= 10:
+                rounded_pb = 3
+            elif rounded_pb >= 6:
+                rounded_pb = 4
+            else:
+                rounded_pb = 0
+            statted_image.text((650-word.calc_length(major_stats[1][i], 60), 820+i*80), major_stats[1][i], font=large_stat_font, fill=pb_colour[rounded_pb])
         else:
             statted_image.text((650-word.calc_length(major_stats[1][i], 60), 820+i*80), major_stats[1][i], font=large_stat_font, fill=white)
 
@@ -136,7 +155,7 @@ def get_major_stats(response):
         win_loss = str(round(response["records"]["2"]["win"] / response["records"]["2"]["lose"], 2))
     except:
         win_loss = str(response["records"]["2"]["win"])
-    pb = str(response["best_record_time"])
+    pb = str(timedelta(milliseconds=response["best_record_time"]))[2:7].lstrip("0")
 
     return [["Elo:",
              "Rank:",

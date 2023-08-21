@@ -11,7 +11,7 @@ def write(card, name):
     badge = get_badge(response)
     dim = badge.size[0]
 
-    x = 185
+    x = 190
     y = 500
     circled_image = ImageDraw.Draw(card)
     circled_image.ellipse([round(x-dim*0.8),

@@ -14,7 +14,7 @@ from pathlib import Path
 
 folder = Path(r"C:\Users\Ntakr\VSCode\Ranked-Cards\imaging\src\pics\bgs")
 bg = "grass.jpg"
-input_name = "jzia"
+input_name = "nadoms"
 response = requests.get(f"https://mcsrranked.com/api/users/{input_name}").json()
 if response["status"] != "error":
     name = response["data"]["nickname"]
