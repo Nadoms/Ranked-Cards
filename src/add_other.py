@@ -23,6 +23,6 @@ def get_date():
     return date
 
 def get_logo():
-    logo = Image.open(fr"C:\Users\Ntakr\VSCode\Ranked-Cards\imaging\src\pics\other\ranked_logo.webp")
+    logo = Image.open(fr"C:\Users\Ntakr\VSCode\Ranked-Cards\src\pics\other\ranked_logo.webp")
     logo = logo.resize((round(logo.size[0]*1), round(logo.size[1]*1)), resample=Image.NEAREST)
     return logo
