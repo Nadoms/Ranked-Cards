@@ -3,6 +3,7 @@ from nextcord import File, Interaction, SlashOption, ChannelType
 from nextcord.abc import GuildChannel
 from nextcord.ext import commands
 from PIL import Image
+from os import getenv
 
 import card as carding
 
@@ -55,4 +56,4 @@ async def register(interaction: Interaction, input_name: str):
 async def unregister(interaction: Interaction, input_name: str):
     await interaction.response.send_message(f"hi! {input_name}")
 
-bot.run("MTE0MDMzMzM0MDA3MTgyNTQ0OA.Ghchtr.QzK5vwKnf-_UZEyi3BAc4mkUeNFAcItXI2Pid8")
+bot.run(getenv("DISCORD_TOKEN"))
