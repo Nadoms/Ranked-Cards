@@ -8,4 +8,4 @@ def calc_length(word, size):
         elif letter in "It":
             length -= 2
     length *= size / 8
-    return length
+    return round(length)

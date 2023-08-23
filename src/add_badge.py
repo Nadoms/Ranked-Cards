@@ -45,7 +45,7 @@ def write(card, name):
     y = 475
     rank_size = 80
     division_size = 140
-    if tier[0] == "Netherite":
+    if tier[0] == "Netherite" or tier[0] == "Unranked":
         y += 65
         rank_size -=5
 
@@ -73,7 +73,7 @@ def get_badge(response):
 
 def get_tier(response):
     elo = response["elo_rate"]
-    ranks = ["Coal", "Iron", "Gold", "Emerald", "Diamond", "Netherite"]
+    ranks = ["Coal", "Iron", "Gold", "Emerald", "Diamond", "Netherite", "Unranked"]
 
     tier = [ranks[rank.get_rank(elo)], rank.get_division(elo)]
 

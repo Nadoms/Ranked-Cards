@@ -48,7 +48,9 @@ def get_degree(elo):
     return degree
 
 def get_division(elo):
-    if elo < 600:
+    if elo < 0:
+        return ""
+    elif elo < 600:
         if elo < 200:
             return "I"
         elif elo < 400:

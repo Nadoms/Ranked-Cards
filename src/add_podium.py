@@ -24,7 +24,6 @@ def get_podium(response):
     return podium
 
 def get_border():
-    
     border = Image.open(r"C:\Users\Ntakr\VSCode\Ranked-Cards\src\pics\podiums\podium_bg.webp")
     border = border.resize((round(border.size[0]*1.38), round(border.size[1]*1.38)))
     return border

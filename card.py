@@ -12,7 +12,7 @@ import requests
 from PIL import Image
 from pathlib import Path
 
-def __main__(input_name):
+def __main__(input_name, pfp):
     folder = Path(r"C:\Users\Ntakr\VSCode\Ranked-Cards\src\pics\bgs")
     bg = "grass.jpg"
 
@@ -27,10 +27,10 @@ def __main__(input_name):
         src.add_skin.write(card, name)
         src.add_badge.write(card, name)
         src.add_splits.write(card, name)
-        src.add_socials.write(card, name)
+        src.add_socials.write(card, name, pfp)
         src.add_other.write(card, name)
         return card
     else:
         print("Player not found.")
 
-__main__("nadoms").show()
+# __main__("nadoms", "https://cdn.discordapp.com/avatars/343108228890099713/25add9f8ccc5c06fae4e36c042aeaf10?size=1024").show()
