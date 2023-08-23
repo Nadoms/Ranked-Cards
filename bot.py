@@ -21,6 +21,7 @@ async def ping(ctx):
 
 @bot.command()
 async def card(ctx, *input_name):
+    input_name = input_name[0]
     if not input_name:
         input_name = get_name(ctx)
         if input_name == "":
