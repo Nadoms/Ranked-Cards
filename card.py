@@ -4,6 +4,7 @@ import src.add_stats
 import src.add_podium
 import src.add_skin
 import src.add_badge
+import src.add_splits
 import src.add_socials
 import src.add_other
 
@@ -25,9 +26,11 @@ def __main__(input_name):
         src.add_podium.write(card, name)
         src.add_skin.write(card, name)
         src.add_badge.write(card, name)
+        src.add_splits.write(card, name)
         src.add_socials.write(card, name)
         src.add_other.write(card, name)
         return card
     else:
         print("Player not found.")
-    
+
+__main__("nadoms").show()

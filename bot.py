@@ -4,6 +4,7 @@ from nextcord.abc import GuildChannel
 from nextcord.ext import commands
 from PIL import Image
 from os import getenv
+from dotenv import load_dotenv
 
 import card as carding
 
@@ -56,4 +57,5 @@ async def register(interaction: Interaction, input_name: str):
 async def unregister(interaction: Interaction, input_name: str):
     await interaction.response.send_message(f"hi! {input_name}")
 
+load_dotenv()
 bot.run(getenv("DISCORD_TOKEN"))

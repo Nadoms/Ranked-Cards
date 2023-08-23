@@ -84,6 +84,7 @@ def write(card, name):
                     rounded_rank = 0
                 major_stats[1][i] = "#" + major_stats[1][i]
             else:
+                major_stats[1][i] = "-"
                 rounded_rank = 0
             statted_image.text((650-word.calc_length(major_stats[1][i], 60), 820+i*80), major_stats[1][i], font=large_stat_font, fill=rank_colour[rounded_rank])
         elif i == 2:
@@ -94,7 +95,11 @@ def write(card, name):
                 rounded_win_loss = 4
             statted_image.text((650-word.calc_length(major_stats[1][i], 60), 820+i*80), major_stats[1][i], font=large_stat_font, fill=win_loss_colour[rounded_win_loss])
         elif i == 3:
-            rounded_pb = int(major_stats[1][i].split(":")[0])
+            if major_stats[1][i] == ":00":
+                major_stats[1][i] = "-"
+                rounded_pb = -1
+            else:
+                rounded_pb = int(major_stats[1][i].split(":")[0])
             if rounded_pb >= 30:
                 rounded_pb = 0
             elif rounded_pb >= 20:
