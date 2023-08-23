@@ -20,7 +20,12 @@ async def ping(ctx):
     await ctx.send("hi there")
 
 @bot.command()
-async def card(ctx, input_name):
+async def card(ctx, *input_name):
+    if not input_name:
+        input_name = get_name(ctx)
+        if input_name == "":
+            await ctx.send("Please register your minecraft account with =register.")
+            return
     user = await bot.fetch_user(get_id(input_name))
     pfp = user.avatar
     img = carding.__main__(input_name, pfp)
@@ -43,6 +48,19 @@ def get_id(input_name):
             id = "343108228890099713"
     return id
 
+def get_name(ctx):
+    user = str(ctx.message.author)
+    if user[-2:] == "#0":
+        user = user[:-2]
+    with open (r"src\link.txt", "r") as f:
+        for line in f:
+            mcname = line.split(":")[0].strip()
+            username = line.split(":")[-1].strip()
+            if user == username:
+                return mcname
+        else:
+            return ""
+
 @bot.command()
 async def register(ctx, input_name):
     user = str(ctx.message.author)
@@ -51,8 +69,8 @@ async def register(ctx, input_name):
     user_exists = False
     with open(r"src\link.txt", "r") as f:
         for line in f:
-            mcname = line.split(":")[0]
-            username = line.split(":")[-1]
+            mcname = line.split(":")[0].strip()
+            username = line.split(":")[-1].strip()
             if user == username:
                 user_exists = True
                 await ctx.send(f"You are already linked to {mcname}.")
@@ -65,7 +83,7 @@ async def register(ctx, input_name):
         await ctx.send(f"{input_name} has been linked to your discord!")
 
 @bot.command()
-async def unregister(ctx, input_name):
+async def unregister(ctx):
     user = str(ctx.message.author)
     if user[-2:] == "#0":
         user = user[:-2]
@@ -76,14 +94,14 @@ async def unregister(ctx, input_name):
         for line in lines:
             mcname = line.split(":")[0]
             username = line.split(":")[-1]
-            if not (input_name.lower() == mcname.lower() and user == username):
+            if not (user == username):
                 f.write(line)
             else:
                 unlinked = True
         if unlinked:
-            await ctx.send(f"{input_name} has been unlinked from your discord.")
+            await ctx.send(f"{mcname} has been unlinked from your discord.")
         else:
-            await ctx.send(f"You are not linked to {input_name}.")
+            await ctx.send(f"You are not registered. Please register your minecraft account with =register.")
 
 @bot.slash_command(name="ping")
 async def ping(interaction: Interaction):
