@@ -70,11 +70,11 @@ def write_discord(card):
     pass
 
 def write_yt(card):
-    yt = Image.open(r"C:\Users\Ntakr\VSCode\Ranked-Cards\src\pics\other\yt_logo.png")
+    yt = Image.open(r"src\pics\other\yt_logo.png")
     yt = yt.resize((40, 40))
     card.paste(yt, (1665, round(1035)), yt)
 
 def write_twitch(card):
-    twitch = Image.open(r"C:\Users\Ntakr\VSCode\Ranked-Cards\src\pics\other\twitch_logo.png")
+    twitch = Image.open(r"src\pics\other\twitch_logo.png")
     twitch = twitch.resize((40, 40))
     card.paste(twitch, (1665, round(1075)), twitch)

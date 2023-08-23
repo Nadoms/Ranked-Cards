@@ -67,7 +67,7 @@ def get_badge(response):
     elo = response["elo_rate"]
     tier = rank.get_rank(elo)
     
-    badge = Image.open(fr"C:\Users\Ntakr\VSCode\Ranked-Cards\src\pics\ranks\rank_{tier}.png")
+    badge = Image.open(fr"src\pics\ranks\rank_{tier}.png")
     badge = badge.resize((round(badge.size[0]*14), round(badge.size[1]*14)), resample=Image.NEAREST)
     return badge
 

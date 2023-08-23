@@ -13,13 +13,11 @@ from PIL import Image
 from pathlib import Path
 
 def __main__(input_name, pfp):
-    folder = Path(r"C:\Users\Ntakr\VSCode\Ranked-Cards\src\pics\bgs")
-    bg = "grass.jpg"
-
     response = requests.get(f"https://mcsrranked.com/api/users/{input_name}").json()
+
     if response["status"] != "error":
         name = response["data"]["nickname"]
-        card = Image.open(folder / bg)
+        card = Image.open(r"src\pics\bgs\grass.jpg")
         src.add_boxes.write(card, name)
         src.add_name.write(card, name)
         src.add_stats.write(card, name)

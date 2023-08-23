@@ -21,12 +21,13 @@ async def ping(ctx):
 
 @bot.command()
 async def card(ctx, *input_name):
-    input_name = input_name[0]
     if not input_name:
         input_name = get_name(ctx)
         if input_name == "":
             await ctx.send("Please register your minecraft account with =register.")
             return
+    else:
+        input_name = input_name[0]
     user = await bot.fetch_user(get_id(input_name))
     pfp = user.avatar
     img = carding.__main__(input_name, pfp)
