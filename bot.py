@@ -35,8 +35,8 @@ async def card(ctx, input_name):
 def get_id(input_name):
     with open (r"src\link.txt", "r") as f:
         for line in f:
-            if input_name.lower() in line.lower():
-                discord = line.split(":")[1]
+            if input_name.lower() == line.split(":")[0].lower():
+                discord = line.split(":")[-1]
                 id = nextcord.utils.get(bot.get_all_members(), name=discord).id
                 break
         else:
@@ -45,17 +45,45 @@ def get_id(input_name):
 
 @bot.command()
 async def register(ctx, input_name):
-    with open (r"src\link.txt", "a") as f:
-        user = str(ctx.message.author)
-        if user[-2:] == "#0":
-            user = user[:-2]
-        f.write("\n" + input_name + ":" + user)
-    await ctx.send(input_name + "has been linked to your discord!")
+    user = str(ctx.message.author)
+    if user[-2:] == "#0":
+        user = user[:-2]
+    user_exists = False
+    with open(r"src\link.txt", "r") as f:
+        for line in f:
+            mcname = line.split(":")[0]
+            username = line.split(":")[-1]
+            if user == username:
+                user_exists = True
+                await ctx.send(f"You are already linked to {mcname}.")
+            elif input_name.lower() == mcname.lower():
+                user_exists = True
+                await ctx.send(f"{input_name} is already linked to {username}.")
+    if not user_exists:
+        with open (r"src\link.txt", "a") as f:
+            f.write(f"\n{input_name}:{user}")
+        await ctx.send(f"{input_name} has been linked to your discord!")
 
 @bot.command()
 async def unregister(ctx, input_name):
-    print("hello")
-    await ctx.send("hi there")
+    user = str(ctx.message.author)
+    if user[-2:] == "#0":
+        user = user[:-2]
+    with open(r"src\link.txt", "r") as f:
+        lines = f.readlines()
+    with open(r"src\link.txt", 'w') as f:
+        unlinked = False
+        for line in lines:
+            mcname = line.split(":")[0]
+            username = line.split(":")[-1]
+            if not (input_name.lower() == mcname.lower() and user == username):
+                f.write(line)
+            else:
+                unlinked = True
+        if unlinked:
+            await ctx.send(f"{input_name} has been unlinked from your discord.")
+        else:
+            await ctx.send(f"You are not linked to {input_name}.")
 
 @bot.slash_command(name="ping")
 async def ping(interaction: Interaction):
