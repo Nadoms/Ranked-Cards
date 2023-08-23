@@ -123,8 +123,8 @@ def get_season_stats(response):
     losses = str(response["records"]["2"]["lose"])
     draws = str(response["records"]["2"]["draw"])
     games = str(response["season_played"])
-    forfeit_loss = str("N/A")
-    playtime = str("N/A")
+    forfeit_loss = str("TBA")
+    playtime = str("TBA")
 
     return [["W/L/D:",
              "Games:",
@@ -133,16 +133,13 @@ def get_season_stats(response):
             [f"{wins}/{losses}/{draws}",
              games,
              forfeit_loss,
-             f"{playtime}h"]]
+             f"{playtime}"]]
 
 def get_lifetime_stats(response):
-    wins = str("N/A")
-    losses = str("N/A")
-    draws = str("N/A")
     best_elo = str(response["best_elo_rate"])
     games = str(response["total_played"])
-    forfeit_loss = str("N/A")
-    playtime = str("N/A")
+    forfeit_loss = str("TBA")
+    playtime = str("TBA")
 
     return [["Best ELO:",
              "Games:",
@@ -151,7 +148,7 @@ def get_lifetime_stats(response):
             [best_elo,
              games,
              forfeit_loss,
-             f"{playtime}h"]]
+             f"{playtime}"]]
 
 def get_major_stats(response):
     elo = str(response["elo_rate"])

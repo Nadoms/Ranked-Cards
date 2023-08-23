@@ -23,8 +23,8 @@ def get_activity(response):
     current_date = datetime.now()
     delta_date = current_date - active_date
     if delta_date.days >= 1:
-        return f"Last Active: {delta_date.days} days ago"
+        return f"Last Active: {delta_date.days} day(s) ago"
     elif delta_date.total_seconds() / 3600 >= 1:
-        return f"Last Active: {floor(delta_date.total_seconds() / 3600)} hours ago"
+        return f"Last Active: {floor(delta_date.total_seconds() / 3600)} hour(s) ago"
     else:
-        return f"Last Active: {floor(delta_date.total_seconds() / 60)} minutes ago"
+        return f"Last Active: {floor(delta_date.total_seconds() / 60)} minute(s) ago"

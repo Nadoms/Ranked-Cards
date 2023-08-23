@@ -29,7 +29,7 @@ def get_discord(response, name):
     discord = "Unlinked"
     with open (r"src\link.txt", "r") as f:
         for line in f:
-            if name in line:
+            if name.lower() == line.split(":")[0].lower():
                 discord = "@" + line.split(":")[1]
                 break
     return discord
