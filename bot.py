@@ -1,9 +1,7 @@
 import nextcord
-from nextcord import File, Interaction, SlashOption, ChannelType
-from nextcord.abc import GuildChannel
+from nextcord import File, Interaction
 from nextcord.ext import commands
-from PIL import Image
-from os import getenv
+from os import getenv, path
 from dotenv import load_dotenv
 
 import card as carding
@@ -40,7 +38,8 @@ async def card(ctx, *input_name):
         await ctx.send("Player not found.")
 
 def get_id(input_name):
-    with open (r"src\link.txt", "r") as f:
+    file = path.join("src", "link.txt")
+    with open (file, "r") as f:
         for line in f:
             if input_name.lower() == line.split(":")[0].lower():
                 discord = line.split(":")[-1]
@@ -51,10 +50,11 @@ def get_id(input_name):
     return id
 
 def get_name(ctx):
+    file = path.join("src", "link.txt")
     user = str(ctx.message.author)
     if user[-2:] == "#0":
         user = user[:-2]
-    with open (r"src\link.txt", "r") as f:
+    with open (file, "r") as f:
         for line in f:
             mcname = line.split(":")[0].strip()
             username = line.split(":")[-1].strip()
@@ -65,11 +65,12 @@ def get_name(ctx):
 
 @bot.command()
 async def register(ctx, input_name):
+    file = path.join("src", "link.txt")
     user = str(ctx.message.author)
     if user[-2:] == "#0":
         user = user[:-2]
     user_exists = False
-    with open(r"src\link.txt", "r") as f:
+    with open (file, "r") as f:
         for line in f:
             mcname = line.split(":")[0].strip()
             username = line.split(":")[-1].strip()
@@ -80,18 +81,19 @@ async def register(ctx, input_name):
                 user_exists = True
                 await ctx.send(f"{input_name} is already linked to {username}.")
     if not user_exists:
-        with open (r"src\link.txt", "a") as f:
+        with open (file, "a") as f:
             f.write(f"\n{input_name}:{user}")
         await ctx.send(f"{input_name} has been linked to your discord!")
 
 @bot.command()
 async def unregister(ctx):
+    file = path.join("src", "link.txt")
     user = str(ctx.message.author)
     if user[-2:] == "#0":
         user = user[:-2]
-    with open(r"src\link.txt", "r") as f:
+    with open (file, "r") as f:
         lines = f.readlines()
-    with open(r"src\link.txt", 'w') as f:
+    with open (file, 'w') as f:
         unlinked = False
         for line in lines:
             mcname = line.split(":")[0]

@@ -1,7 +1,6 @@
-from PIL import Image
-from PIL import ImageDraw
-from PIL import ImageFont
+from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
+from os import path
 
 from . import word
 
@@ -23,6 +22,7 @@ def get_date():
     return date
 
 def get_logo():
-    logo = Image.open(fr"src\pics\other\ranked_logo.webp")
+    file = path.join("src", "pics", "other", "ranked_logo.webp")
+    logo = Image.open(file)
     logo = logo.resize((round(logo.size[0]*1), round(logo.size[1]*1)), resample=Image.NEAREST)
     return logo

@@ -4,8 +4,7 @@ from PIL import ImageDraw
 from PIL import ImageFont
 from PIL import ImageOps
 import requests
-from math import floor
-from datetime import datetime
+from os import path
 
 from . import word
 
@@ -27,7 +26,8 @@ def write(card, name, pfp):
 
 def get_discord(response, name):
     discord = "Unlinked"
-    with open (r"src\link.txt", "r") as f:
+    file = path.join("src", "link.txt")
+    with open (file, "r") as f:
         for line in f:
             if name.lower() == line.split(":")[0].lower():
                 discord = "@" + line.split(":")[1]
@@ -55,7 +55,8 @@ def write_pfp(card, x, pfp):
     pfped_image = ImageDraw.Draw(card)
     pfped_image.ellipse([x-6, y-6, x+124, y+125], fill="#122b30", outline="#000000", width=2)
 
-    circle = Image.open(r"src\pics\other\circle.png").convert("L")
+    file = path.join("src", "pics", "other", "circle.png")
+    circle = Image.open(file).convert("L")
 
     pic = Image.open(BytesIO(response.content))
 
@@ -70,11 +71,13 @@ def write_discord(card):
     pass
 
 def write_yt(card):
-    yt = Image.open(r"src\pics\other\yt_logo.png")
+    file = path.join("src", "pics", "other", "yt_logo.png")
+    yt = Image.open(file)
     yt = yt.resize((40, 40))
     card.paste(yt, (1665, round(1035)), yt)
 
 def write_twitch(card):
-    twitch = Image.open(r"src\pics\other\twitch_logo.png")
+    file = path.join("src", "pics", "other", "twitch_logo.png")
+    twitch = Image.open(file)
     twitch = twitch.resize((40, 40))
     card.paste(twitch, (1665, round(1075)), twitch)

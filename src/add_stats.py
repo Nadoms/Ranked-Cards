@@ -1,8 +1,6 @@
-from PIL import Image
-from PIL import ImageDraw
-from PIL import ImageFont
+from PIL import ImageDraw, ImageFont
 import requests
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from . import word
 from . import rank
