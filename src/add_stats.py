@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from . import word
 from . import rank
+from . import matches
 
 def write(card, name):
     response = requests.get(f"https://mcsrranked.com/api/users/{name}").json()["data"]
@@ -121,8 +122,8 @@ def get_season_stats(response):
     losses = str(response["records"]["2"]["lose"])
     draws = str(response["records"]["2"]["draw"])
     games = str(response["season_played"])
-    forfeit_loss = str("TBA")
-    playtime = str("TBA")
+    forfeit_loss = str(matches.get_ff_loss(response["nickname"], True))
+    playtime = str(matches.get_playtime(response["nickname"], True))
 
     return [["W/L/D:",
              "Games:",
@@ -130,14 +131,14 @@ def get_season_stats(response):
              "Playtime:"],
             [f"{wins}/{losses}/{draws}",
              games,
-             forfeit_loss,
-             f"{playtime}"]]
+             f"{forfeit_loss}%",
+             f"{playtime} h"]]
 
 def get_lifetime_stats(response):
     best_elo = str(response["best_elo_rate"])
     games = str(response["total_played"])
-    forfeit_loss = str("TBA")
-    playtime = str("TBA")
+    forfeit_loss = str(matches.get_ff_loss(response["nickname"], False))
+    playtime = str(matches.get_playtime(response["nickname"], False))
 
     return [["Best ELO:",
              "Games:",
@@ -145,8 +146,8 @@ def get_lifetime_stats(response):
              "Playtime:"],
             [best_elo,
              games,
-             forfeit_loss,
-             f"{playtime}"]]
+             f"{forfeit_loss}%",
+             f"{playtime} h"]]
 
 def get_major_stats(response):
     elo = str(response["elo_rate"])

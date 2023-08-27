@@ -31,5 +31,3 @@ def __main__(input_name, pfp):
         return card
     else:
         print("Player not found.")
-
-# __main__("nadoms", "https://cdn.discordapp.com/avatars/343108228890099713/25add9f8ccc5c06fae4e36c042aeaf10?size=1024").show()
