@@ -4,10 +4,11 @@ from datetime import timedelta
 
 from . import word
 from . import rank
-from . import matches
+from . import match
 
 def write(card, name):
     response = requests.get(f"https://mcsrranked.com/api/users/{name}").json()["data"]
+    matches = match.get_matches(response["nickname"])
 
     statted_image = ImageDraw.Draw(card)
     stat_font = ImageFont.truetype('minecraft_font.ttf', 40)
@@ -21,7 +22,7 @@ def write(card, name):
     white = "#ffffff"
 
     # Season stats
-    season_stats = get_season_stats(response)
+    season_stats = get_season_stats(response, matches)
 
     statted_image.text((1350, 50), "Season Stats", font=large_stat_font, fill=white)
     for i in range(0, len(season_stats[0])):
@@ -41,7 +42,7 @@ def write(card, name):
             statted_image.text((1827-word.calc_length(season_stats[1][i], 40), 140+i*60), season_stats[1][i], font=stat_font, fill=white)
 
     # Lifetime stats
-    lifetime_stats = get_lifetime_stats(response)
+    lifetime_stats = get_lifetime_stats(response, matches)
 
     statted_image.text((1350, 500), "Lifetime Stats", font=large_stat_font, fill=white)
     for i in range(0, len(lifetime_stats[0])):
@@ -117,13 +118,13 @@ def write(card, name):
 
     return card
 
-def get_season_stats(response):
+def get_season_stats(response, matches):
     wins = str(response["records"]["2"]["win"])
     losses = str(response["records"]["2"]["lose"])
     draws = str(response["records"]["2"]["draw"])
     games = str(response["season_played"])
-    forfeit_loss = str(matches.get_ff_loss(response["nickname"], True))
-    playtime = str(matches.get_playtime(response["nickname"], True))
+    forfeit_loss = str(match.get_ff_loss(matches, True, response["nickname"]))
+    playtime = str(match.get_playtime(matches, True))
 
     return [["W/L/D:",
              "Games:",
@@ -134,11 +135,11 @@ def get_season_stats(response):
              f"{forfeit_loss}%",
              f"{playtime} h"]]
 
-def get_lifetime_stats(response):
+def get_lifetime_stats(response, matches):
     best_elo = str(response["best_elo_rate"])
     games = str(response["total_played"])
-    forfeit_loss = str(matches.get_ff_loss(response["nickname"], False))
-    playtime = str(matches.get_playtime(response["nickname"], False))
+    forfeit_loss = str(match.get_ff_loss(matches, False, response["nickname"]))
+    playtime = str(match.get_playtime(matches, False))
 
     return [["Best ELO:",
              "Games:",
