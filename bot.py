@@ -89,8 +89,9 @@ async def ping(interaction: Interaction):
 
 @bot.slash_command(name="card", description="Generates a card for the player you specify.")
 async def card(interaction: Interaction, input_name: str = SlashOption(
-    "card",
+    "name",
     required = False,
+    description="The player to generate a card for.",
     default = ""
 )):
     if not input_name:
