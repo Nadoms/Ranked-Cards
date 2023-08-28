@@ -27,6 +27,7 @@ async def card(ctx, *input_name):
             return
     else:
         input_name = input_name[0]
+    print(f"\nGenerating card for {input_name}")
     user = await bot.fetch_user(get_id(input_name))
     pfp = user.avatar
     img = carding.__main__(input_name, pfp)
@@ -99,6 +100,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
         if input_name == "":
             await interaction.response.send_message("Please link your minecraft account with /link or specify a minecraft username.")
             return
+    print(f"\nGenerating card for {input_name}")
     user = await bot.fetch_user(get_id(input_name))
     pfp = user.avatar
     await interaction.response.defer()
