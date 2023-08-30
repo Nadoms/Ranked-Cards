@@ -13,12 +13,10 @@ def write(card, name, pfp):
 
     discord = get_discord(response, name)
     discord_size = min(word.calc_size(discord, 520), 50)
-    print(discord_size)
     discord_font = ImageFont.truetype('minecraft_font.ttf', discord_size)
 
     twitch = get_twitch(response)
     twitch_size = min(word.calc_size(twitch, 470), 30)
-    print(twitch_size)
     twitch_font = ImageFont.truetype('minecraft_font.ttf', twitch_size)
     
     socialed_image = ImageDraw.Draw(card)

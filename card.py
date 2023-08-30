@@ -59,5 +59,3 @@ def splits(then, process):
     diff = round((now - then).total_seconds() * 1000)
     print(f"{processes[process]} took {diff}ms")
     return now
-
-__main__("nadoms", "https://cdn.discordapp.com/avatars/298936021557706754/562510471dc433e0e9fe790ac2ee7cce.png?size=1024").show()
