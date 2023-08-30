@@ -18,6 +18,7 @@ def __main__(input_name, pfp):
 
     if response["status"] != "error":
         name = response["data"]["nickname"]
+        uuid = response["data"]["uuid"]
         file = path.join("src", "pics", "bgs", "grass.jpg")
         card = Image.open(file)
 
@@ -30,7 +31,7 @@ def __main__(input_name, pfp):
         then = splits(then, 2)
         src.add_podium.write(card, name)
         then = splits(then, 3)
-        src.add_skin.write(card, name)
+        src.add_skin.write(card, uuid)
         then = splits(then, 4)
         src.add_badge.write(card, name)
         then = splits(then, 5)

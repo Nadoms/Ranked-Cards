@@ -8,7 +8,7 @@ from . import match
 
 def write(card, name):
     response = requests.get(f"https://mcsrranked.com/api/users/{name}").json()["data"]
-    matches = match.get_matches(response["nickname"])
+    matches = [] # match.get_matches(response["nickname"])
 
     statted_image = ImageDraw.Draw(card)
     stat_font = ImageFont.truetype('minecraft_font.ttf', 40)
@@ -123,8 +123,8 @@ def get_season_stats(response, matches):
     losses = str(response["records"]["2"]["lose"])
     draws = str(response["records"]["2"]["draw"])
     games = str(response["season_played"])
-    forfeit_loss = str(match.get_ff_loss(matches, True, response["nickname"]))
-    playtime = str(match.get_playtime(matches, True))
+    forfeit_loss = "- " # str(match.get_ff_loss(matches, True, response["nickname"]))
+    playtime = "-" # str(match.get_playtime(matches, True))
 
     return [["W/L/D:",
              "Games:",
@@ -138,8 +138,8 @@ def get_season_stats(response, matches):
 def get_lifetime_stats(response, matches):
     best_elo = str(response["best_elo_rate"])
     games = str(response["total_played"])
-    forfeit_loss = str(match.get_ff_loss(matches, False, response["nickname"]))
-    playtime = str(match.get_playtime(matches, False))
+    forfeit_loss = "- " # str(match.get_ff_loss(matches, False, response["nickname"]))
+    playtime = "-" # str(match.get_playtime(matches, False))
 
     return [["Best ELO:",
              "Games:",

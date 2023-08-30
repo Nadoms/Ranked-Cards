@@ -2,13 +2,13 @@ from PIL import Image
 import requests
 from io import BytesIO
 
-def write(card, name):
-    skin = get_skin(name)
+def write(card, uuid):
+    skin = get_skin(uuid)
     card.paste(skin, (round(960-skin.size[0]/2), 230), skin)
     return card
 
-def get_skin(name):
-    response = requests.get(f"https://mc-heads.net/body/{name}")
+def get_skin(uuid):
+    response = requests.get(f"https://visage.surgeplay.com/full/832/{uuid}?y=20&p=0")
     skin = Image.open(BytesIO(response.content))
-    skin = skin.resize((round(skin.size[0]*1.6), round(skin.size[1]*1.6)))
+    skin = skin.resize((round(skin.size[0]*0.85), round(skin.size[1]*0.85)))
     return skin

@@ -23,14 +23,17 @@ async def card(ctx, *input_name):
     if not input_name:
         input_name = get_name(ctx)
         if input_name == "":
-            await ctx.send("Please link your minecraft account with /link or specify a minecraft username.")
+            await ctx.send("Please link your minecraft account with </link:1145666604567367750> or specify a minecraft username.")
             return
     else:
         input_name = input_name[0]
     print(f"\nGenerating card for {input_name}")
     user = await bot.fetch_user(get_id(input_name))
     pfp = user.avatar
-    img = carding.__main__(input_name, pfp)
+    try:
+        img = carding.__main__(input_name, pfp)
+    except Exception as e:
+        await ctx.send("An error has occurred. <@298936021557706754> fix it pls")
     if img:
         img.save("card.png")
         with open("card.png", "rb") as f:
@@ -81,7 +84,7 @@ async def unlink(ctx):
         if unlinked:
             await ctx.send(f"{mcname} has been unlinked from your discord.")
         else:
-            await ctx.send(f"You are not linked. Please link your minecraft account with =link.")
+            await ctx.send(f"You are not linked. Please link your minecraft account with </link:1145666604567367750>.")
 
 # SLASH COMMANDS
 @bot.slash_command(name="ping", description="Pong!")
@@ -98,13 +101,16 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     if not input_name:
         input_name = get_name(interaction)
         if input_name == "":
-            await interaction.response.send_message("Please link your minecraft account with /link or specify a minecraft username.")
+            await interaction.response.send_message("Please link your minecraft account with </link:1145666604567367750> or specify a minecraft username.")
             return
     print(f"\nGenerating card for {input_name}")
     user = await bot.fetch_user(get_id(input_name))
     pfp = user.avatar
     await interaction.response.defer()
-    img = carding.__main__(input_name, pfp)
+    try:
+        img = carding.__main__(input_name, pfp)
+    except Exception as e:
+        await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls")
     if img:
         img.save("card.png")
         with open("card.png", "rb") as f:
@@ -156,7 +162,7 @@ async def unlink(interaction: Interaction):
         if unlinked:
             await interaction.response.send_message(f"{mcname} has been unlinked from your discord.")
         else:
-            await interaction.response.send_message(f"You are not linked. Please link your minecraft account with =link.")
+            await interaction.response.send_message(f"You are not linked. Please link your minecraft account with </link:1145666604567367750>.")
 
 
 def get_id(input_name):
@@ -165,6 +171,7 @@ def get_id(input_name):
         for line in f:
             if input_name.lower() == line.split(":")[0].lower():
                 discord = line.split(":")[-1]
+                print(discord)
                 id = nextcord.utils.get(bot.get_all_members(), name=discord).id
                 break
         else:
