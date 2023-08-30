@@ -171,7 +171,6 @@ def get_id(input_name):
         for line in f:
             if input_name.lower() == line.split(":")[0].lower():
                 discord = line.split(":")[-1]
-                print(discord)
                 id = nextcord.utils.get(bot.get_all_members(), name=discord).id
                 break
         else:
