@@ -23,6 +23,6 @@ def get_boxes(name, response):
     return boxes
 
 def get_name_box(name, response):
-    length = 130 + max(word.calc_length(name, 140), word.calc_length(add_name.get_activity(response), 35))
+    length = 130 + min(max(word.calc_length(name, min(word.calc_size(name, 1080), 140)), word.calc_length(add_name.get_activity(response), 35)), 1080)
     box = [70, 50, length, 310]
     return box
