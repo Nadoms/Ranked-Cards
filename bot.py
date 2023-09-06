@@ -171,7 +171,11 @@ def get_id(input_name):
         for line in f:
             if input_name.lower() == line.split(":")[0].lower():
                 discord = line.split(":")[-1]
-                id = nextcord.utils.get(bot.get_all_members(), name=discord).id
+                try:
+                    id = nextcord.utils.get(bot.get_all_members(), name=discord).id
+                except Exception as e:
+                    print("PROFILE PICTURE FAILED:", e)
+                    id = "343108228890099713"
                 break
         else:
             id = "343108228890099713"
@@ -195,4 +199,4 @@ def get_name(interaction_ctx):
             return ""
 
 load_dotenv()
-bot.run(getenv("DISCORD_TOKEN"))
+bot.run(getenv("OTHER_TOKEN"))
