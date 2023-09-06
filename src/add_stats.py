@@ -15,9 +15,9 @@ def write(card, name):
     large_stat_font = ImageFont.truetype('minecraft_font.ttf', 60)
     colour = rank.get_colour(response["elo_rate"])
     best_colour = rank.get_colour(response["best_elo_rate"])
-    rank_colour = ["#888888", "#9dc8e6", "#50fe50", "#0f52ba", "#cd7f32", "#c0c0c0", "#ffd700"]
-    win_loss_colour = ["#888888", "#9dc8e6", "#50fe50", "#0f52ba", "#ffd700"]
-    pb_colour = ["#888888", "#9dc8e6", "#50fe50", "#0f52ba", "#ffd700"]
+    rank_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52ba", "#cd7f32", "#c0c0c0", "#ffd700"]
+    win_loss_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
+    pb_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
     w_d_l_colour = ["#50fe50", "#ee4b2b", "#ffbf00"]
     white = "#ffffff"
 
@@ -68,18 +68,20 @@ def write(card, name):
                 rounded_rank = int(major_stats[1][i])
                 if rounded_rank > 500:
                     rounded_rank = 0
-                elif rounded_rank > 100:
+                elif rounded_rank > 300:
                     rounded_rank = 1
-                elif rounded_rank > 10:
+                elif rounded_rank > 100:
                     rounded_rank = 2
-                elif rounded_rank > 3:
+                elif rounded_rank > 10:
                     rounded_rank = 3
-                elif rounded_rank == 3:
+                elif rounded_rank > 3:
                     rounded_rank = 4
-                elif rounded_rank == 2:
+                elif rounded_rank == 3:
                     rounded_rank = 5
-                elif rounded_rank == 1:
+                elif rounded_rank == 2:
                     rounded_rank = 6
+                elif rounded_rank == 1:
+                    rounded_rank = 7
                 else:
                     rounded_rank = 0
                 major_stats[1][i] = "#" + major_stats[1][i]
@@ -88,11 +90,19 @@ def write(card, name):
                 rounded_rank = 0
             statted_image.text((650-word.calc_length(major_stats[1][i], 60), 820+i*80), major_stats[1][i], font=large_stat_font, fill=rank_colour[rounded_rank])
         elif i == 2:
-            rounded_win_loss = round(float(major_stats[1][i]) * 2 - 1)
-            if rounded_win_loss < 0:
+            rounded_win_loss = float(major_stats[1][i])
+            if rounded_win_loss < 0.8:
                 rounded_win_loss = 0
-            elif rounded_win_loss > 4:
+            elif rounded_win_loss < 1:
+                rounded_win_loss = 1
+            elif rounded_win_loss < 1.2:
+                rounded_win_loss = 2
+            elif rounded_win_loss < 1.5:
+                rounded_win_loss = 3
+            elif rounded_win_loss < 2:
                 rounded_win_loss = 4
+            elif rounded_win_loss >= 2:
+                rounded_win_loss = 5
             statted_image.text((650-word.calc_length(major_stats[1][i], 60), 820+i*80), major_stats[1][i], font=large_stat_font, fill=win_loss_colour[rounded_win_loss])
         elif i == 3:
             if major_stats[1][i] == ":00":
@@ -100,16 +110,18 @@ def write(card, name):
                 rounded_pb = -1
             else:
                 rounded_pb = int(major_stats[1][i].split(":")[0])
-            if rounded_pb >= 30:
+            if rounded_pb >= 20:
                 rounded_pb = 0
-            elif rounded_pb >= 20:
-                rounded_pb = 1
             elif rounded_pb >= 15:
+                rounded_pb = 1
+            elif rounded_pb >= 12:
                 rounded_pb = 2
             elif rounded_pb >= 10:
                 rounded_pb = 3
-            elif rounded_pb >= 6:
+            elif rounded_pb >= 9:
                 rounded_pb = 4
+            elif rounded_pb >= 6:
+                rounded_pb = 5
             else:
                 rounded_pb = 0
             statted_image.text((650-word.calc_length(major_stats[1][i], 60), 820+i*80), major_stats[1][i], font=large_stat_font, fill=pb_colour[rounded_pb])
