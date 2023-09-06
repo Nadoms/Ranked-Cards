@@ -28,7 +28,7 @@ async def card(ctx, *input_name):
     else:
         input_name = input_name[0]
     print(f"\nGenerating card for {input_name}")
-    user = await bot.fetch_user(get_id(input_name))
+    user = await bot.fetch_user(get_uid(input_name))
     pfp = user.avatar
     try:
         img = carding.__main__(input_name, pfp)
@@ -75,10 +75,11 @@ async def unlink(ctx):
     with open (file, 'w') as f:
         unlinked = False
         for line in lines:
-            mcname = line.split(":")[0]
-            username = line.split(":")[-1]
+            mcname = line.split(":")[0].strip()
+            username = line.split(":")[-1].strip()
             if not (user == username):
-                f.write(line)
+                if line != "":
+                    f.write(line)
             else:
                 unlinked = True
         if unlinked:
@@ -100,15 +101,20 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
 )):
     if not input_name:
         input_name = get_name(interaction)
-        if input_name == "":
+        if not input_name:
             await interaction.response.send_message("Please link your minecraft account with </link:1145666604567367750> or specify a minecraft username.")
             return
+        
     print(f"\nGenerating card for {input_name}")
-    user = await bot.fetch_user(get_id(input_name))
+    user = await bot.fetch_user(get_uid(input_name))
     pfp = user.avatar
+    discord = str(user)
+    if discord[-2:] == "#0":
+        discord = discord[:-2]
     await interaction.response.defer()
+
     try:
-        img = carding.__main__(input_name, pfp)
+        img = carding.__main__(input_name, discord, pfp)
     except Exception as e:
         await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls")
     if img:
@@ -123,80 +129,87 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
 @bot.slash_command(name="link", description="Links your minecraft account with your discord account.")
 async def link(interaction: Interaction, input_name: str):
     file = path.join("src", "link.txt")
-    user = str(interaction.user)
+
+    uid = str(interaction.user.id)
+
+    '''user = str(interaction.user)
     if user[-2:] == "#0":
-        user = user[:-2]
+        user = user[:-2]'''
+
     user_exists = False
+
     with open (file, "r") as f:
         for line in f:
             mcname = line.split(":")[0].strip()
-            username = line.split(":")[-1].strip()
-            if user == username:
+            storeduid = line.split(":")[-1].strip()
+
+            if uid == storeduid:
                 user_exists = True
                 await interaction.response.send_message(f"You are already linked to {mcname}.")
             elif input_name.lower() == mcname.lower():
                 user_exists = True
-                await interaction.response.send_message(f"{input_name} is already linked to {username}.")
+                await interaction.response.send_message(f"{input_name} is already linked to {bot.get_user(int(storeduid))}.")
+
     if not user_exists:
         with open (file, "a") as f:
-            f.write(f"\n{input_name}:{user}")
+            f.write(f"\n{input_name}:{uid}")
         await interaction.response.send_message(f"{input_name} has been linked to your discord!")
 
 @bot.slash_command(name="unlink", description="Unlinks your minecraft account with your discord account.")
 async def unlink(interaction: Interaction):
     file = path.join("src", "link.txt")
-    user = str(interaction.user)
+
+    uid = str(interaction.user.id)
+
+    '''user = str(interaction.user)
     if user[-2:] == "#0":
-        user = user[:-2]
+        user = user[:-2]'''
+    
     with open (file, "r") as f:
         lines = f.readlines()
+
     with open (file, 'w') as f:
         unlinked = False
+
         for line in lines:
-            mcname = line.split(":")[0]
-            username = line.split(":")[-1]
-            if not (user == username):
+            mcname = line.split(":")[0].strip()
+            storeduid = line.split(":")[-1].strip()
+            if uid != storeduid:
                 f.write(line)
             else:
                 unlinked = True
+
         if unlinked:
             await interaction.response.send_message(f"{mcname} has been unlinked from your discord.")
         else:
             await interaction.response.send_message(f"You are not linked. Please link your minecraft account with </link:1145666604567367750>.")
 
 
-def get_id(input_name):
+def get_uid(input_name):
     file = path.join("src", "link.txt")
     with open (file, "r") as f:
         for line in f:
             if input_name.lower() == line.split(":")[0].lower():
-                discord = line.split(":")[-1]
-                try:
-                    id = nextcord.utils.get(bot.get_all_members(), name=discord).id
-                except Exception as e:
-                    print("PROFILE PICTURE FAILED:", e)
-                    id = "343108228890099713"
+                uid = line.split(":")[-1]
                 break
         else:
-            id = "343108228890099713"
-    return id
+            uid = "343108228890099713"
+    return uid
 
 def get_name(interaction_ctx):
     file = path.join("src", "link.txt")
     try:
-        user = str(interaction_ctx.user)
+        uid = str(interaction_ctx.user.id)
     except:
-        user = str(interaction_ctx.message.author)
-    if user[-2:] == "#0":
-        user = user[:-2]
+        uid = str(interaction_ctx.message.author.id)
     with open (file, "r") as f:
         for line in f:
             mcname = line.split(":")[0].strip()
-            username = line.split(":")[-1].strip()
-            if user == username:
+            storeduid = line.split(":")[-1].strip()
+            if uid == storeduid:
                 return mcname
         else:
             return ""
 
 load_dotenv()
-bot.run(getenv("OTHER_TOKEN"))
+bot.run(getenv("DISCORD_TOKEN"))

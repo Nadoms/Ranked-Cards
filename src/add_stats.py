@@ -66,9 +66,9 @@ def write(card, name):
         elif i == 1:
             if major_stats[1][i] != "None":
                 rounded_rank = int(major_stats[1][i])
-                if rounded_rank > 500:
+                if rounded_rank > 1000:
                     rounded_rank = 0
-                elif rounded_rank > 300:
+                elif rounded_rank > 500:
                     rounded_rank = 1
                 elif rounded_rank > 100:
                     rounded_rank = 2

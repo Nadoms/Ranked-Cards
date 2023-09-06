@@ -13,7 +13,7 @@ from PIL import Image
 from os import path
 from datetime import datetime, timedelta
 
-def __main__(input_name, pfp):
+def __main__(input_name, discord, pfp):
     response = requests.get(f"https://mcsrranked.com/api/users/{input_name}").json()
 
     if response["status"] != "error":
@@ -37,7 +37,7 @@ def __main__(input_name, pfp):
         then = splits(then, 5)
         src.add_splits.write(card, name)
         then = splits(then, 6)
-        src.add_socials.write(card, name, pfp)
+        src.add_socials.write(card, name, discord, pfp)
         then = splits(then, 7)
         src.add_other.write(card, name)
         then = splits(then, 8)

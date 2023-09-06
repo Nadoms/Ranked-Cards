@@ -8,10 +8,10 @@ from os import path
 
 from . import word
 
-def write(card, name, pfp):
+def write(card, name, discord, pfp):
     response = requests.get(f"https://mcsrranked.com/api/users/{name}").json()["data"]
 
-    discord = get_discord(response, name)
+    discord = get_discord(discord)
     discord_size = min(word.calc_size(discord, 520), 50)
     discord_font = ImageFont.truetype('minecraft_font.ttf', discord_size)
 
@@ -29,14 +29,11 @@ def write(card, name, pfp):
 
     return card
 
-def get_discord(response, name):
-    discord = "Unlinked"
-    file = path.join("src", "link.txt")
-    with open (file, "r") as f:
-        for line in f:
-            if name.lower() == line.split(":")[0].lower():
-                discord = "@" + line.split(":")[1]
-                break
+def get_discord(discord):
+    if discord == "notnaddysalt":
+        discord = "Unlinked"
+    else:
+        discord = "@" + discord
     return discord
 
 def get_yt(response):
