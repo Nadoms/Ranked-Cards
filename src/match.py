@@ -1,6 +1,10 @@
 import requests
 from datetime import timedelta
 
+def get_split_mactches(name):
+    response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?count=50&filter=2").json()["data"]
+    return response
+
 def get_matches(name):
     matches = []
     for s in range(0, get_season()+1):

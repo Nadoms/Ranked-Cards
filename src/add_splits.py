@@ -2,10 +2,9 @@ from PIL import ImageDraw, ImageFont
 import requests
 
 from . import rank
+from . import match
 
 def write(card, name):
-    response = requests.get(f"https://mcsrranked.com/api/users/{name}").json()["data"]
-    
     splits_font = ImageFont.truetype('minecraft_font.ttf', 20)
     
     splitted_image = ImageDraw.Draw(card)
