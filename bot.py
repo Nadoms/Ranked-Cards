@@ -28,7 +28,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     if not input_name:
         input_name = get_name(interaction)
         if not input_name:
-            await interaction.response.send_message("Please link your minecraft account with </link:1145666604567367750> or specify a minecraft username.")
+            await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1145666604567367750> or specify a minecraft username.")
             return
         
     print(f"\nGenerating card for {input_name}")
@@ -52,9 +52,9 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     else:
         await interaction.followup.send("Player not found.")
 
-@bot.slash_command(name="link", description="Links your minecraft account with your discord account.")
-async def link(interaction: Interaction, input_name: str):
-    file = path.join("src", "link.txt")
+@bot.slash_command(name="connect", description="Connects your minecraft account with your discord account.")
+async def connect(interaction: Interaction, input_name: str):
+    file = path.join("src", "connect.txt")
 
     uid = str(interaction.user.id)
 
@@ -71,19 +71,19 @@ async def link(interaction: Interaction, input_name: str):
 
             if uid == storeduid:
                 user_exists = True
-                await interaction.response.send_message(f"You are already linked to {mcname}.")
+                await interaction.response.send_message(f"You are already connected to {mcname}.")
             elif input_name.lower() == mcname.lower():
                 user_exists = True
-                await interaction.response.send_message(f"{input_name} is already linked to {bot.get_user(int(storeduid))}.")
+                await interaction.response.send_message(f"{input_name} is already connected to {bot.get_user(int(storeduid))}.")
 
     if not user_exists:
         with open (file, "a") as f:
             f.write(f"\n{input_name}:{uid}")
-        await interaction.response.send_message(f"{input_name} has been linked to your discord!")
+        await interaction.response.send_message(f"{input_name} has been connected to your discord!")
 
-@bot.slash_command(name="unlink", description="Unlinks your minecraft account with your discord account.")
-async def unlink(interaction: Interaction):
-    file = path.join("src", "link.txt")
+@bot.slash_command(name="disconnect", description="Disconnects your minecraft account with your discord account.")
+async def disconnect(interaction: Interaction):
+    file = path.join("src", "connect.txt")
 
     uid = str(interaction.user.id)
 
@@ -95,7 +95,7 @@ async def unlink(interaction: Interaction):
         lines = f.readlines()
 
     with open (file, 'w') as f:
-        unlinked = False
+        disconnected = False
 
         for line in lines:
             mcname = line.split(":")[0].strip()
@@ -103,16 +103,16 @@ async def unlink(interaction: Interaction):
             if uid != storeduid:
                 f.write(line)
             else:
-                unlinked = True
+                disconnected = True
 
-        if unlinked:
-            await interaction.response.send_message(f"{mcname} has been unlinked from your discord.")
+        if disconnected:
+            await interaction.response.send_message(f"{mcname} has been disconnected from your discord.")
         else:
-            await interaction.response.send_message(f"You are not linked. Please link your minecraft account with </link:1145666604567367750>.")
+            await interaction.response.send_message(f"You are not connected. Please connect your minecraft account with </connect:1145666604567367750> to your discord.")
 
 
 def get_uid(input_name):
-    file = path.join("src", "link.txt")
+    file = path.join("src", "connect.txt")
     with open (file, "r") as f:
         for line in f:
             if input_name.lower() == line.split(":")[0].lower():
@@ -123,7 +123,7 @@ def get_uid(input_name):
     return uid
 
 def get_name(interaction_ctx):
-    file = path.join("src", "link.txt")
+    file = path.join("src", "connect.txt")
     try:
         uid = str(interaction_ctx.user.id)
     except:
