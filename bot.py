@@ -4,7 +4,9 @@ from nextcord.ext import commands
 from os import getenv, path
 from dotenv import load_dotenv
 
+import requests
 import card as carding
+
 intents = intents=nextcord.Intents.all()
 intents.members = True
 bot = commands.Bot(command_prefix="=", intents=intents, default_guild_ids=[735859906434957392, 1113914901325434880, 1056779246728658984])
@@ -32,25 +34,27 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
             return
         
     print(f"\nGenerating card for {input_name}")
-    user = await bot.fetch_user(get_uid(input_name))
-    pfp = user.avatar
-    discord = str(user)
-    if discord[-2:] == "#0":
-        discord = discord[:-2]
-    await interaction.response.defer()
+    response = requests.get(f"https://mcsrranked.com/api/users/{input_name}").json()
+    if response["status"] == "error":
+        await interaction.followup.send("Player not found.")
+    else:
+        user = await bot.fetch_user(get_uid(response, input_name))
+        pfp = user.avatar
+        discord = str(user)
+        if discord[-2:] == "#0":
+            discord = discord[:-2]
+        await interaction.response.defer()
 
-    try:
-        img = carding.__main__(input_name, discord, pfp)
-    except Exception as e:
-        await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls")
-    if img:
+        try:
+            img = carding.__main__(input_name, response, discord, pfp)
+        except Exception as e:
+            await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls")
+
         img.save("card.png")
         with open("card.png", "rb") as f:
             img = File(f)
         await interaction.channel.send(files=[img])
         await interaction.followup.send(f"{input_name}'s ranked card:")
-    else:
-        await interaction.followup.send("Player not found.")
 
 @bot.slash_command(name="connect", description="Connects your minecraft account with your discord account.")
 async def connect(interaction: Interaction, input_name: str):
@@ -111,7 +115,10 @@ async def disconnect(interaction: Interaction):
             await interaction.response.send_message(f"You are not connected. Please connect your minecraft account with </connect:1145666604567367750> to your discord.")
 
 
-def get_uid(input_name):
+def get_uid(response, input_name):
+    if response["data"]["connections"]["discord"]:
+        uid = response["data"]["connections"]["discord"]["id"]
+        return uid
     file = path.join("src", "connect.txt")
     with open (file, "r") as f:
         for line in f:

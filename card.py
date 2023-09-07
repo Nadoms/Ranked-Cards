@@ -12,9 +12,7 @@ from PIL import Image
 from os import path
 from datetime import datetime
 
-def __main__(input_name, discord, pfp):
-    response = requests.get(f"https://mcsrranked.com/api/users/{input_name}").json()
-
+def __main__(input_name, response, discord, pfp):
     if response["status"] != "error":
         name = response["data"]["nickname"]
         uuid = response["data"]["uuid"]
