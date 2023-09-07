@@ -7,9 +7,7 @@ from os import path
 from . import rank
 from . import word
 
-def write(card, name):
-    response = requests.get(f"https://mcsrranked.com/api/users/{name}").json()["data"]
-
+def write(card, name, response):
     badge = get_badge(response)
     dim = badge.size[0]
 

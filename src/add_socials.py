@@ -8,9 +8,7 @@ from os import path
 
 from . import word
 
-def write(card, name, discord, pfp):
-    response = requests.get(f"https://mcsrranked.com/api/users/{name}").json()["data"]
-
+def write(card, name, discord, pfp, response):
     discord = get_discord(discord)
     discord_size = min(word.calc_size(discord, 520), 50)
     discord_font = ImageFont.truetype('minecraft_font.ttf', discord_size)

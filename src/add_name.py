@@ -6,9 +6,7 @@ from datetime import datetime
 
 from . import word
 
-def write(card, name):
-    response = requests.get(f"https://mcsrranked.com/api/users/{name}").json()["data"]
-
+def write(card, name, response):
     name_size = min(word.calc_size(name, 1080), 140)
     name_font = ImageFont.truetype('minecraft_font.ttf', name_size)
     activity_font = ImageFont.truetype('minecraft_font.ttf', 35)

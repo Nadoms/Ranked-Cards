@@ -4,9 +4,7 @@ import requests
 from . import word
 from . import add_name
 
-def write(card, name):
-    response = requests.get(f"https://mcsrranked.com/api/users/{name}").json()["data"]
-
+def write(card, name, response):
     boxed_image = ImageDraw.Draw(card)
     for box in get_boxes(name, response):
         boxed_image.rectangle(box, fill="#122b30", outline="#000000", width=10) #88cd34

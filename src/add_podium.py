@@ -4,9 +4,7 @@ from os import path
 
 from . import rank
 
-def write(card, name):
-    response = requests.get(f"https://mcsrranked.com/api/users/{name}").json()["data"]
-
+def write(card, name, response):
     podium = get_podium(response)
     border = get_border()
     card.paste(border, (round(960-border.size[0]/2), round(990-border.size[1]/2)), border)

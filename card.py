@@ -14,25 +14,26 @@ from datetime import datetime
 
 def __main__(input_name, response, discord, pfp):
     if response["status"] != "error":
-        name = response["data"]["nickname"]
-        uuid = response["data"]["uuid"]
+        response = response["data"]
+        name = response["nickname"]
+        uuid = response["uuid"]
         file = path.join("src", "pics", "bgs", "grass.jpg")
         card = Image.open(file)
 
         then = datetime.now()
-        src.add_boxes.write(card, name)
+        src.add_boxes.write(card, name, response)
         then = splits(then, 0)
-        src.add_name.write(card, name)
+        src.add_name.write(card, name, response)
         then = splits(then, 1)
-        src.add_stats.write(card, name)
+        src.add_stats.write(card, name, response)
         then = splits(then, 2)
-        src.add_podium.write(card, name)
+        src.add_podium.write(card, name, response)
         then = splits(then, 3)
         src.add_skin.write(card, uuid)
         then = splits(then, 4)
-        src.add_badge.write(card, name)
+        src.add_badge.write(card, name, response)
         then = splits(then, 5)
-        src.add_socials.write(card, name, discord, pfp)
+        src.add_socials.write(card, name, discord, pfp, response)
         then = splits(then, 7)
         src.add_other.write(card, name)
         then = splits(then, 8)

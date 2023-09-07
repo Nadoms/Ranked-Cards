@@ -145,4 +145,4 @@ def get_name(interaction_ctx):
             return ""
 
 load_dotenv()
-bot.run(getenv("DISCORD_TOKEN"))
+bot.run(getenv("TEST_TOKEN"))

@@ -6,8 +6,7 @@ from . import word
 from . import rank
 from . import match
 
-def write(card, name):
-    response = requests.get(f"https://mcsrranked.com/api/users/{name}").json()["data"]
+def write(card, name, response):
     matches = [] # match.get_matches(response["nickname"])
 
     statted_image = ImageDraw.Draw(card)
