@@ -4,6 +4,7 @@ import src.add_stats
 import src.add_podium
 import src.add_skin
 import src.add_badge
+import src.add_splits
 import src.add_socials
 import src.add_other
 
@@ -12,10 +13,9 @@ from PIL import Image
 from os import path
 from datetime import datetime
 
-def __main__(input_name, response, discord, pfp):
+def __main__(name, response, discord, pfp):
     if response["status"] != "error":
         response = response["data"]
-        name = response["nickname"]
         uuid = response["uuid"]
         file = path.join("src", "pics", "bgs", "grass.jpg")
         card = Image.open(file)
@@ -33,6 +33,8 @@ def __main__(input_name, response, discord, pfp):
         then = splits(then, 4)
         src.add_badge.write(card, name, response)
         then = splits(then, 5)
+        src.add_splits.write(card, name)
+        then = splits(then, 6)
         src.add_socials.write(card, name, discord, pfp, response)
         then = splits(then, 7)
         src.add_other.write(card, name)

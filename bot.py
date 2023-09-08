@@ -30,16 +30,20 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     if not input_name:
         input_name = get_name(interaction)
         if not input_name:
-            await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1145666604567367750> or specify a minecraft username.")
+            await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a minecraft username.")
             return
+    
+    response = requests.get(f"https://mcsrranked.com/api/users/{input_name}").json()
         
     print(f"\nGenerating card for {input_name}")
-    response = requests.get(f"https://mcsrranked.com/api/users/{input_name}").json()
     if response["status"] == "error":
-        await interaction.followup.send("Player not found.")
+        await interaction.response.send_message("Player not found.")
     else:
+        input_name = response["data"]["nickname"]
         user = await bot.fetch_user(get_uid(response, input_name))
         pfp = user.avatar
+        if not pfp:
+            pfp = "https://cdn.discordapp.com/avatars/343108228890099713/1b4bf25c894af2c68410b0574135d150"
         discord = str(user)
         if discord[-2:] == "#0":
             discord = discord[:-2]
@@ -112,7 +116,7 @@ async def disconnect(interaction: Interaction):
         if disconnected:
             await interaction.response.send_message(f"{mcname} has been disconnected from your discord.")
         else:
-            await interaction.response.send_message(f"You are not connected. Please connect your minecraft account with </connect:1145666604567367750> to your discord.")
+            await interaction.response.send_message(f"You are not connected. Please connect your minecraft account with </connect:1149442234513637448> to your discord.")
 
 
 def get_uid(response, input_name):
@@ -145,4 +149,4 @@ def get_name(interaction_ctx):
             return ""
 
 load_dotenv()
-bot.run(getenv("TEST_TOKEN"))
+bot.run(getenv("DISCORD_TOKEN"))
