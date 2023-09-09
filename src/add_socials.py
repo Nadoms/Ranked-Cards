@@ -58,7 +58,7 @@ def write_pfp(card, x, pfp):
     file = path.join("src", "pics", "other", "circle.png")
     circle = Image.open(file).convert("L")
 
-    pic = Image.open(BytesIO(response.content))
+    pic = Image.open(BytesIO(response.content)).convert("RGBA")
 
     circled_pic = ImageOps.fit(pic, circle.size, centering=(0.5, 0.5))
     circled_pic.putalpha(circle)
