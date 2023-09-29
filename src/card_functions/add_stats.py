@@ -2,9 +2,7 @@ from PIL import ImageDraw, ImageFont
 import requests
 from datetime import timedelta
 
-from . import word
-from . import rank
-from . import match
+from src.gen_functions import word, rank, match
 
 def write(card, name, response):
     matches = [] # match.get_matches(response["nickname"])

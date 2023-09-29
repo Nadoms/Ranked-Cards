@@ -6,7 +6,7 @@ from PIL import ImageOps
 import requests
 from os import path
 
-from . import word
+from src.gen_functions import word
 
 def write(card, name, discord, pfp, response):
     discord = get_discord(discord)

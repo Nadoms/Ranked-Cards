@@ -1,8 +1,7 @@
 from PIL import ImageDraw, ImageFont
 import requests
 
-from . import rank
-from . import match
+from src.gen_functions import rank, match
 
 def write(card, name):
     splits_font = ImageFont.truetype('minecraft_font.ttf', 20)

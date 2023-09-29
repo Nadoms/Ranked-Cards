@@ -2,7 +2,7 @@ from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
 from os import path
 
-from . import word
+from src.gen_functions import word
 
 # rank with a circle indicating how close to the next main rank, with lines for each division
 

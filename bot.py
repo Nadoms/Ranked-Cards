@@ -49,10 +49,10 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
             discord = discord[:-2]
         await interaction.response.defer()
         
-        img = carding.__main__(input_name, response, discord, pfp)
         try:
-            print("ball")
+            img = carding.__main__(input_name, response, discord, pfp)
         except Exception as e:
+            print(e)
             await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls")
 
         img.save("card.png")
