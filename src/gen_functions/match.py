@@ -27,11 +27,12 @@ def get_playtime(matches, season):
     playtime = 0
 
     for match in matches:
-        if not season:
-            playtime += match["final_time"]
-            continue
-        if match["match_season"] == current_season:
-            playtime += match["final_time"]
+        if not match["is_decay"]:
+            if not season:
+                playtime += match["final_time"]
+                continue
+            if match["match_season"] == current_season:
+                playtime += match["final_time"]
 
     hours = round(timedelta(milliseconds=playtime).total_seconds() / 3600, 1)
     return hours
@@ -42,17 +43,18 @@ def get_ff_loss(matches, season, uuid, name):
     losses = 0
 
     for match in matches:
-        if not season:
-            if match["winner"] != uuid:
-                losses += 1
-                if match["forfeit"] == True:
-                    forfeits += 1
-            continue
-        if match["match_season"] == current_season:
-            if match["winner"] != uuid:
-                losses += 1
-                if match["forfeit"] == True:
-                    forfeits += 1
+        if not match["is_decay"]:
+            if not season:
+                if match["winner"] != uuid:
+                    losses += 1
+                    if match["forfeit"] == True:
+                        forfeits += 1
+                continue
+            if match["match_season"] == current_season:
+                if match["winner"] != uuid:
+                    losses += 1
+                    if match["forfeit"] == True:
+                        forfeits += 1
 
     if losses == 0:
         return "-"

@@ -49,7 +49,7 @@ def write(card, name, uuid, response):
                     rounded_ff_loss = 3
                 elif rounded_ff_loss > 20:
                     rounded_ff_loss = 4
-                elif rounded_ff_loss > 0:
+                elif rounded_ff_loss >= 0:
                     rounded_ff_loss = 5
                 else:
                     rounded_ff_loss = 0
