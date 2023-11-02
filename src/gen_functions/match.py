@@ -16,6 +16,12 @@ def get_matches(name):
             i += 1
     return matches
 
+def get_recent_matches(name):
+    matches = []
+    response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page=0&count=50&filter=2&season={get_season()}").json()["data"]
+    matches += response
+    return matches
+
 def get_playtime(matches, season):
     current_season = get_season()
     playtime = 0
@@ -30,8 +36,7 @@ def get_playtime(matches, season):
     hours = round(timedelta(milliseconds=playtime).total_seconds() / 3600, 1)
     return hours
 
-def get_ff_loss(matches, season, name):
-    uuid = requests.get(f"https://mcsrranked.com/api/users/{name}").json()["data"]["uuid"]
+def get_ff_loss(matches, season, uuid, name):
     current_season = get_season()
     forfeits = 0
     losses = 0
@@ -56,7 +61,7 @@ def get_ff_loss(matches, season, name):
     return forfeit_loss
 
 def get_season():
-    return 2
+    return 3
 """
     response = requests.get("https://mcsrranked.com/api/matches/?count=1").json()["data"]
     season = response[0]["match_season"]

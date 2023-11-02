@@ -19,7 +19,7 @@ def __main__(name, response, discord, pfp):
         then = splits(then, 0)
         add_name.write(card, name, response)
         then = splits(then, 1)
-        add_stats.write(card, name, response)
+        add_stats.write(card, name, uuid, response)
         then = splits(then, 2)
         add_podium.write(card, name, response)
         then = splits(then, 3)
