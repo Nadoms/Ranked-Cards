@@ -159,7 +159,7 @@ def get_season_stats(response, matches, uuid):
 
     return [["W/L/D:",
              "Games:",
-             "FF/Loss:",
+             "FF/loss:",
              "Playtime:"],
             [f"{wins}/{losses}/{draws}",
              games,
