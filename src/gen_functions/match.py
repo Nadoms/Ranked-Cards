@@ -55,7 +55,7 @@ def get_ff_loss(matches, season, uuid, name):
                     forfeits += 1
 
     if losses == 0:
-        return 0
+        return "-"
     
     forfeit_loss = round(forfeits / losses * 100, 1)
     return forfeit_loss

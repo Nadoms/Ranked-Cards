@@ -15,6 +15,7 @@ def write(card, name, uuid, response):
     rank_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52ba", "#cd7f32", "#c0c0c0", "#ffd700"]
     win_loss_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
     pb_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
+    ff_loss_colour = ["#bb3030", "#ff6164", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
     w_d_l_colour = ["#50fe50", "#ee4b2b", "#ffbf00"]
     white = "#ffffff"
 
@@ -35,6 +36,27 @@ def write(card, name, uuid, response):
                 if j != len(w_d_l_spliced)-1:
                     statted_image.text((1827-word.calc_length(season_stats[1][i], 40)+word.calc_length(letters_placed, 40), 140+i*60), "/", font=stat_font, fill=white)
                     letters_placed += "/"
+        elif i == 2:
+            if season_stats[1][i] != "-":
+                rounded_ff_loss = float(season_stats[1][i])
+                if rounded_ff_loss > 80:
+                    rounded_ff_loss = 0
+                elif rounded_ff_loss > 60:
+                    rounded_ff_loss = 1
+                elif rounded_ff_loss > 40:
+                    rounded_ff_loss = 2
+                elif rounded_ff_loss > 30:
+                    rounded_ff_loss = 3
+                elif rounded_ff_loss > 20:
+                    rounded_ff_loss = 4
+                elif rounded_ff_loss > 0:
+                    rounded_ff_loss = 5
+                else:
+                    rounded_ff_loss = 0
+                season_stats[1][i] = season_stats[1][i] + "%"
+            else:
+                rounded_ff_loss = 0
+            statted_image.text((1827-word.calc_length(season_stats[1][i], 40), 140+i*60), season_stats[1][i], font=stat_font, fill=ff_loss_colour[rounded_ff_loss])
         else:
             statted_image.text((1827-word.calc_length(season_stats[1][i], 40), 140+i*60), season_stats[1][i], font=stat_font, fill=white)
 
@@ -132,7 +154,7 @@ def get_season_stats(response, matches, uuid):
     losses = str(response["records"]["2"]["lose"])
     draws = str(response["records"]["2"]["draw"])
     games = str(response["season_played"])
-    recent_forfeit_loss = str(match.get_ff_loss(matches, True, uuid, response["nickname"]))
+    recent_ff_loss = str(match.get_ff_loss(matches, True, uuid, response["nickname"]))
     playtime = "-" # str(match.get_playtime(matches, True))
 
     return [["W/L/D:",
@@ -141,13 +163,13 @@ def get_season_stats(response, matches, uuid):
              "Playtime:"],
             [f"{wins}/{losses}/{draws}",
              games,
-             f"{recent_forfeit_loss}%",
+             f"{recent_ff_loss}",
              f"{playtime} h"]]
 
 def get_lifetime_stats(response, matches, uuid):
     best_elo = str(response["best_elo_rate"])
     games = str(response["total_played"])
-    forfeit_loss = "- " # str(match.get_ff_loss(matches, False, uuid, response["nickname"]))
+    ff_loss = "- " # str(match.get_ff_loss(matches, False, uuid, response["nickname"]))
     playtime = "-" # str(match.get_playtime(matches, False))
 
     return [["Best ELO:",
@@ -156,7 +178,7 @@ def get_lifetime_stats(response, matches, uuid):
              "Playtime:"],
             [best_elo,
              games,
-             f"{forfeit_loss}%",
+             f"{ff_loss}%",
              f"{playtime} h"]]
 
 def get_major_stats(response):
