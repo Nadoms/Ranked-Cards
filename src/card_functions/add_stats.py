@@ -15,6 +15,7 @@ def write(card, name, uuid, response):
     rank_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52ba", "#cd7f32", "#c0c0c0", "#ffd700"]
     win_loss_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
     pb_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
+    avg_completion_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
     ff_loss_colour = ["#bb3030", "#ff6164", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
     w_d_l_colour = ["#50fe50", "#ee4b2b", "#ffbf00"]
     white = "#ffffff"
@@ -57,6 +58,27 @@ def write(card, name, uuid, response):
             else:
                 rounded_ff_loss = 0
             statted_image.text((1827-word.calc_length(season_stats[1][i], 40), 140+i*60), season_stats[1][i], font=stat_font, fill=ff_loss_colour[rounded_ff_loss])
+        elif i == 3:
+            if season_stats[1][i] == ":00":
+                season_stats[1][i] = "-"
+                rounded_avg_completion = -1
+            else:
+                rounded_avg_completion = int(season_stats[1][i].split(":")[0])
+            if rounded_avg_completion >= 26:
+                rounded_avg_completion = 0
+            elif rounded_avg_completion >= 21:
+                rounded_avg_completion = 1
+            elif rounded_avg_completion >= 17:
+                rounded_avg_completion = 2
+            elif rounded_avg_completion >= 15:
+                rounded_avg_completion = 3
+            elif rounded_avg_completion >= 13:
+                rounded_avg_completion = 4
+            elif rounded_avg_completion >= 7:
+                rounded_avg_completion = 5
+            else:
+                rounded_avg_completion = 0
+            statted_image.text((1827-word.calc_length(season_stats[1][i], 40), 140+i*60), season_stats[1][i], font=stat_font, fill=avg_completion_colour[rounded_avg_completion])
         else:
             statted_image.text((1827-word.calc_length(season_stats[1][i], 40), 140+i*60), season_stats[1][i], font=stat_font, fill=white)
 
@@ -155,16 +177,16 @@ def get_season_stats(response, matches, uuid):
     draws = str(response["records"]["2"]["draw"])
     games = str(response["season_played"])
     recent_ff_loss = str(match.get_ff_loss(matches, True, uuid, response["nickname"]))
-    playtime = "-" # str(match.get_playtime(matches, True))
+    recent_avg_completion = str(timedelta(milliseconds=match.get_avg_completion(matches, True, uuid, response)))[2:7].lstrip("0")
 
     return [["W/L/D:",
              "Games:",
              "FF/loss:",
-             "Playtime:"],
+             "Avg Finish:"],
             [f"{wins}/{losses}/{draws}",
              games,
-             f"{recent_ff_loss}",
-             f"{playtime} h"]]
+             recent_ff_loss,
+             recent_avg_completion]]
 
 def get_lifetime_stats(response, matches, uuid):
     best_elo = str(response["best_elo_rate"])

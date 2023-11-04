@@ -49,8 +49,7 @@ def get_ff_loss(matches, season, uuid, name):
                     losses += 1
                     if match["forfeit"] == True:
                         forfeits += 1
-                continue
-            if match["match_season"] == current_season:
+            elif match["match_season"] == current_season:
                 if match["winner"] != uuid:
                     losses += 1
                     if match["forfeit"] == True:
@@ -61,6 +60,26 @@ def get_ff_loss(matches, season, uuid, name):
     
     forfeit_loss = round(forfeits / losses * 100, 1)
     return forfeit_loss
+
+def get_avg_completion(matches, season, uuid, name):
+    current_season = get_season()
+    total_time = 0
+    completions = 0
+
+    for match in matches:
+        if match["winner"] == uuid and match["forfeit"] == False:
+            if not season:
+                total_time += match["final_time"]
+                completions += 1
+            elif match["match_season"] == current_season:
+                total_time += match["final_time"]
+                completions += 1
+
+    if completions == 0:
+        return 0
+    
+    avg_completion = round(total_time / completions, 0)
+    return avg_completion
 
 def get_season():
     return 3
