@@ -1,10 +1,6 @@
 import requests
 from datetime import timedelta
 
-def get_split_mactches(name):
-    response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?count=50&filter=2").json()["data"]
-    return response
-
 def get_matches(name):
     matches = []
     for s in range(0, get_season()+1):
@@ -45,12 +41,12 @@ def get_ff_loss(matches, season, uuid, name):
     for match in matches:
         if not match["is_decay"]:
             if not season:
-                if match["winner"] != uuid:
+                if match["winner"] != uuid and match["winner"]:
                     losses += 1
                     if match["forfeit"] == True:
                         forfeits += 1
             elif match["match_season"] == current_season:
-                if match["winner"] != uuid:
+                if match["winner"] != uuid and match["winner"]:
                     losses += 1
                     if match["forfeit"] == True:
                         forfeits += 1
