@@ -10,7 +10,8 @@ def write(card, uuid):
 
 def get_skin(uuid):
     try:
-        response = requests.get(f"https://visage.surgeplay.com/full/832/{uuid}?y=20&p=0")
+        headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
+        response = requests.get(f"https://visage.surgeplay.com/full/832/{uuid}?y=20&p=0", headers=headers)
         skin = Image.open(BytesIO(response.content))
     except:
         skin = get_default_skin()
