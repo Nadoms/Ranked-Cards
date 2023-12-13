@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 
 import requests
 import card as carding
+import graph as graphing
 
 intents = intents=nextcord.Intents.all()
 intents.members = True
@@ -19,6 +20,7 @@ async def on_ready():
 @bot.slash_command(name="ping", description="Pong!")
 async def ping(interaction: Interaction):
     await interaction.response.send_message("Pong!")
+
 
 @bot.slash_command(name="card", description="Generates a card for the player you specify.")
 async def card(interaction: Interaction, input_name: str = SlashOption(
@@ -61,6 +63,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
         await interaction.channel.send(files=[img])
         await interaction.followup.send(f"{input_name}'s ranked card:")
 
+
 @bot.slash_command(name="connect", description="Connects your minecraft account with your discord account.")
 async def connect(interaction: Interaction, input_name: str):
     file = path.join("src", "connect.txt")
@@ -72,6 +75,7 @@ async def connect(interaction: Interaction, input_name: str):
         user = user[:-2]'''
 
     user_exists = False
+    mc_exists = False
 
     with open (file, "r") as f:
         for line in f:
@@ -80,15 +84,30 @@ async def connect(interaction: Interaction, input_name: str):
 
             if uid == storeduid:
                 user_exists = True
-                await interaction.response.send_message(f"You are already connected to {mcname}.")
+                break
             elif input_name.lower() == mcname.lower():
-                user_exists = True
+                mc_exists = True
                 await interaction.response.send_message(f"{input_name} is already connected to {bot.get_user(int(storeduid))}.")
 
-    if not user_exists:
-        with open (file, "a") as f:
-            f.write(f"\n{input_name}:{uid}")
+    if user_exists:
+        with open (file, "r") as f:
+            lines = f.readlines()
+
+        with open (file, 'w') as f:
+            for line in lines:
+                mcname = line.split(":")[0].strip()
+                storeduid = line.split(":")[-1].strip()
+                if uid != storeduid:
+                    f.write(line)
+                else:
+                    f.write(f"{input_name}:{uid}\n")
         await interaction.response.send_message(f"{input_name} has been connected to your discord!")
+
+    elif not mc_exists:
+        with open (file, "a") as f:
+            f.write(f"{input_name}:{uid}\n")
+        await interaction.response.send_message(f"{input_name} has been connected to your discord!")
+
 
 @bot.slash_command(name="disconnect", description="Disconnects your minecraft account with your discord account.")
 async def disconnect(interaction: Interaction):
@@ -105,6 +124,7 @@ async def disconnect(interaction: Interaction):
 
     with open (file, 'w') as f:
         disconnected = False
+        my_mcname = ""
 
         for line in lines:
             mcname = line.split(":")[0].strip()
@@ -113,11 +133,54 @@ async def disconnect(interaction: Interaction):
                 f.write(line)
             else:
                 disconnected = True
+                mymcname = mcname
 
         if disconnected:
-            await interaction.response.send_message(f"{mcname} has been disconnected from your discord.")
+            await interaction.response.send_message(f"{mymcname} has been disconnected from your discord.")
         else:
             await interaction.response.send_message(f"You are not connected. Please connect your minecraft account with </connect:1149442234513637448> to your discord.")
+
+
+@bot.slash_command(name="graph", description="Illustrates a graph for the player + metric that you choose.")
+async def card(interaction: Interaction, input_name: str = SlashOption(
+    "name",
+    required = False,
+    description="The player to draw a graph for.",
+    default = ""
+    ), type: str = SlashOption(
+    "type",
+    required = False,
+    description="The metric to plot.",
+    default = "elo"
+    )):
+    if not input_name:
+        input_name = get_name(interaction)
+        if not input_name:
+            await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a minecraft username.")
+            return
+    
+    response = requests.get(f"https://mcsrranked.com/api/users/{input_name}").json()
+        
+    print(f"\nDrawing graph for {input_name}")
+    if response["status"] == "error":
+        await interaction.response.send_message("Player not found.")
+    else:
+        input_name = response["data"]["nickname"]
+
+        await interaction.response.defer()
+        
+        try:
+            pass
+            # img = graphing.__main__(input_name, response, discord, pfp)
+        except Exception as e:
+            print(e)
+            await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls")
+
+        img.save("graph.png")
+        with open("graph.png", "rb") as f:
+            img = File(f)
+        await interaction.channel.send(files=[img])
+        await interaction.followup.send(f"{input_name}'s {type} graph:")
 
 
 def get_uid(response, input_name):
