@@ -2,7 +2,7 @@ from PIL import ImageDraw, ImageFont
 import requests
 from datetime import timedelta
 
-from src.gen_functions import word, rank, match
+from gen_functions import word, rank, match
 
 def write(card, name, uuid, response):
     matches = match.get_recent_matches(response["nickname"])

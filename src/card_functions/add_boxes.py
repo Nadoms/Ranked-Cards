@@ -1,8 +1,8 @@
 from PIL import ImageDraw
 import requests
 
-from src.gen_functions import word
-from src.card_functions import add_name
+from gen_functions import word
+from card_functions import add_name
 
 def write(card, name, response):
     boxed_image = ImageDraw.Draw(card)

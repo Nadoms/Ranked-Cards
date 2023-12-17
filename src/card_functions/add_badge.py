@@ -4,7 +4,7 @@ from PIL import ImageFont
 import requests
 from os import path
 
-from src.gen_functions import rank, word
+from gen_functions import rank, word
 
 def write(card, name, response):
     badge = get_badge(response)

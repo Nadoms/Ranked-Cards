@@ -4,7 +4,7 @@ import requests
 from math import floor
 from datetime import datetime
 
-from src.gen_functions import word
+from gen_functions import word
 
 def write(card, name, response):
     name_size = min(word.calc_size(name, 1080), 140)

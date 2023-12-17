@@ -2,7 +2,7 @@ from PIL import Image
 import requests
 from os import path
 
-from src.gen_functions import rank
+from gen_functions import rank
 
 def write(card, name, response):
     podium = get_podium(response)

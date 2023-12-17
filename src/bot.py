@@ -5,8 +5,8 @@ from os import getenv, path
 from dotenv import load_dotenv
 
 import requests
-import card as carding
-import graph as graphing
+from commands import card as carding
+from commands import graph as graphing
 
 intents = intents=nextcord.Intents.all()
 intents.members = True
@@ -52,7 +52,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
         await interaction.response.defer()
         
         try:
-            img = carding.__main__(input_name, response, discord, pfp)
+            img = carding.main(input_name, response, discord, pfp)
         except Exception as e:
             print(e)
             await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls")
@@ -164,23 +164,24 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     print(f"\nDrawing graph for {input_name}")
     if response["status"] == "error":
         await interaction.response.send_message("Player not found.")
-    else:
-        input_name = response["data"]["nickname"]
+        return
+    
+    input_name = response["data"]["nickname"]
+    await interaction.response.defer()
+    
+    img = graphing.main(input_name, response, type)
+    try:
+        pass
+    except Exception as e:
+        print(e)
+        await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls")
+        return
 
-        await interaction.response.defer()
-        
-        try:
-            pass
-            # img = graphing.__main__(input_name, response, discord, pfp)
-        except Exception as e:
-            print(e)
-            await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls")
-
-        img.save("graph.png")
-        with open("graph.png", "rb") as f:
-            img = File(f)
-        await interaction.channel.send(files=[img])
-        await interaction.followup.send(f"{input_name}'s {type} graph:")
+    img.save("graph.png")
+    with open("graph.png", "rb") as f:
+        img = File(f)
+    await interaction.channel.send(files=[img])
+    await interaction.followup.send(f"{input_name}'s {type} graph:")
 
 
 def get_uid(response, input_name):
@@ -213,4 +214,4 @@ def get_name(interaction_ctx):
             return ""
 
 load_dotenv()
-bot.run(getenv("DISCORD_TOKEN"))
+bot.run(getenv("TEST_TOKEN"))
