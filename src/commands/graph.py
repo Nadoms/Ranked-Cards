@@ -5,17 +5,18 @@ from PIL import Image
 from os import path
 from datetime import datetime
 
-def main(name, response, type):
+def main(name, response, type, season):
     if response["status"] == "error":
         print("Player not found.")
         return None
     response = response["data"]
     uuid = response["uuid"]
 
-    file = add_graph.write(name, uuid, response, type)
-    graph = Image.open(file)
-
     then = datetime.now()
+    file = add_graph.write(name, uuid, response, type, season)
+    graph = Image.open(file)
+    then = splits(then, 0)
+
     return graph
 
 def splits(then, process):

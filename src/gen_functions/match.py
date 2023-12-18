@@ -1,20 +1,30 @@
 import requests
 from datetime import timedelta
 
-def get_matches(name):
+def get_matches(name, season):
+    if season == "lifetime":
+        matches = []
+        for s in reversed(range(1, get_season()+1)):
+            matches += get_season_matches(name, s)
+    else:
+        matches = get_season_matches(name, season)
+    return matches
+
+def get_season_matches(name, s):
     matches = []
-    for s in range(0, get_season()+1):
-        response = ["PLACEHOLDER"]
-        i = 0
-        while response != []:
-            response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page={i}&count=50&filter=2&season={s}").json()["data"]
-            matches += response
-            i += 1
+    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
+    response = ["PLACEHOLDER"]
+    i = 0
+    while response != []:
+        response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page={i}&count=50&filter=2&season={s}", headers=headers).json()["data"]
+        matches += response
+        i += 1
     return matches
 
 def get_recent_matches(name):
     matches = []
-    response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page=0&count=50&filter=2&season={get_season()}").json()["data"]
+    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
+    response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page=0&count=50&filter=2&season={get_season()}", headers=headers).json()["data"]
     matches += response
     return matches
 

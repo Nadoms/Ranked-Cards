@@ -35,7 +35,8 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
             await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a minecraft username.")
             return
     
-    response = requests.get(f"https://mcsrranked.com/api/users/{input_name}").json()
+    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
+    response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=headers).json()
         
     print(f"\nGenerating card for {input_name}")
     if response["status"] == "error":
@@ -146,12 +147,19 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     "name",
     required = False,
     description="The player to draw a graph for.",
-    default = ""
+    default=""
     ), type: str = SlashOption(
     "type",
     required = False,
     description="The metric to plot.",
-    default = "elo"
+    default="Elo",
+    choices=["Elo", "Completion time"]
+    ), season: str = SlashOption(
+    "season",
+    required = False,
+    description="The season to gather data for.",
+    default="3",
+    choices=["1", "2", "3", "Lifetime"]
     )):
     if not input_name:
         input_name = get_name(interaction)
@@ -159,7 +167,8 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
             await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a minecraft username.")
             return
     
-    response = requests.get(f"https://mcsrranked.com/api/users/{input_name}").json()
+    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
+    response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=headers).json()
         
     print(f"\nDrawing graph for {input_name}")
     if response["status"] == "error":
@@ -169,7 +178,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     input_name = response["data"]["nickname"]
     await interaction.response.defer()
     
-    img = graphing.main(input_name, response, type)
+    img = graphing.main(input_name, response, type, season)
     try:
         pass
     except Exception as e:
@@ -214,4 +223,4 @@ def get_name(interaction_ctx):
             return ""
 
 load_dotenv()
-bot.run(getenv("TEST_TOKEN"))
+bot.run(getenv("DISCORD_TOKEN"))
