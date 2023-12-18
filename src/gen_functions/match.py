@@ -16,6 +16,8 @@ def get_season_matches(name, s):
     response = ["PLACEHOLDER"]
     i = 0
     while response != []:
+        if response == "Too many requests":
+            return None
         response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page={i}&count=50&filter=2&season={s}", headers=headers).json()["data"]
         matches += response
         i += 1

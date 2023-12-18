@@ -1,3 +1,4 @@
+import difflib
 import nextcord
 from nextcord import File, Interaction, SlashOption
 from nextcord.ext import commands
@@ -40,7 +41,8 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
         
     print(f"\nGenerating card for {input_name}")
     if response["status"] == "error":
-        await interaction.response.send_message("Player not found.")
+        extra = get_close(input_name)
+        await interaction.response.send_message("Player not found." + extra)
     else:
         input_name = response["data"]["nickname"]
         user = await bot.fetch_user(get_uid(response, input_name))
@@ -142,7 +144,7 @@ async def disconnect(interaction: Interaction):
             await interaction.response.send_message(f"You are not connected. Please connect your minecraft account with </connect:1149442234513637448> to your discord.")
 
 
-@bot.slash_command(name="graph", description="Illustrates a graph for the player + metric that you choose.")
+@bot.slash_command(name="plot", description="Illustrates a graph for the player + metric that you choose.")
 async def card(interaction: Interaction, input_name: str = SlashOption(
     "name",
     required = False,
@@ -172,7 +174,8 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
         
     print(f"\nDrawing graph for {input_name}")
     if response["status"] == "error":
-        await interaction.response.send_message("Player not found.")
+        extra = get_close(input_name.lower())
+        await interaction.response.send_message("Player not found." + extra)
         return
     
     input_name = response["data"]["nickname"]
@@ -222,5 +225,26 @@ def get_name(interaction_ctx):
         else:
             return ""
 
+def get_close(input_name):
+    extra = ""
+    file = path.join("src", "players.txt")
+    with open(file) as f:
+        players = f.readlines()
+        close = difflib.get_close_matches(input_name, players)
+    if close:
+        extra += " Did you mean "
+        headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
+        for i in range(0, len(close)):
+            player = requests.get(f"https://mcsrranked.com/api/users/{close[i].strip()}", headers=headers).json()["data"]["nickname"]
+            extra += player
+            if i < len(close) - 2:
+                extra += ", "
+            elif i == len(close) - 2:
+                extra += " or "
+            else:
+                extra += "?"
+    return extra
+
+
 load_dotenv()
-bot.run(getenv("DISCORD_TOKEN"))
+bot.run(getenv("TEST_TOKEN"))

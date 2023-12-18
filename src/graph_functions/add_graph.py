@@ -12,14 +12,12 @@ from gen_functions import match, rank
 def write(name, uuid, response, type, season):
     matches = match.get_matches(response["nickname"], season)
     columns = ["Games ago", type, "Season"]
-    print("done")
 
     if type == "Elo":
         data = pd.DataFrame(get_elo(uuid, matches, season), columns=columns)
     elif type == "Completion time":
         data = pd.DataFrame(get_comps(uuid, matches, season), columns=columns)
         data["Completion time"] = pd.to_datetime(data["Completion time"], unit='ms')
-        data["Completion time"] = pd.to_datetime(data["Completion time"].dt.strftime('%M:%S'))
     
     games_ago = np.array(data['Games ago'])
     metric = np.array(data[type])
@@ -46,16 +44,24 @@ def write(name, uuid, response, type, season):
     # Axis adjustments.
     ax.invert_xaxis()
     ax.grid(axis='x')
+    if type == "Completion time":
+        ax.yaxis.set_major_formatter(md.DateFormatter("%M:%S"))
 
+    # Fill under line.
     if type == "Elo":
         elo_boundaries = [0, 600, 900, 1200, 1500, 2000, 3000]
         for i in range(len(elo_boundaries)):
             if i == len(elo_boundaries) - 1:
                 break
-            colour = rank.get_colour(elo_boundaries[i])[0]
+            elif i == len(elo_boundaries) - 2:
+                colour = "#000000"
+            else:
+                colour = rank.get_colour(elo_boundaries[i])[0]
             line1 = np.array([elo_boundaries[i]] * len(data))
             line2 = np.clip(metric, 0, elo_boundaries[i+1])
-            ax.fill_between(x=games_ago, y1=line2, y2=line1, where=(line2 > line1) , color=colour, interpolate=True, alpha=0.3)
+            ax.fill_between(x=games_ago, y1=line2, y2=line1, where=(line2 > line1), color=colour, interpolate=True, alpha=0.3)
+    elif type == "Completion time":
+        ax.fill_between(x=games_ago, y1=metric, color="#00FFFF", interpolate=True, alpha=0.2)
 
     # Vertical season lines.
     if season == "Lifetime":
@@ -71,12 +77,14 @@ def write(name, uuid, response, type, season):
     # Horizontal best line.
     if type == "Elo":
         horiz = max(data[type])
-        label = "Best elo"
-        xpos = 1 - (data[type].idxmax() / len(data))
+        label = f"Best elo ({horiz})"
+        xpos = 1 - (data[type].idxmax() / (len(data)-1))
     elif type == "Completion time":
         horiz = min(data[type])
-        label = "Fastest completion"
-        xpos = 1 - (data[type].idxmin() / len(data))
+        print(horiz)
+        fastest = str(horiz)[-12:-7]
+        label = f"Fastest time ({fastest})"
+        xpos = 1 - (data[type].idxmin() / (len(data)-1))
     xmin = max(xpos-0.04, 0)
     xmax = min(xpos+0.04, 1)
     ax.axhline(horiz, color="#00FFFF", alpha=0.8, linestyle="--", label=label, xmin=xmin, xmax=xmax)
