@@ -172,7 +172,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
     response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=headers).json()
         
-    print(f"\nDrawing graph for {input_name}")
+    print(f"\nDrawing {type} graph for {input_name}")
     if response["status"] == "error":
         extra = get_close(input_name.lower())
         await interaction.response.send_message("Player not found." + extra)

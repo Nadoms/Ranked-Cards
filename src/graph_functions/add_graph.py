@@ -70,7 +70,6 @@ def write(name, uuid, response, type, season):
             season = data["Season"].loc[data.index[i]]
             if prev_season != season:
                 vert = data["Games ago"].loc[data.index[i]]
-                print(vert)
                 ax.axvline(vert, color=[1, 1-0.2*(season-1), 0.1*(season-1)], alpha=0.8, linestyle="--", label=f"Season {season} end", ymin=0.0, ymax=0.5)
             prev_season = season
 
@@ -81,7 +80,6 @@ def write(name, uuid, response, type, season):
         xpos = 1 - (data[type].idxmax() / (len(data)-1))
     elif type == "Completion time":
         horiz = min(data[type])
-        print(horiz)
         fastest = str(horiz)[-12:-7]
         label = f"Fastest time ({fastest})"
         xpos = 1 - (data[type].idxmin() / (len(data)-1))
@@ -119,7 +117,7 @@ def get_elo(uuid, matches, season):
 
             elo = score_change["score"] + score_change["change"]
             season = game["match_season"]
-            if elo != -1:
+            if score_change["score"] != -1:
                 last_relo = elo
                 elo_array.append([remain, elo, season])
             else:
