@@ -9,7 +9,7 @@ import pandas as pd
 from gen_functions import match, rank
 
 
-def write(name, uuid, response, type, season):
+def write(uuid, response, type, season):
     matches = match.get_matches(response["nickname"], season)
     columns = ["Games ago", type, "Season"]
 
@@ -38,7 +38,8 @@ def write(name, uuid, response, type, season):
                      'font.family': prop.get_name()}
     sns.set(font_scale=0.8, rc=custom_params)
 
-    fig, ax = plt.subplots(figsize=(8, 5))
+    fig, ax = plt.subplots(figsize=(8, 5.5))
+    fig.subplots_adjust(top=0.8, left=0.1, right=0.95)
     lineplot = sns.lineplot(data=data, x=data['Games ago'], y=data[type], ax=ax, color='white', alpha=0.8, label=type)
 
     # Axis adjustments.

@@ -13,9 +13,15 @@ def main(name, response, type, season):
     uuid = response["uuid"]
 
     then = datetime.now()
-    file = add_graph.write(name, uuid, response, type, season)
-    graph = Image.open(file)
+    file = add_graph.write(uuid, response, type, season)
     then = splits(then, 0)
+    graph = Image.open(file)
+    add_name.write(graph, name)
+    then = splits(then, 1)
+    add_skin.write(graph, uuid)
+    then = splits(then, 3)
+    add_other.write(graph)
+    then = splits(then, 8)
 
     return graph
 

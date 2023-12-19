@@ -63,8 +63,8 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
         img.save("card.png")
         with open("card.png", "rb") as f:
             img = File(f)
-        await interaction.channel.send(files=[img])
-        await interaction.followup.send(f"{input_name}'s ranked card:")
+        await interaction.followup.send(files=[img])
+        # await interaction.followup.send(f"{input_name}'s ranked card:")
 
 
 @bot.slash_command(name="connect", description="Connects your minecraft account with your discord account.")
@@ -192,8 +192,8 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     img.save("graph.png")
     with open("graph.png", "rb") as f:
         img = File(f)
-    await interaction.channel.send(files=[img])
-    await interaction.followup.send(f"{input_name}'s {type} graph:")
+    await interaction.followup.send(files=[img])
+    # await interaction.followup.send(f"{input_name}'s {type} graph:")
 
 
 def get_uid(response, input_name):
