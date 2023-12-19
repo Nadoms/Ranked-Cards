@@ -1,4 +1,4 @@
-from graph_functions import add_graph, add_name, add_other, add_skin
+from graph_functions import add_graph, add_name, add_other, add_skin, add_stats
 
 import requests
 from PIL import Image
@@ -18,8 +18,10 @@ def main(name, response, type, season):
     graph = Image.open(file)
     add_name.write(graph, name)
     then = splits(then, 1)
+    add_stats.write(graph, uuid, response)
+    then = splits(then, 2)
     add_skin.write(graph, uuid)
-    then = splits(then, 3)
+    then = splits(then, 4)
     add_other.write(graph)
     then = splits(then, 8)
 
