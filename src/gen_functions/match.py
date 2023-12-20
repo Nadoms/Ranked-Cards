@@ -2,7 +2,7 @@ import requests
 from datetime import timedelta
 
 def get_matches(name, season):
-    if season == "lifetime":
+    if season == "Lifetime":
         matches = []
         for s in reversed(range(1, get_season()+1)):
             matches += get_season_matches(name, s)

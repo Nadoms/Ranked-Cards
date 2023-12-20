@@ -18,6 +18,6 @@ def get_skin(uuid):
     return skin
 
 def get_default_skin():
-    file = path.join("src", "pics", "other", "default_skin.webp")
+    file = path.join("src", "pics", "other", "default_head.webp")
     skin = Image.open(file)
     return skin

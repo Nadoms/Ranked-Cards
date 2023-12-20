@@ -14,6 +14,8 @@ def main(name, response, type, season):
 
     then = datetime.now()
     file = add_graph.write(uuid, response, type, season)
+    if file == -1:
+        return -1
     then = splits(then, 0)
     graph = Image.open(file)
     add_name.write(graph, name)

@@ -181,12 +181,23 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     input_name = response["data"]["nickname"]
     await interaction.response.defer()
     
-    img = graphing.main(input_name, response, type, season)
     try:
-        pass
+        img = graphing.main(input_name, response, type, season)
     except Exception as e:
         print(e)
         await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls")
+        return
+    
+    if img == -1:
+        if type == "Elo":
+            msg1 = "games played"
+        elif type == "Completion time":
+            msg1 = "completed matches"
+        if season != "Lifetime":
+            msg2 = f" from season {season}"
+        else:
+            msg2 = ""
+        await interaction.followup.send(f"{input_name} has no {msg1}{msg2}.")
         return
 
     img.save("graph.png")

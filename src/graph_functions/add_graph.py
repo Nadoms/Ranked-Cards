@@ -19,6 +19,9 @@ def write(uuid, response, type, season):
         data = pd.DataFrame(get_comps(uuid, matches, season), columns=columns)
         data["Completion time"] = pd.to_datetime(data["Completion time"], unit='ms')
     
+    if len(data) == 0:
+        return -1
+    
     games_ago = np.array(data['Games ago'])
     metric = np.array(data[type])
 
