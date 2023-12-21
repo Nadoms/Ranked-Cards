@@ -44,8 +44,8 @@ def splits(then, process):
     print(f"{processes[process]} took {diff}ms")
     return now
 
-'''if __name__ == "__main__":
+if __name__ == "__main__":
     input_name = "nadoms"
     response = requests.get(f"https://mcsrranked.com/api/users/{input_name}").json()
     type = "elo"
-    main(input_name, response, type)'''
+    main(input_name, response, type).show()

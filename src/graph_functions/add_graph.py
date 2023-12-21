@@ -1,4 +1,5 @@
 from datetime import timedelta
+import math
 from os import path
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import fontManager, FontProperties
@@ -6,24 +7,35 @@ import matplotlib.dates as md
 import numpy as np
 import seaborn as sns
 import pandas as pd
+from scipy.interpolate import make_interp_spline
+
 from gen_functions import match, rank
 
 
 def write(uuid, response, type, season):
     matches = match.get_matches(response["nickname"], season)
-    columns = ["Games ago", type, "Season"]
+    columns = ["Games ago", type, type + " (smoothed)", "Season"]
 
     if type == "Elo":
-        data = pd.DataFrame(get_elo(uuid, matches, season), columns=columns)
+        elos = get_smoothed_data(get_elo(uuid, matches, season))
+        data = pd.DataFrame(elos, columns=columns)
     elif type == "Completion time":
-        data = pd.DataFrame(get_comps(uuid, matches, season), columns=columns)
+        comps = get_smoothed_data(get_comps(uuid, matches, season))
+        data = pd.DataFrame(comps, columns=columns)
         data["Completion time"] = pd.to_datetime(data["Completion time"], unit='ms')
+        data["Completion time (smoothed)"] = pd.to_datetime(data["Completion time (smoothed)"], unit='ms')
     
     if len(data) == 0:
         return -1
     
     games_ago = np.array(data['Games ago'])
     metric = np.array(data[type])
+    smoothed_metric = np.array(data[type + " (smoothed)"])
+    
+#    xy_spline = make_interp_spline(games_ago, smoothed_metric)
+ 
+#    x_ = np.linspace(games_ago.min(), games_ago.max(), 500)
+#    y_ = xy_spline(x_)
 
     # Get minecraft font.
     fp = "minecraft_font.ttf"
@@ -43,7 +55,8 @@ def write(uuid, response, type, season):
 
     fig, ax = plt.subplots(figsize=(8, 5.5))
     fig.subplots_adjust(top=0.8, left=0.1, right=0.95)
-    lineplot = sns.lineplot(data=data, x=data['Games ago'], y=data[type], ax=ax, color='white', alpha=0.8, label=type)
+    lineplot = sns.lineplot(data=data, x=data['Games ago'], y=data[type], ax=ax, color='white', alpha=0.7, label=type)
+    smoothed_lineplot = sns.lineplot(data=data, x=data['Games ago'], y=data[type + " (smoothed)"], ax=ax, color='#00BBFF', alpha=1)
 
     # Axis adjustments.
     ax.invert_xaxis()
@@ -144,3 +157,26 @@ def get_comps(uuid, matches, season):
 
         remain += 1
     return comp_array
+
+def get_smoothed_data(data_array, smoothing=-1):
+    if smoothing == -1:
+        smoothing = math.ceil(len(data_array) / 10)
+    running_total = 0
+    smoothed_array = []
+    length = len(data_array)
+    max_count = smoothing*2+1
+    count = smoothing+1
+
+    for i in range(count):
+        running_total += data_array[i][1]
+
+    for i in range(length):
+        smoothed_array.append([data_array[i][0], data_array[i][1], running_total / count, data_array[i][2]])
+        if i+smoothing < length-1:
+            running_total += data_array[i+smoothing+1][1]
+            count += 1
+        if i-smoothing >= 0:
+            running_total -= data_array[i-smoothing][1]
+            count -= 1
+
+    return smoothed_array
