@@ -8,9 +8,6 @@ from os import path
 from datetime import datetime
 
 def main(name, response, discord, pfp):
-    if response["status"] == "error":
-        print("Player not found.")
-        return None
     response = response["data"]
     uuid = response["uuid"]
     file = path.join("src", "pics", "bgs", "grass.jpg")

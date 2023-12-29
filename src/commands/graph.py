@@ -6,9 +6,6 @@ from os import path
 from datetime import datetime
 
 def main(name, response, type, season):
-    if response["status"] == "error":
-        print("Player not found.")
-        return None
     response = response["data"]
     uuid = response["uuid"]
 

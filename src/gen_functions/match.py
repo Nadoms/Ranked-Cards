@@ -30,6 +30,19 @@ def get_recent_matches(name):
     matches += response
     return matches
 
+def get_last_match(name):
+    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
+    player_response = requests.get(f"https://mcsrranked.com/api/users/{name}", headers=headers).json()
+    if player_response["status"] == "error":
+        return None
+    uuid = player_response["data"]["uuid"]
+    
+    matches_response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?count=1&filter=2&excludedecay", headers=headers).json()
+    if matches_response["data"] == []:
+        return None
+    else:
+        return [uuid, matches_response["data"][0]["match_id"]]
+
 def get_playtime(matches, season):
     current_season = get_season()
     playtime = 0

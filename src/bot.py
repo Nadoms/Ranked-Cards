@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 import requests
 from commands import card as carding
 from commands import graph as graphing
+from commands import analyse as analysing
+from gen_functions import match
 
 intents = intents=nextcord.Intents.all()
 intents.members = True
@@ -29,7 +31,8 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     required = False,
     description="The player to generate a card for.",
     default = ""
-)):
+    )):
+    
     if not input_name:
         input_name = get_name(interaction)
         if not input_name:
@@ -41,30 +44,30 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
         
     print(f"\nGenerating card for {input_name}")
     if response["status"] == "error":
+        print("Player not found.")
         extra = get_close(input_name)
         await interaction.response.send_message("Player not found." + extra)
-    else:
-        input_name = response["data"]["nickname"]
-        user = await bot.fetch_user(get_uid(response, input_name))
-        pfp = user.avatar
-        if not pfp:
-            pfp = "https://cdn.discordapp.com/avatars/343108228890099713/1b4bf25c894af2c68410b0574135d150"
-        discord = str(user)
-        if discord[-2:] == "#0":
-            discord = discord[:-2]
-        await interaction.response.defer()
-        
-        try:
-            img = carding.main(input_name, response, discord, pfp)
-        except Exception as e:
-            print(e)
-            await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls")
+        return
+    input_name = response["data"]["nickname"]
+    user = await bot.fetch_user(get_uid(response, input_name))
+    pfp = user.avatar
+    if not pfp:
+        pfp = "https://cdn.discordapp.com/avatars/343108228890099713/1b4bf25c894af2c68410b0574135d150"
+    discord = str(user)
+    if discord[-2:] == "#0":
+        discord = discord[:-2]
+    await interaction.response.defer()
+    
+    try:
+        img = carding.main(input_name, response, discord, pfp)
+    except Exception as e:
+        print(e)
+        await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls")
 
-        img.save("card.png")
-        with open("card.png", "rb") as f:
-            img = File(f)
-        await interaction.followup.send(files=[img])
-        # await interaction.followup.send(f"{input_name}'s ranked card:")
+    img.save("card.png")
+    with open("card.png", "rb") as f:
+        img = File(f)
+    await interaction.followup.send(files=[img])
 
 
 @bot.slash_command(name="connect", description="Connects your minecraft account with your discord account.")
@@ -163,6 +166,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     default="3",
     choices=["1", "2", "3", "Lifetime"]
     )):
+
     if not input_name:
         input_name = get_name(interaction)
         if not input_name:
@@ -174,6 +178,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
         
     print(f"\nDrawing {type} graph for {input_name}")
     if response["status"] == "error":
+        print("Player not found.")
         extra = get_close(input_name.lower())
         await interaction.response.send_message("Player not found." + extra)
         return
@@ -204,7 +209,50 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     with open("graph.png", "rb") as f:
         img = File(f)
     await interaction.followup.send(files=[img])
-    # await interaction.followup.send(f"{input_name}'s {type} graph:")
+
+
+@bot.slash_command(name="analyse", description="Performs an analyses on your most recent match, or the match specified.")
+async def card(interaction: Interaction, match_id: str = SlashOption(
+    "match id",
+    required = False,
+    description="The match to perform an analysis on.",
+    default=None
+    )):
+
+    input_name = get_name(interaction)
+    uuid = None
+    if not match_id:
+        if not input_name:
+            await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a match ID.")
+            return
+
+        print(f"\nFinding {input_name}'s last match")
+        uuid, match_id = match.get_last_match(input_name)
+        if not match_id:
+            await interaction.response.send_message("Player has no matches from this season.")
+            return
+
+    print(f"\nAnalysing match {match_id}")
+    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
+    response = requests.get(f"https://mcsrranked.com/api/matches/{match_id}", headers=headers).json()
+    if response["status"] == "error":
+        print("Match not found.")
+        await interaction.response.send_message("Match not found.")
+        return
+    
+    await interaction.response.defer()
+    
+    try:
+        img = analysing.main(uuid, response, match_id)
+    except Exception as e:
+        print(e)
+        await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls")
+        return
+
+    img.save("analysis.png")
+    with open("analysis.png", "rb") as f:
+        img = File(f)
+    await interaction.followup.send(files=[img])
 
 
 def get_uid(response, input_name):
