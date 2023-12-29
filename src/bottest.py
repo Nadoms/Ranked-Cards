@@ -6,7 +6,7 @@ from commands import card as carding
 from commands import graph as graphing
 from commands import analyse as analysing
 
-def main(command, name, type, season):
+def main(command, name, type, season, match_id):
     response = requests.get(f"https://mcsrranked.com/api/users/{name}").json()
     discord = "notnaddysalt"
     pfp = "https://cdn.discordapp.com/avatars/343108228890099713/1b4bf25c894af2c68410b0574135d150"

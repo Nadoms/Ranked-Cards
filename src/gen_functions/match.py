@@ -7,6 +7,8 @@ def get_matches(name, season):
         for s in reversed(range(1, get_season()+1)):
             matches += get_season_matches(name, s)
     else:
+        if not season:
+            season = get_season()
         matches = get_season_matches(name, season)
     return matches
 

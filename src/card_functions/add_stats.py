@@ -1,3 +1,4 @@
+import math
 from PIL import ImageDraw, ImageFont
 import requests
 from datetime import timedelta
@@ -5,7 +6,7 @@ from datetime import timedelta
 from gen_functions import word, rank, match
 
 def write(card, name, uuid, response):
-    matches = match.get_recent_matches(response["nickname"])
+    matches = match.get_matches(response["nickname"], None)
 
     statted_image = ImageDraw.Draw(card)
     stat_font = ImageFont.truetype('minecraft_font.ttf', 40)
@@ -17,6 +18,8 @@ def write(card, name, uuid, response):
     pb_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
     avg_completion_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
     ff_loss_colour = ["#bb3030", "#ff6164", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
+    ws_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
+    best_ws_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
     w_d_l_colour = ["#50fe50", "#ee4b2b", "#ffbf00"]
     white = "#ffffff"
 
@@ -54,7 +57,7 @@ def write(card, name, uuid, response):
                     rounded_ff_loss = 5
                 else:
                     rounded_ff_loss = 0
-                season_stats[1][i] = season_stats[1][i] + "%"
+                season_stats[1][i] += "%"
             else:
                 rounded_ff_loss = 0
             statted_image.text((1827-word.calc_length(season_stats[1][i], 40), 140+i*60), season_stats[1][i], font=stat_font, fill=ff_loss_colour[rounded_ff_loss])
@@ -85,15 +88,19 @@ def write(card, name, uuid, response):
     # Lifetime stats
     lifetime_stats = get_lifetime_stats(response, matches, uuid)
 
-    statted_image.text((1350, 500), "Lifetime Stats", font=large_stat_font, fill=white)
+    statted_image.text((1350, 540), "Lifetime Stats", font=large_stat_font, fill=white)
     for i in range(0, len(lifetime_stats[0])):
-        statted_image.text((1350, 590+i*60), lifetime_stats[0][i], font=stat_font, fill=white)
+        statted_image.text((1350, 630+i*60), lifetime_stats[0][i], font=stat_font, fill=white)
 
     for i in range(0, len(lifetime_stats[1])):
         if i == 0:
-            statted_image.text((1827-word.calc_length(lifetime_stats[1][i], 40), 590+i*60), lifetime_stats[1][i], font=stat_font, fill=best_colour[0], stroke_fill=best_colour[1], stroke_width=1)
+            statted_image.text((1827-word.calc_length(lifetime_stats[1][i], 40), 630+i*60), lifetime_stats[1][i], font=stat_font, fill=best_colour[0], stroke_fill=best_colour[1], stroke_width=1)
+        elif i == 2:
+            rounded_best_ws = min(math.floor(int(lifetime_stats[1][i])/2), len(best_ws_colour)-1)
+            lifetime_stats[1][i] += " wins"
+            statted_image.text((1827-word.calc_length(lifetime_stats[1][i], 40), 630+i*60), lifetime_stats[1][i], font=stat_font, fill=best_ws_colour[rounded_best_ws])
         else:
-            statted_image.text((1827-word.calc_length(lifetime_stats[1][i], 40), 590+i*60), lifetime_stats[1][i], font=stat_font, fill=white)
+            statted_image.text((1827-word.calc_length(lifetime_stats[1][i], 40), 630+i*60), lifetime_stats[1][i], font=stat_font, fill=white)
 
     # Major stats
     major_stats = get_major_stats(response)
@@ -176,32 +183,32 @@ def get_season_stats(response, matches, uuid):
     losses = str(response["records"]["2"]["lose"])
     draws = str(response["records"]["2"]["draw"])
     games = str(response["season_played"])
-    recent_ff_loss = str(match.get_ff_loss(matches, True, uuid, response["nickname"]))
-    recent_avg_completion = str(timedelta(milliseconds=match.get_avg_completion(matches, True, uuid, response)))[2:7].lstrip("0")
+    ff_loss = str(match.get_ff_loss(matches, True, uuid, response["nickname"]))
+    avg_completion = str(timedelta(milliseconds=match.get_avg_completion(matches, True, uuid, response)))[2:7].lstrip("0")
+    playtime = str(match.get_playtime(matches, True))
 
     return [["W/L/D:",
              "Games:",
              "FF/loss:",
-             "Avg Finish:"],
+             "Avg Finish:",
+             "Playtime:"],
             [f"{wins}/{losses}/{draws}",
              games,
-             recent_ff_loss,
-             recent_avg_completion]]
+             ff_loss,
+             avg_completion,
+             f"{playtime}h"]]
 
 def get_lifetime_stats(response, matches, uuid):
     best_elo = str(response["best_elo_rate"])
     games = str(response["total_played"])
-    ff_loss = "- " # str(match.get_ff_loss(matches, False, uuid, response["nickname"]))
-    playtime = "-" # str(match.get_playtime(matches, False))
+    best_ws = str(response["highest_winstreak"])
 
     return [["Best ELO:",
              "Games:",
-             "FF/loss:",
-             "Playtime:"],
+             "Best WS:"],
             [best_elo,
              games,
-             f"{ff_loss}%",
-             f"{playtime} h"]]
+             best_ws]]
 
 def get_major_stats(response):
     elo = str(response["elo_rate"])
