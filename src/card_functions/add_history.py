@@ -24,7 +24,17 @@ def write(card, matches, uuid):
         historyed_image.polygon(blocks[i], fill=w_d_l_colour[wl[i]], outline="#122b30", width=3)
         
     description = get_desc(wl, recent_matches, uuid)
-    historyed_image.text((360-word.calc_length(description, 20)/2, 725), description, font=history_font, fill="#ffffff")
+    full_desc = "".join(description)
+    x = 360-word.calc_length(full_desc, 20)/2
+
+    if description[7][0] == "+":
+        elo_colour = "#86b8db"
+    else:
+        elo_colour = "#ee4b2b"
+    desc_colour = ["#ffffff", "#86b8db", "#ffffff", "#ee4b2b", "#ffffff", "#ffbf00", "#ffffff", elo_colour]
+    for i in range(len(description)):
+        historyed_image.text((x, 725), description[i], font=history_font, fill=desc_colour[i])
+        x += word.calc_length(description[i], 20)+20/7
     
     return card
 
@@ -68,15 +78,13 @@ def get_wl(recent_matches, uuid):
     return wl
 
 def get_desc(wl, recent_matches, uuid):
-    description = ""
-    description += f"W/L/D: {wl.count(0)}/{wl.count(1)}/{wl.count(2)}"
     elo_change = get_elo_change(recent_matches, uuid)
     if elo_change >= 0:
         elo_change = "+" + str(elo_change)
     else:
         elo_change = str(elo_change)
-    description += f" // Elo change: {elo_change}"
-    description += f""
+
+    description = ["W/L/D: ", str(wl.count(0)), "/", str(wl.count(1)), "/", str(wl.count(2)), " // Elo change: ", elo_change]
     return description
 
 def get_elo_change(recent_matches, uuid):

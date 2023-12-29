@@ -19,7 +19,7 @@ def write(card, matches, uuid, response):
     ff_loss_colour = ["#bb3030", "#ff6164", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
     ws_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
     best_ws_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
-    w_d_l_colour = ["#50fe50", "#ee4b2b", "#ffbf00"]
+    w_d_l_colour = ["#86b8db", "#ee4b2b", "#ffbf00"]
     white = "#ffffff"
 
     # Season stats
