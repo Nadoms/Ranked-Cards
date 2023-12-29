@@ -5,12 +5,11 @@ from datetime import timedelta
 
 from gen_functions import word, rank, match
 
-def write(card, name, uuid, response):
-    matches = match.get_matches(response["nickname"], None)
-
+def write(card, matches, uuid, response):
     statted_image = ImageDraw.Draw(card)
     stat_font = ImageFont.truetype('minecraft_font.ttf', 40)
     large_stat_font = ImageFont.truetype('minecraft_font.ttf', 60)
+
     colour = rank.get_colour(response["elo_rate"])
     best_colour = rank.get_colour(response["best_elo_rate"])
     rank_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52ba", "#cd7f32", "#c0c0c0", "#ffd700"]
@@ -196,7 +195,7 @@ def get_season_stats(response, matches, uuid):
              games,
              ff_loss,
              avg_completion,
-             f"{playtime}h"]]
+             f"{playtime} h"]]
 
 def get_lifetime_stats(response, matches, uuid):
     best_elo = str(response["best_elo_rate"])

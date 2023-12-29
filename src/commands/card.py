@@ -1,15 +1,18 @@
-from card_functions import add_boxes, add_name, add_stats, \
+from card_functions import add_boxes, add_history, add_name, add_stats, \
                                add_podium, add_skin, add_badge, \
-                               add_splits, add_socials, add_other
+                               add_socials, add_other
 
 import requests
 from PIL import Image
 from os import path
 from datetime import datetime
 
+from gen_functions import match
+
 def main(name, response, discord, pfp):
     response = response["data"]
     uuid = response["uuid"]
+    matches = match.get_matches(name, None)
     file = path.join("src", "pics", "bgs", "grass.jpg")
     card = Image.open(file)
 
@@ -18,7 +21,7 @@ def main(name, response, discord, pfp):
     then = splits(then, 0)
     add_name.write(card, name, response)
     then = splits(then, 1)
-    add_stats.write(card, name, uuid, response)
+    add_stats.write(card, matches, uuid, response)
     then = splits(then, 2)
     add_podium.write(card, name, response)
     then = splits(then, 3)
@@ -26,7 +29,7 @@ def main(name, response, discord, pfp):
     then = splits(then, 4)
     add_badge.write(card, name, response)
     then = splits(then, 5)
-    add_splits.write(card, name)
+    add_history.write(card, matches, uuid)
     then = splits(then, 6)
     add_socials.write(card, name, discord, pfp, response)
     then = splits(then, 7)
@@ -41,7 +44,7 @@ def splits(then, process):
      "Pasting podium",
      "Finding skin",
      "Creating badge",
-     "Averaging splits",
+     "Checking history",
      "Getting socials",
      "Final touchups"]
     now = datetime.now()
