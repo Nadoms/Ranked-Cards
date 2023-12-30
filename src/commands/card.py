@@ -29,7 +29,7 @@ def main(name, response, discord, pfp):
     then = splits(then, 4)
     add_badge.write(card, name, response)
     then = splits(then, 5)
-    add_history.write(card, matches, uuid)
+    add_history.write(card, matches, uuid, response)
     then = splits(then, 6)
     add_socials.write(card, name, discord, pfp, response)
     then = splits(then, 7)
