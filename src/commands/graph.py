@@ -17,7 +17,7 @@ def main(name, response, type, season):
     graph = Image.open(file)
     add_name.write(graph, name)
     then = splits(then, 1)
-    add_stats.write(graph, uuid, response)
+    add_stats.write(graph, response)
     then = splits(then, 2)
     add_skin.write(graph, uuid)
     then = splits(then, 4)

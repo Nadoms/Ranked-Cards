@@ -6,16 +6,16 @@ from gen_functions import word
 
 # rank with a circle indicating how close to the next main rank, with lines for each division
 
-def write(card, name):
-    othered_image = ImageDraw.Draw(card)
+def write(analysis):
+    othered_image = ImageDraw.Draw(analysis)
     other_font = ImageFont.truetype('minecraft_font.ttf', 20)
 
     othered_image.text((1700-word.calc_length(get_date(), 20), 1155), get_date(), font=other_font, fill="yellow")
     othered_image.text((1700-word.calc_length("mcsrranked.com/discord", 20), 1120), "mcsrranked.com/discord", font=other_font, fill="lightblue")
     logo = get_logo()
-    card.paste(logo, (1680, 978), logo)
+    analysis.paste(logo, (1680, 978), logo)
 
-    return card
+    return analysis
 
 def get_date():
     date = datetime.now().strftime("Generated at %H:%M on %d/%m/%y")

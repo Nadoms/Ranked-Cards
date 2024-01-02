@@ -13,7 +13,7 @@ def main(name, response, discord, pfp):
     response = response["data"]
     uuid = response["uuid"]
     matches = match.get_matches(name, None)
-    file = path.join("src", "pics", "bgs", "grass.jpg")
+    file = path.join("src", "pics", "bgs", "brick.jpg")
     card = Image.open(file)
 
     then = datetime.now()

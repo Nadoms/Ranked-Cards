@@ -23,3 +23,7 @@ def calc_size(word, desired_length):
             length -= 2
     size = round(desired_length / length * 8)
     return size
+
+def horiz_to_vert(size):
+    size = round(size * 7 / 5)
+    return size

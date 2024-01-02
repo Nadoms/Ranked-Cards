@@ -4,15 +4,15 @@ from datetime import timedelta
 
 from gen_functions import word, rank, match
 
-def write(graph, uuid, response):
+def write(graph, response):
     statted_image = ImageDraw.Draw(graph)
     stat_size = 20
     stat_font = ImageFont.truetype('minecraft_font.ttf', stat_size)
-    colour = rank.get_colour(response["elo_rate"])
     rank_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52ba", "#cd7f32", "#c0c0c0", "#ffd700"]
     white = "#ffffff"
 
     stats = get_stats(response)
+    colour = rank.get_colour(int(stats[1]))
 
     if stats[3] != "None":
         rounded_rank = int(stats[3])

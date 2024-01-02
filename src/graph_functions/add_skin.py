@@ -3,10 +3,10 @@ from PIL import Image
 import requests
 from io import BytesIO
 
-def write(card, uuid):
+def write(graph, uuid):
     skin = get_skin(uuid)
-    card.paste(skin, (0, 0), skin)
-    return card
+    graph.paste(skin, (0, 0), skin)
+    return graph
 
 def get_skin(uuid):
     try:

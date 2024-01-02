@@ -1,6 +1,10 @@
 from gen_functions import match, rank
 
-def write(name, response, match_id):
+def write(analysis, name, response, match_id):
+    insights = get_insights(response)
+    return analysis
+
+def get_insights(response):
     insights = {
         "Elo": [1800, 0.1],
         "Final time:": ["10:20", 0.15],
