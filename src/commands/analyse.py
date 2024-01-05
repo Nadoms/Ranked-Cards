@@ -20,15 +20,15 @@ def main(response, match_id):
     analysis = Image.open(file)
 
     then = datetime.now()
-    analysis = add_shapes.write(analysis, names, response)
+    analysis = add_shapes.write(analysis, names, response) # done! for now
     then = splits(then, 0)
-    analysis = add_names.write(analysis, names, response)
+    analysis = add_names.write(analysis, names, response) # done!
     then = splits(then, 1)
-    analysis = add_stats.write(analysis, uuids, response, vs_response)
+    analysis = add_stats.write(analysis, uuids, response, vs_response) # yup!
     then = splits(then, 2)
-    analysis = add_skins.write(analysis, uuids)
+    analysis = add_skins.write(analysis, uuids) # yes!
     then = splits(then, 3)
-    analysis = add_splits.write(analysis, names, response, match_id)
+    analysis = add_splits.write(analysis, uuids, response, match_id) # oh dear god...
     then = splits(then, 4)
     analysis = add_context.write(analysis, names, response, match_id)
     then = splits(then, 5)

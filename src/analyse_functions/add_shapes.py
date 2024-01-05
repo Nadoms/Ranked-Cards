@@ -1,5 +1,4 @@
 from PIL import ImageDraw, ImageFont
-import requests
 
 from gen_functions import word
 
@@ -38,7 +37,7 @@ def get_lines():
 
 def get_text_pos():
     pos = [120, 250, 320, 390]
-    texts = ["vs", "elo", "rank", "score"]
+    texts = ["vs", "elo then", "elo now", "score"]
     return [texts, pos]
 
 def get_boxes(names, response):

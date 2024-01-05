@@ -3,6 +3,7 @@ from card_functions import add_boxes, add_history, add_name, add_stats, \
                                add_socials, add_other
 
 import requests
+import random
 from PIL import Image
 from os import path
 from datetime import datetime
@@ -13,7 +14,10 @@ def main(name, response, discord, pfp):
     response = response["data"]
     uuid = response["uuid"]
     matches = match.get_matches(name, None)
-    file = path.join("src", "pics", "bgs", "brick.jpg")
+    pic = "grass.jpg"
+    if random.randint(0, 100) == 0:
+        pic = "end.jpg"
+    file = path.join("src", "pics", "bgs", pic)
     card = Image.open(file)
 
     then = datetime.now()
