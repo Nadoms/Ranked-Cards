@@ -16,6 +16,9 @@ def write(uuid, response, type, season):
     matches = match.get_matches(response["nickname"], season)
     columns = ["Games ago", type, type + " (smoothed)", "Season"]
 
+    if len(matches) == 0:
+        return -1
+
     if type == "Elo":
         elos = get_smoothed_data(get_elo(uuid, matches, season))
         data = pd.DataFrame(elos, columns=columns)
@@ -24,9 +27,6 @@ def write(uuid, response, type, season):
         data = pd.DataFrame(comps, columns=columns)
         data["Completion time"] = pd.to_datetime(data["Completion time"], unit='ms')
         data["Completion time (smoothed)"] = pd.to_datetime(data["Completion time (smoothed)"], unit='ms')
-    
-    if len(data) == 0:
-        return -1
     
     games_ago = np.array(data['Games ago'])
     metric = np.array(data[type])

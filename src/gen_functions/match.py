@@ -105,7 +105,7 @@ def get_avg_completion(matches, season, uuid, name):
     return avg_completion
 
 def get_season():
-    return 3
+    return 4
 """
     response = requests.get("https://mcsrranked.com/api/matches/?count=1").json()["data"]
     season = response[0]["match_season"]

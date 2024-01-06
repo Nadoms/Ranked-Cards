@@ -25,7 +25,7 @@ if __name__ == "__main__":
     name = "Nadoms"
     season = 3
     type = "Completion time"
-    match_id = 663977
+    match_id = 676630
     if len(sys.argv) >= 3:
         command = sys.argv[1]
         name = sys.argv[2]

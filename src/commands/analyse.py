@@ -12,6 +12,8 @@ def main(response, match_id):
 
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
     vs_response = requests.get(f"https://mcsrranked.com/api/users/{names[0]}/versus/{names[1]}", headers=headers).json()
+    print(f"https://mcsrranked.com/api/users/{names[0]}/versus/{names[1]}")
+    print(uuids)
     if vs_response["status"] != "success":
         return -1
     vs_response = vs_response["data"]

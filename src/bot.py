@@ -163,8 +163,8 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     "season",
     required = False,
     description="The season to gather data for.",
-    default="3",
-    choices=["1", "2", "3", "Lifetime"]
+    default="4",
+    choices=["1", "2", "3", "4", "Lifetime"]
     )):
 
     if not input_name:
@@ -186,7 +186,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     input_name = response["data"]["nickname"]
     await interaction.response.defer()
     
-    try:
+    try:   
         img = graphing.main(input_name, response, type, season)
     except Exception as e:
         print(e)

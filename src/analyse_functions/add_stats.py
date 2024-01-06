@@ -13,16 +13,16 @@ def write(analysis, uuids, response, vs_response):
 
     for i in range(0, 2):
         stats = get_stats(response, scores, uuids, i)
-        legacy_elo_colour = rank.get_colour(int(stats[0]))[0]
-        current_elo_colour = rank.get_colour(int(stats[1]))[0]
-        score_colour = "#00ffff"
+        legacy_elo_colour = rank.get_colour(int(stats[0]))
+        current_elo_colour = rank.get_colour(int(stats[1]))
+        score_colour = ["#00ffff", "#122b30"]
         colours = [legacy_elo_colour, current_elo_colour, score_colour]
 
         for j in range(len(stats)):
             x = int(x_values[i] + (i-1) * word.calc_length(stats[j], stat_size))
             y = y_values[j] - int(word.horiz_to_vert(stat_size) / 2)
 
-            statted_image.text((x, y), stats[j], font=stat_font, fill=colours[j])
+            statted_image.text((x, y), stats[j], font=stat_font, fill=colours[j][0], stroke_fill=colours[j][1], stroke_width=1)
         
     return analysis
 

@@ -1,129 +1,190 @@
+from datetime import timedelta
 from os import path
-from PIL import ImageDraw, Image
+from PIL import ImageDraw, Image, ImageFont
+
+from gen_functions import word
+
+# 1. label splits with times
+# 2 add events
+# 3 analyse
 
 def write(analysis, uuids, response, match_id):
     splitted_image = ImageDraw.Draw(analysis)
-    x_values = [710, 1210]
+    x_values = [680, 1240]
 
     final_time = response["final_time"]
     splits = extract_splits(uuids, response, final_time)
     split_colours = ["#afacf9", "#b43234", "#2b2937", "#600000", "#3f5cf9", "#818181", "#e4e7a9"]
     textures = ["overworld", "nether", "bastion", "fortress", "blind", "stronghold", "end"]
+    advancements = []
 
     for i in range(0, 2):
         x = x_values[i]
-        splitted_image.rectangle([x-25, 250-5, x+25, 1100+5], fill="#000000", outline="#ffffff", width=2)
+        advancements.append(process_advancements(splits[i], final_time))
+        splitted_image.rectangle([x-33, 250-8, x+33, 1100+8], fill="#000000", outline="#ffffff", width=4)
+
+    for i in range(0, 2):
+        coords = advancements[i][0] + advancements[i][3]
+        coords.sort()
+        times = advancements[i][2] + advancements[i][5]
+        times.sort()
+        side = -1 + 2*i
+
+        for j in range(len(coords)):
+            time = str(timedelta(milliseconds=times[j]))[2:7].lstrip("0")
+            time_size = 20
+            time_font = ImageFont.truetype('minecraft_font.ttf', time_size)
+
+            side *= -1
+
+            x = x_values[i] + side * 70
+            x = x + (side-1) * word.calc_length(time, time_size) / 2
+            y = coords[j] - word.horiz_to_vert(time_size) / 2
+            
+            splitted_image.text((x, y), time, font=time_font, fill="#00ffff")
 
     for i in range(0, 2):
         x = x_values[i]
-
-        prog_coords, progressions, event_coords, events = process_advancements(splits[i], final_time)
+        prog_coords = advancements[i][0]
+        progressions = advancements[i][1]
         
-        for i in range(len(progressions)):
-            y1 = prog_coords[i]
-            if i >= len(progressions) - 1:
+        for j in range(len(progressions)):
+            y1 = prog_coords[j]
+            if j >= len(progressions) - 1:
                 y2 = 1100
             else:
-                y2 = prog_coords[i+1]
-            
-            file = path.join("src", "pics", "textures", "cleantextures", f"{textures[i]}.png")
-            texture = Image.open(file).resize(analysis.size)
+                y2 = prog_coords[j+1]
+                
+            file = path.join("src", "pics", "textures", "cleantextures", f"{textures[progressions[j]]}.jpg")
+            texture = Image.open(file)
 
             mask = Image.new("L", analysis.size, 0)
             draw = ImageDraw.Draw(mask)
-            draw.rectangle([x-20, y1, x+20, y2], fill="#ffffff", outline="#000000", width=2)
+            draw.rectangle([x-25, y1, x+25, y2], fill="#ffffff", outline="#000000", width=2)
             analysis = Image.composite(texture, analysis, mask)
 
+    evented_image = ImageDraw.Draw(analysis)
+    
+    for i in range(0, 2):
+        event_coords = advancements[i][3]
+        events = advancements[i][4]
+        side = 1 - 2*i
+
+        for j in range(len(events)):
+            if events[j] >= 4:
+                continue
+            icon = get_icon(events[j])
+
+            side *= -1
+
+            x = x_values[i] + side * 70 - int(icon.size[0]/2)
+            y = event_coords[j] - int(icon.size[1]/2)
+
+            analysis.paste(icon, (x, y), icon)
+
+            # line = [(x-50, y), (x+50, y)]
+            # evented_image.line(line, fill="#ffff00", width=3)
+            # evented_image.text((x, y), "", fill="#ffff00")
+
     return analysis
+
+def get_icon(event):
+    file = path.join("src", "pics", "emojis", f"{event}.webp")
+    icon = Image.open(file)
+    icon = icon.resize((round(icon.size[0]*0.4), round(icon.size[1]*0.4)))
+    return icon
 
 def process_advancements(splits, final_time):
     y = 250
     length = 850
-
     prog_coords = [y]
     progressions = [0]
     event_coords = [y]
-    events = []
+    events = [0]
+    prog_times = [0]
+    event_times = [0]
     
     for advancement in splits:
-        prog_coord = None
-        event_coord = None
+        prog_time = None
+        event_time = None
 
-        if advancement == "story.enter_the_nether":
-            prog_coord = splits[advancement]
+        if advancement["timeline"] == "story.enter_the_nether":
+            prog_time = advancement["time"]
             progressions.append(1)
 
-        elif advancement == "nether.find_bastion":
-            prog_coord = splits[advancement]
+        elif advancement["timeline"] == "projectelo.timeline.reset":
+            prog_time = advancement["time"]
+            progressions.append(0)
+            event_time = advancement["time"]
+            events.append(0)
+
+        elif advancement["timeline"] == "nether.find_bastion":
+            prog_time = advancement["time"]
             progressions.append(2)
 
-        elif advancement == "nether.obtain_blaze_rod":
-            prog_coord = splits[advancement]
+        elif advancement["timeline"] == "nether.find_fortress":
+            prog_time = advancement["time"]
             progressions.append(3)
 
-        elif advancement == "projectelo.timeline.blind_travel":
-            prog_coord = splits[advancement]
+        elif advancement["timeline"] == "nether.obtain_blaze_rod":
+            prog_time = advancement["time"]
+            progressions.append(3)
+
+        elif advancement["timeline"] == "projectelo.timeline.blind_travel":
+            prog_time = advancement["time"]
             progressions.append(4)
 
-        elif advancement == "story.follow_ender_eye":
-            prog_coord = splits[advancement]
+        elif advancement["timeline"] == "story.follow_ender_eye":
+            prog_time = advancement["time"]
             progressions.append(5)
 
-        elif advancement == "story.enter_the_end":
-            prog_coord = splits[advancement]
+        elif advancement["timeline"] == "story.enter_the_end":
+            prog_time = advancement["time"]
             progressions.append(6)
 
-        elif advancement == "nether.find_fortress":
-            event_coord = splits[advancement]
+        elif advancement["timeline"] == "projectelo.timeline.death":
+            event_time = advancement["time"]
             events.append(1)
 
-        elif advancement == "projectelo.timeline.reset":
-            event_coord = splits[advancement]
+        elif advancement["timeline"] == "win":
+            event_time = advancement["time"]
             events.append(2)
 
-        elif advancement == "projectelo.timeline.death":
-            event_coord = splits[advancement]
+        elif advancement["timeline"] == "finish":
+            event_time = advancement["time"]
             events.append(3)
 
-        elif advancement == "lose":
-            event_coord = splits[advancement]
+        elif advancement["timeline"] == "lose":
+            event_time = advancement["time"]
             events.append(4)
 
-        elif advancement == "finish":
-            event_coord = splits[advancement]
+        elif advancement["timeline"] == "forfeit":
+            event_time = advancement["time"]
             events.append(5)
 
-        elif advancement == "forfeit":
-            event_coord = splits[advancement]
-            events.append(6)
-
-        elif advancement == "win":
-            event_coord = splits[advancement]
-            events.append(7)
-
-        if prog_coord:
-            prog_coord = y + length * splits[advancement] / final_time
+        if prog_time:
+            prog_coord = int(y + length * prog_time / final_time)
             prog_coords.append(prog_coord)
-        elif event_coord:
-            event_coord = y + length * splits[advancement] / final_time
+            prog_times.append(prog_time)
+        if event_time:
+            event_coord = int(y + length * event_time / final_time)
             event_coords.append(event_coord)
+            event_times.append(event_time)
 
-        print("did", advancement, "in", splits[advancement] / 1000 / 60, "minutes.")
-
-    return [prog_coords, progressions, event_coords, events]
+    return [prog_coords, progressions, prog_times, event_coords, events, event_times]
 
 
 def extract_splits(uuids, response, final_time):
     timelines = response["timelines"]
     timelines.reverse()
-    player_0 = {}
-    player_1 = {}
+    player_0 = []
+    player_1 = []
 
     for time in timelines:
         if time["uuid"] == uuids[0]:
-            player_0[time["timeline"]] = time["time"]
+            player_0.append({"timeline": time["timeline"], "time": time["time"]})
         elif time["uuid"] == uuids[1]:
-            player_1[time["timeline"]] = time["time"]
+            player_1.append({"timeline": time["timeline"], "time": time["time"]})
     
     if response["forfeit"] == True:
         if response["winner"] == uuids[0]:
@@ -143,7 +204,7 @@ def extract_splits(uuids, response, final_time):
             outcome_0 = "finish"
             outcome_1 = "lose"
 
-    player_0[outcome_0] = final_time
-    player_1[outcome_1] = final_time
+    player_0.append({"timeline": outcome_0, "time": final_time})
+    player_1.append({"timeline": outcome_1, "time": final_time})
     
     return [player_0, player_1]
