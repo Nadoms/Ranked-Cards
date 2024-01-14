@@ -202,7 +202,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
             msg2 = f" from season {season}"
         else:
             msg2 = ""
-        await interaction.followup.send(f"{input_name} has no {msg1}{msg2}.")
+        await interaction.followup.send(f"{input_name} has not enough {msg1}{msg2}.")
         return
 
     img.save("graph.png")

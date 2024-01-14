@@ -13,12 +13,9 @@ def write(card, matches, uuid, response):
     colour = rank.get_colour(response["elo_rate"])
     best_colour = rank.get_colour(response["best_elo_rate"])
     rank_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52ba", "#cd7f32", "#c0c0c0", "#ffd700"]
-    win_loss_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
-    pb_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
-    avg_completion_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
-    ff_loss_colour = ["#bb3030", "#ff6164", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
     ws_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
-    best_ws_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
+    ff_loss_colour = ["#bb3030", "#ff6164", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
+    elos = [0, 600, 900, 1200, 1500, 2000]
     w_d_l_colour = ["#86b8db", "#ee4b2b", "#ffbf00"]
     white = "#ffffff"
 
@@ -66,21 +63,22 @@ def write(card, matches, uuid, response):
                 rounded_avg_completion = -1
             else:
                 rounded_avg_completion = int(season_stats[1][i].split(":")[0])
-            if rounded_avg_completion >= 26:
+            if rounded_avg_completion >= 30:
                 rounded_avg_completion = 0
-            elif rounded_avg_completion >= 21:
+            elif rounded_avg_completion >= 27:
                 rounded_avg_completion = 1
-            elif rounded_avg_completion >= 17:
+            elif rounded_avg_completion >= 21:
                 rounded_avg_completion = 2
             elif rounded_avg_completion >= 15:
                 rounded_avg_completion = 3
             elif rounded_avg_completion >= 13:
                 rounded_avg_completion = 4
-            elif rounded_avg_completion >= 7:
+            elif rounded_avg_completion >= 6:
                 rounded_avg_completion = 5
             else:
                 rounded_avg_completion = 0
-            statted_image.text((1827-word.calc_length(season_stats[1][i], 40), 140+i*60), season_stats[1][i], font=stat_font, fill=avg_completion_colour[rounded_avg_completion])
+            avg_colours = rank.get_colour(elos[rounded_avg_completion])
+            statted_image.text((1827-word.calc_length(season_stats[1][i], 40), 140+i*60), season_stats[1][i], font=stat_font, fill=avg_colours[0], stroke_fill=avg_colours[1], stroke_width=1)
         else:
             statted_image.text((1827-word.calc_length(season_stats[1][i], 40), 140+i*60), season_stats[1][i], font=stat_font, fill=white)
 
@@ -95,9 +93,9 @@ def write(card, matches, uuid, response):
         if i == 0:
             statted_image.text((1827-word.calc_length(lifetime_stats[1][i], 40), 630+i*60), lifetime_stats[1][i], font=stat_font, fill=best_colour[0], stroke_fill=best_colour[1], stroke_width=1)
         elif i == 2:
-            rounded_best_ws = min(math.floor(int(lifetime_stats[1][i])/2), len(best_ws_colour)-1)
+            rounded_best_ws = min(math.floor(int(lifetime_stats[1][i])/2), len(ws_colour)-1)
             lifetime_stats[1][i] += " wins"
-            statted_image.text((1827-word.calc_length(lifetime_stats[1][i], 40), 630+i*60), lifetime_stats[1][i], font=stat_font, fill=best_ws_colour[rounded_best_ws])
+            statted_image.text((1827-word.calc_length(lifetime_stats[1][i], 40), 630+i*60), lifetime_stats[1][i], font=stat_font, fill=ws_colour[rounded_best_ws])
         else:
             statted_image.text((1827-word.calc_length(lifetime_stats[1][i], 40), 630+i*60), lifetime_stats[1][i], font=stat_font, fill=white)
 
@@ -150,20 +148,20 @@ def write(card, matches, uuid, response):
                 rounded_win_loss = 4
             elif rounded_win_loss >= 2:
                 rounded_win_loss = 5
-            statted_image.text((650-word.calc_length(major_stats[1][i], 60), 820+i*80), major_stats[1][i], font=large_stat_font, fill=win_loss_colour[rounded_win_loss])
+            statted_image.text((650-word.calc_length(major_stats[1][i], 60), 820+i*80), major_stats[1][i], font=large_stat_font, fill=ws_colour[rounded_win_loss])
         elif i == 3:
             if major_stats[1][i] == ":00":
                 major_stats[1][i] = "-"
                 rounded_pb = -1
             else:
                 rounded_pb = int(major_stats[1][i].split(":")[0])
-            if rounded_pb >= 20:
+            if rounded_pb >= 28:
                 rounded_pb = 0
-            elif rounded_pb >= 15:
+            elif rounded_pb >= 23:
                 rounded_pb = 1
-            elif rounded_pb >= 12:
+            elif rounded_pb >= 15:
                 rounded_pb = 2
-            elif rounded_pb >= 10:
+            elif rounded_pb >= 11:
                 rounded_pb = 3
             elif rounded_pb >= 9:
                 rounded_pb = 4
@@ -171,7 +169,8 @@ def write(card, matches, uuid, response):
                 rounded_pb = 5
             else:
                 rounded_pb = 0
-            statted_image.text((650-word.calc_length(major_stats[1][i], 60), 820+i*80), major_stats[1][i], font=large_stat_font, fill=pb_colour[rounded_pb])
+            pb_colours = rank.get_colour(elos[rounded_pb])
+            statted_image.text((650-word.calc_length(major_stats[1][i], 60), 820+i*80), major_stats[1][i], font=large_stat_font, fill=pb_colours[0], stroke_fill=pb_colours[1], stroke_width=1)
         else:
             statted_image.text((650-word.calc_length(major_stats[1][i], 60), 820+i*80), major_stats[1][i], font=large_stat_font, fill=white)
 

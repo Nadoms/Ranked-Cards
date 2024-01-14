@@ -16,7 +16,7 @@ def write(uuid, response, type, season):
     matches = match.get_matches(response["nickname"], season)
     columns = ["Games ago", type, type + " (smoothed)", "Season"]
 
-    if len(matches) == 0:
+    if len(matches) <= 1:
         return -1
 
     if type == "Elo":

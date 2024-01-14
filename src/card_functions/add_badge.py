@@ -6,47 +6,62 @@ from os import path
 
 from gen_functions import rank, word
 
-def write(card, name, response):
+def write(card, response):
     badge = get_badge(response)
     dim = badge.size[0]
 
     x = 190
     y = 500
     circled_image = ImageDraw.Draw(card)
-    circled_image.ellipse([round(x-dim*0.8),
-                           round(y-dim*0.8),
-                           round(x+dim*0.8),
-                           round(y+dim*0.8)],
-                           fill="#122b30",
-                           outline="#000000",
-                           width=12)
-    
     circled_image.ellipse([round(x-dim*0.75),
                            round(y-dim*0.75),
                            round(x+dim*0.75),
                            round(y+dim*0.75)],
-                           outline="#021b20",
-                           width=5)
+                           fill=(18, 43, 48),
+                           outline="#000000",
+                           width=12)
     
-    circled_image.arc([round(x-dim*0.75),
-                           round(y-dim*0.75),
-                           round(x+dim*0.75),
-                           round(y+dim*0.75)],
-                           fill="#add8e6",
-                           width=5,
-                           start=270,
-                           end=rank.get_degree(response["elo_rate"]))
+    circled_image.ellipse([round(x-dim*0.7),
+                           round(y-dim*0.7),
+                           round(x+dim*0.7),
+                           round(y+dim*0.7)],
+                           outline=(6, 15, 16),
+                           width=8)
+    
+    if response["elo_rate"] >= 2000:
+        circled_image.ellipse([round(x-dim*0.7),
+                        round(y-dim*0.7),
+                        round(x+dim*0.7),
+                        round(y+dim*0.7)],
+                        outline=rank.get_colour(response["elo_rate"])[1],
+                        width=8)
+    else:
+        circled_image.arc([round(x-dim*0.7),
+                            round(y-dim*0.7),
+                            round(x+dim*0.7),
+                            round(y+dim*0.7)],
+                            fill=rank.get_colour(response["elo_rate"])[0], # "#add8e6"
+                            width=8,
+                            start=270,
+                            end=rank.get_degree(response["elo_rate"]))
+    
+    circled_image.ellipse([round(x-dim*0.67),
+                           round(y-dim*0.67),
+                           round(x+dim*0.67),
+                           round(y+dim*0.67)],
+                           outline="#000000",
+                           width=5)
     
     card.paste(badge, (round(x-dim/2), round(y-dim/2)), badge)
 
     tier = get_tier(response)
+    x = 565
     y = 475
     rank_size = 80
     division_size = 140
     if tier[0] == "Netherite" or tier[0] == "Unranked":
         y += 65
-        rank_size -=5
-
+        rank_size -= 10
 
     rank_shadow_font = ImageFont.truetype('minecraft_font.ttf', rank_size-5)
     division_shadow_font = ImageFont.truetype('minecraft_font.ttf', division_size-10)
@@ -54,10 +69,10 @@ def write(card, name, response):
     division_font = ImageFont.truetype('minecraft_font.ttf', division_size)
     
     ranked_image = ImageDraw.Draw(card)
-    ranked_image.text((570-word.calc_length(tier[0], rank_size-5)/2, y-rank_size-5), tier[0], font=rank_shadow_font, fill="#000000", stroke_width=3)
-    ranked_image.text((570-word.calc_length(tier[1], division_size-10)/2, y), tier[1], font=division_shadow_font, fill="#000000", stroke_width=3)
-    ranked_image.text((570-word.calc_length(tier[0], rank_size)/2, y-20-rank_size), tier[0], font=rank_font, fill=rank.get_colour(response["elo_rate"])[0], stroke_fill=rank.get_colour(response["elo_rate"])[1], stroke_width=4)
-    ranked_image.text((570-word.calc_length(tier[1], division_size)/2, y-20), tier[1], font=division_font, fill=rank.get_colour(response["elo_rate"])[0], stroke_fill=rank.get_colour(response["elo_rate"])[1], stroke_width=4)
+    ranked_image.text((x-word.calc_length(tier[0], rank_size-5)/2, y-rank_size-5), tier[0], font=rank_shadow_font, fill="#000000", stroke_width=3)
+    ranked_image.text((x-word.calc_length(tier[1], division_size-10)/2, y), tier[1], font=division_shadow_font, fill="#000000", stroke_width=3)
+    ranked_image.text((x-word.calc_length(tier[0], rank_size)/2, y-20-rank_size), tier[0], font=rank_font, fill=rank.get_colour(response["elo_rate"])[0], stroke_fill=rank.get_colour(response["elo_rate"])[1], stroke_width=4)
+    ranked_image.text((x-word.calc_length(tier[1], division_size)/2, y-20), tier[1], font=division_font, fill=rank.get_colour(response["elo_rate"])[0], stroke_fill=rank.get_colour(response["elo_rate"])[1], stroke_width=4)
 
     return card
 

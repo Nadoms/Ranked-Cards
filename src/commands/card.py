@@ -13,36 +13,38 @@ from gen_functions import match
 def main(name, response, discord, pfp):
     response = response["data"]
     uuid = response["uuid"]
-    matches = match.get_matches(name, None)
     pic = "grass.jpg"
     if random.randint(0, 100) == 0:
         pic = "end.jpg"
     file = path.join("src", "pics", "bgs", pic)
-    card = Image.open(file)
+    card = Image.open(file).convert("RGBA")
 
     then = datetime.now()
-    add_boxes.write(card, name, response)
+    matches = match.get_matches(name, None)
     then = splits(then, 0)
-    add_name.write(card, name, response)
+    add_boxes.write(card, name, response)
     then = splits(then, 1)
-    add_stats.write(card, matches, uuid, response)
+    add_name.write(card, name, response)
     then = splits(then, 2)
-    add_podium.write(card, name, response)
+    add_stats.write(card, matches, uuid, response)
     then = splits(then, 3)
-    add_skin.write(card, uuid)
+    add_podium.write(card, name, response)
     then = splits(then, 4)
-    add_badge.write(card, name, response)
+    add_skin.write(card, uuid)
     then = splits(then, 5)
-    add_history.write(card, matches, uuid, response)
+    add_badge.write(card, response)
     then = splits(then, 6)
-    add_socials.write(card, name, discord, pfp, response)
+    add_history.write(card, matches, uuid, response)
     then = splits(then, 7)
-    add_other.write(card, name)
+    add_socials.write(card, name, discord, pfp, response)
     then = splits(then, 8)
+    add_other.write(card, name)
+    then = splits(then, 9)
     return card
 
 def splits(then, process):
-    processes = ["Drawing boxes",
+    processes = ["Gathering data",
+     "Drawing boxes",
      "Writing username",
      "Calculating stats",
      "Pasting podium",

@@ -11,6 +11,7 @@ def main(command, name, type, season, match_id):
     response2 = requests.get(f"https://mcsrranked.com/api/matches/{match_id}").json()
     discord = "notnaddysalt"
     pfp = "https://cdn.discordapp.com/avatars/343108228890099713/1b4bf25c894af2c68410b0574135d150"
+    print(command, name, type)
     if command == "card":
         img = carding.main(name, response, discord, pfp)
     elif command == "graph":
