@@ -26,7 +26,7 @@ def get_colour(elo):
     elif elo < 1500:
         return ["#30e858", "#122b30"]
     elif elo < 2000:
-        return ["#5ac9c0", "#122b30"]
+        return ["#37dcdd", "#122b30"]
     elif elo >= 2000:
         return ["#3e3a3e", "#fad43d"]
     else:

@@ -23,7 +23,10 @@ def write(uuid, response, type, season):
         elos = get_smoothed_data(get_elo(uuid, matches, season))
         data = pd.DataFrame(elos, columns=columns)
     elif type == "Completion time":
-        comps = get_smoothed_data(get_comps(uuid, matches, season))
+        comps = get_comps(uuid, matches, season)
+        if len(comps) <= 1:
+            return -1
+        comps = get_smoothed_data(comps)
         data = pd.DataFrame(comps, columns=columns)
         data["Completion time"] = pd.to_datetime(data["Completion time"], unit='ms')
         data["Completion time (smoothed)"] = pd.to_datetime(data["Completion time (smoothed)"], unit='ms')

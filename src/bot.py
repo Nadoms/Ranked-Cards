@@ -93,7 +93,7 @@ async def connect(interaction: Interaction, input_name: str):
                 break
             elif input_name.lower() == mcname.lower():
                 mc_exists = True
-                await interaction.response.send_message(f"{input_name} is already connected to {bot.get_user(int(storeduid))}.")
+                await interaction.response.send_message(f"`{input_name}` is already connected to {bot.get_user(int(storeduid))}.")
 
     if user_exists:
         with open (file, "r") as f:
@@ -107,12 +107,12 @@ async def connect(interaction: Interaction, input_name: str):
                     f.write(line)
                 else:
                     f.write(f"{input_name}:{uid}\n")
-        await interaction.response.send_message(f"{input_name} has been connected to your discord!")
+        await interaction.response.send_message(f"`{input_name}` has been connected to your discord!")
 
     elif not mc_exists:
         with open (file, "a") as f:
             f.write(f"{input_name}:{uid}\n")
-        await interaction.response.send_message(f"{input_name} has been connected to your discord!")
+        await interaction.response.send_message(f"`{input_name}` has been connected to your discord!")
 
 
 @bot.slash_command(name="disconnect", description="Disconnects your minecraft account with your discord account.")
@@ -142,13 +142,13 @@ async def disconnect(interaction: Interaction):
                 mymcname = mcname
 
         if disconnected:
-            await interaction.response.send_message(f"{mymcname} has been disconnected from your discord.")
+            await interaction.response.send_message(f"`{mymcname}` has been disconnected from your discord.")
         else:
             await interaction.response.send_message(f"You are not connected. Please connect your minecraft account with </connect:1149442234513637448> to your discord.")
 
 
 @bot.slash_command(name="plot", description="Illustrates a graph for the player + metric that you choose.")
-async def card(interaction: Interaction, input_name: str = SlashOption(
+async def plot(interaction: Interaction, input_name: str = SlashOption(
     "name",
     required = False,
     description="The player to draw a graph for.",
@@ -202,7 +202,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
             msg2 = f" from season {season}"
         else:
             msg2 = ""
-        await interaction.followup.send(f"{input_name} has not enough {msg1}{msg2}.")
+        await interaction.followup.send(f"`{input_name}` has not enough {msg1}{msg2}.")
         return
 
     img.save("graph.png")
@@ -210,10 +210,10 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
         img = File(f)
     await interaction.followup.send(files=[img])
 
-'''
+
 @bot.slash_command(name="analyse", description="Performs an analyses on your most recent match, or the match specified.")
-async def card(interaction: Interaction, match_id: str = SlashOption(
-    "match id",
+async def analyse(interaction: Interaction, match_id: str = SlashOption(
+    "match_id",
     required = False,
     description="The match to perform an analysis on.",
     default=None
@@ -243,7 +243,7 @@ async def card(interaction: Interaction, match_id: str = SlashOption(
     await interaction.response.defer()
     
     try:
-        img = analysing.main(uuid, response, match_id)
+        img = analysing.main(response, match_id)
     except Exception as e:
         print(e)
         await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls")
@@ -253,7 +253,7 @@ async def card(interaction: Interaction, match_id: str = SlashOption(
     with open("analysis.png", "rb") as f:
         img = File(f)
     await interaction.followup.send(files=[img])
-'''
+
 
 def get_uid(response, input_name):
     if response["data"]["connections"]["discord"]:
@@ -295,7 +295,7 @@ def get_close(input_name):
         headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
         for i in range(0, len(close)):
             player = requests.get(f"https://mcsrranked.com/api/users/{close[i].strip()}", headers=headers).json()["data"]["nickname"]
-            extra += player
+            extra += f"`{player}`"
             if i < len(close) - 2:
                 extra += ", "
             elif i == len(close) - 2:

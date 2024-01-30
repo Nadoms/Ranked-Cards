@@ -18,7 +18,7 @@ def main(response, match_id):
         return -1
     vs_response = vs_response["data"]
 
-    file = path.join("src", "pics", "bgs", "nether.jpg")
+    file = path.join("src", "pics", "bgs", "dirt.jpg")
     analysis = Image.open(file)
 
     then = datetime.now()
