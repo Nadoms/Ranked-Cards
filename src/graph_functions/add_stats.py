@@ -51,7 +51,7 @@ def write(graph, response):
     return graph
 
 def get_stats(response):
-    elo = str(response["elo_rate"])
-    rank = str(response["elo_rank"])
+    elo = str(response["eloRate"])
+    rank = str(response["eloRank"])
 
     return ["Current Elo: ", elo, " / Rank: ", rank]

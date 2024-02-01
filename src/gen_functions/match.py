@@ -43,25 +43,31 @@ def get_last_match(name):
     if matches_response["data"] == []:
         return None
     else:
-        return [uuid, matches_response["data"][0]["match_id"]]
+        return [uuid, matches_response["data"][0]["id"]]
 
-def get_playtime(matches, season):
-    current_season = get_season()
+def get_playtime(response, seasonOrTotal):
+    playtime = response["statistics"][seasonOrTotal]["playtime"]["ranked"]
+
+    '''current_season = get_season()
     playtime = 0
 
     for match in matches:
         if not match["is_decay"]:
             if not season:
-                playtime += match["final_time"]
+                playtime += match["result"]["time"]
                 continue
             if match["match_season"] == current_season:
-                playtime += match["final_time"]
+                playtime += match["result"]["time"]'''
 
     hours = round(timedelta(milliseconds=playtime).total_seconds() / 3600, 1)
     return hours
 
-def get_ff_loss(matches, season, uuid, name):
-    current_season = get_season()
+def get_ff_loss(response, seasonOrTotal):
+    forfeits = response["statistics"][seasonOrTotal]["forfeits"]["ranked"]
+    losses = response["statistics"][seasonOrTotal]["loses"]["ranked"]
+    forfeit_loss = forfeits / losses
+
+    '''current_season = get_season()
     forfeits = 0
     losses = 0
 
@@ -79,23 +85,23 @@ def get_ff_loss(matches, season, uuid, name):
                         forfeits += 1
 
     if losses == 0:
-        return "-"
+        return "-"'''
     
     forfeit_loss = round(forfeits / losses * 100, 1)
     return forfeit_loss
 
-def get_avg_completion(matches, season, uuid, name):
+def get_avg_completion(matches, seasonOrTotal, uuid):
     current_season = get_season()
     total_time = 0
     completions = 0
 
     for match in matches:
-        if match["winner"] == uuid and match["forfeit"] == False:
-            if not season:
-                total_time += match["final_time"]
+        if match["result"]["uuid"] == uuid and match["forfeited"] == False:
+            if seasonOrTotal == "total":
+                total_time += match["result"]["time"]
                 completions += 1
-            elif match["match_season"] == current_season:
-                total_time += match["final_time"]
+            elif match["season"] == current_season:
+                total_time += match["result"]["time"]
                 completions += 1
 
     if completions == 0:

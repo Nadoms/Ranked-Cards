@@ -131,13 +131,13 @@ def get_elo(uuid, matches, season):
     last_relo = -1
 
     for game in matches:
-        for score_change in game["score_changes"]:
+        for score_change in game["changes"]:
             if score_change["uuid"] != uuid:
                 continue
 
-            elo = score_change["score"] + score_change["change"]
-            season = game["match_season"]
-            if score_change["score"] != -1:
+            elo = score_change["eloRate"] + score_change["change"]
+            season = game["season"]
+            if score_change["eloRate"] != -1:
                 last_relo = elo
                 elo_array.append([remain, elo, season])
             else:
@@ -151,11 +151,11 @@ def get_comps(uuid, matches, season):
     remain = 0
 
     for game in matches:
-        if game["winner"] != uuid or game["forfeit"] != False:
+        if game["result"]["uuid"] != uuid or game["forfeited"] != False:
             continue
 
-        comp = game["final_time"]
-        season = game["match_season"]
+        comp = game["result"]["time"]
+        season = game["season"]
         comp_array.append([remain, comp, season])
 
         remain += 1

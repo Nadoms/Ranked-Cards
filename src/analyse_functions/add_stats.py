@@ -27,7 +27,7 @@ def write(analysis, uuids, response, vs_response):
     return analysis
 
 def get_stats(response, scores, uuids, i):
-    current_elo = str(response["members"][i]["elo_rate"])
+    current_elo = str(response["members"][i]["eloRate"])
     for score_change in response["score_changes"]:
         if score_change["uuid"] == uuids[i]:
             legacy_elo = str(score_change["score"])

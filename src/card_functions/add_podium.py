@@ -12,7 +12,7 @@ def write(card, name, response):
     return card
 
 def get_podium(response):
-    elo = response["elo_rate"]
+    elo = response["eloRate"]
     tier = rank.get_rank(elo)
     
     file = path.join("src", "pics", "podiums", f"podium_{tier}.webp")

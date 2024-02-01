@@ -35,14 +35,14 @@ def get_discord(discord):
     return discord
 
 def get_yt(response):
-    if response["connections"]["youtube"]:
+    if response["connections"] and response["connections"]["youtube"]:
         youtube = response["connections"]["youtube"]["name"]
         return youtube
     else:
         return "Unlinked"
 
 def get_twitch(response):
-    if response["connections"]["twitch"]:
+    if response["connections"] and response["connections"]["twitch"]:
         twitch = response["connections"]["twitch"]["name"]
         return "twitch.tv/" + twitch
     else:

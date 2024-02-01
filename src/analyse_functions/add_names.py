@@ -8,7 +8,7 @@ def write(analysis, names, response):
     x_values = [650, 1270]
 
     for i in range(0, 2):
-        rank = str(response["members"][i]["elo_rank"])
+        rank = str(response["members"][i]["eloRank"])
         rank_colour = get_rank_colour(rank)
         if rank == "None":
             rank = "-"

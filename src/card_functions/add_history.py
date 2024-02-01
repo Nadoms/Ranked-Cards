@@ -44,7 +44,7 @@ def write(card, matches, uuid, response):
 def last_few(matches, desired):
     recent_matches = []
     for match in matches:
-        if not match["is_decay"]:
+        if not match["decayed"]:
             recent_matches.append(match)
         if len(recent_matches) >= desired:
             break
@@ -71,9 +71,9 @@ def get_blocks(recent_matches):
 def get_wl(recent_matches, uuid):
     wl = []
     for match in recent_matches:
-        if match["winner"] == uuid:
+        if match["result"]["uuid"] == uuid:
             wl.append(0)
-        elif match["winner"] == None:
+        elif match["result"]["uuid"] == None:
             wl.append(2)
         else:
             wl.append(1)
@@ -87,7 +87,7 @@ def get_desc(wl, recent_matches, uuid, response):
     else:
         elo_change = str(elo_change)
 
-    winstreak = response["current_winstreak"]
+    winstreak = response["statistics"]["season"]["currentWinStreak"]["ranked"]
 
     description = ["Winstreak: ",  str(winstreak), " / Elo change: ", elo_change] #"W/L/D: ", str(wl.count(0)), "/", str(wl.count(1)), "/", str(wl.count(2)),
     return description
@@ -95,7 +95,7 @@ def get_desc(wl, recent_matches, uuid, response):
 def get_elo_change(recent_matches, uuid):
     elo_change = 0
     for match in recent_matches:
-        for player in match["score_changes"]:
+        for player in match["changes"]:
             if player["uuid"] == uuid:
                 elo_change += player["change"]
     return elo_change

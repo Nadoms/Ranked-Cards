@@ -24,7 +24,7 @@ def main(command, name, type, season, match_id):
 if __name__ == "__main__":
     command = "analyse"
     name = "Nadoms"
-    season = 3
+    season = 4
     type = "Completion time"
     match_id = 676630
     if len(sys.argv) >= 3:

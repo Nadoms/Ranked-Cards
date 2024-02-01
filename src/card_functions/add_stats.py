@@ -10,8 +10,8 @@ def write(card, matches, uuid, response):
     stat_font = ImageFont.truetype('minecraft_font.ttf', 40)
     large_stat_font = ImageFont.truetype('minecraft_font.ttf', 60)
 
-    colour = rank.get_colour(response["elo_rate"])
-    best_colour = rank.get_colour(response["best_elo_rate"])
+    colour = rank.get_colour(response["eloRate"])
+    best_colour = rank.get_colour(0) # response["bestEloRate"]
     rank_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52ba", "#cd7f32", "#c0c0c0", "#ffd700"]
     ws_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
     ff_loss_colour = ["#bb3030", "#ff6164", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
@@ -177,13 +177,13 @@ def write(card, matches, uuid, response):
     return card
 
 def get_season_stats(response, matches, uuid):
-    wins = str(response["records"]["2"]["win"])
-    losses = str(response["records"]["2"]["lose"])
-    draws = str(response["records"]["2"]["draw"])
-    games = str(response["season_played"])
-    ff_loss = str(match.get_ff_loss(matches, True, uuid, response["nickname"]))
-    avg_completion = str(timedelta(milliseconds=match.get_avg_completion(matches, True, uuid, response)))[2:7].lstrip("0")
-    playtime = str(match.get_playtime(matches, True))
+    wins = str(response["statistics"]["season"]["wins"]["ranked"])
+    losses = str(response["statistics"]["season"]["loses"]["ranked"])
+    games = str(response["statistics"]["season"]["playedMatches"]["ranked"])
+    draws = str(int(games) - int(wins) - int(losses))
+    ff_loss = str(match.get_ff_loss(response, "season"))
+    avg_completion = str(timedelta(milliseconds=match.get_avg_completion(matches, "season", uuid)))[2:7].lstrip("0")
+    playtime = str(match.get_playtime(response, "season"))
 
     return [["W/L/D:",
              "Games:",
@@ -197,9 +197,9 @@ def get_season_stats(response, matches, uuid):
              f"{playtime} h"]]
 
 def get_lifetime_stats(response, matches, uuid):
-    best_elo = str(response["best_elo_rate"])
-    games = str(response["total_played"])
-    best_ws = str(response["highest_winstreak"])
+    best_elo = "0" #str(response["bestEloRate"])
+    games = str(response["statistics"]["total"]["playedMatches"]["ranked"])
+    best_ws = str(response["statistics"]["total"]["highestWinStreak"]["ranked"])
 
     return [["Best ELO:",
              "Games:",
@@ -209,13 +209,13 @@ def get_lifetime_stats(response, matches, uuid):
              best_ws]]
 
 def get_major_stats(response):
-    elo = str(response["elo_rate"])
-    rank = str(response["elo_rank"])
+    elo = str(response["eloRate"])
+    rank = str(response["eloRank"])
     try:
-        win_loss = str(round(response["records"]["2"]["win"] / response["records"]["2"]["lose"], 2))
+        win_loss = str(round(response["statistics"]["total"]["wins"]["ranked"] / response["statistics"]["total"]["loses"]["ranked"], 2))
     except:
-        win_loss = str(response["records"]["2"]["win"])
-    pb = str(timedelta(milliseconds=response["best_record_time"]))[2:7].lstrip("0")
+        win_loss = str(response["statistics"]["total"]["wins"]["ranked"])
+    pb = str(timedelta(milliseconds=response["statistics"]["total"]["bestTime"]["ranked"]))[2:7].lstrip("0")
 
     return [["Elo:",
              "Rank:",

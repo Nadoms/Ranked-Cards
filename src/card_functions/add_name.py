@@ -18,7 +18,7 @@ def write(card, name, response):
     return card
 
 def get_activity(response):
-    last_active = response["latest_time"]
+    last_active = response["timestamp"]["lastRanked"]
     active_date = datetime.fromtimestamp(last_active)
     current_date = datetime.now()
     delta_date = current_date - active_date
