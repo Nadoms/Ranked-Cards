@@ -135,9 +135,11 @@ def get_elo(uuid, matches, season):
             if score_change["uuid"] != uuid:
                 continue
 
-            elo = score_change["eloRate"] + score_change["change"]
+            if score_change["change"]:
+                elo = score_change["eloRate"] + score_change["change"]
             season = game["season"]
-            if score_change["eloRate"] != -1:
+            
+            if score_change["eloRate"]:
                 last_relo = elo
                 elo_array.append([remain, elo, season])
             else:
