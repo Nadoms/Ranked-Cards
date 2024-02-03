@@ -257,7 +257,7 @@ async def analyse(interaction: Interaction, match_id: str = SlashOption(
 
 
 def get_uid(response, input_name):
-    if response["data"]["connections"] and response["data"]["connections"]["discord"]:
+    if "discord" in response["data"]["connections"]:
         uid = response["data"]["connections"]["discord"]["id"]
         return uid
     file = path.join("src", "connect.txt")

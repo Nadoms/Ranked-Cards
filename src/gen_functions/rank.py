@@ -1,5 +1,5 @@
 def get_rank(elo):
-    if elo < 0:
+    if not elo:
         return -1
     elif elo < 600:
         return 0
@@ -17,7 +17,9 @@ def get_rank(elo):
         return -1
 
 def get_colour(elo):
-    if elo < 600:
+    if not elo:
+        return ["#151716", "#ffffff"]
+    elif elo < 600:
         return ["#151716", "#ffffff"]
     elif elo < 900:
         return ["#bdbdbd", "#122b30"]
@@ -30,11 +32,11 @@ def get_colour(elo):
     elif elo >= 2000:
         return ["#3e3a3e", "#fad43d"]
     else:
-        return 0
+        return ["#151716", "#ffffff"]
 
 def get_degree(elo):
     degree = 270
-    if elo < 0:
+    if not elo:
         return degree
     elif elo < 600:
         degree += round(elo / 600 * 360)
@@ -48,7 +50,7 @@ def get_degree(elo):
     return degree
 
 def get_division(elo):
-    if elo < 0:
+    if not elo:
         return ""
     elif elo < 600:
         if elo < 200:

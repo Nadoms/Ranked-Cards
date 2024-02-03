@@ -2,6 +2,7 @@ import math
 from PIL import ImageDraw, ImageFont
 import requests
 from datetime import timedelta
+import time
 
 from gen_functions import word, rank, match
 
@@ -11,7 +12,7 @@ def write(card, matches, uuid, response):
     large_stat_font = ImageFont.truetype('minecraft_font.ttf', 60)
 
     colour = rank.get_colour(response["eloRate"])
-    best_colour = rank.get_colour(0) # response["bestEloRate"]
+    best_colour = rank.get_colour(response["seasonResult"]["highest"])
     rank_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52ba", "#cd7f32", "#c0c0c0", "#ffd700"]
     ws_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
     ff_loss_colour = ["#bb3030", "#ff6164", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
@@ -36,6 +37,10 @@ def write(card, matches, uuid, response):
                 if j != len(w_d_l_spliced)-1:
                     statted_image.text((1827-word.calc_length(season_stats[1][i], 40)+word.calc_length(letters_placed, 40), 140+i*60), "/", font=stat_font, fill=white)
                     letters_placed += "/"
+        elif i == 1:
+            if season_stats[1][i] == "None":
+                season_stats[1][i] = "-"
+            statted_image.text((1827-word.calc_length(season_stats[1][i], 40), 140+i*60), season_stats[1][i], font=stat_font, fill=best_colour[0], stroke_fill=best_colour[1], stroke_width=1)
         elif i == 2:
             if season_stats[1][i] != "-":
                 rounded_ff_loss = float(season_stats[1][i])
@@ -85,19 +90,17 @@ def write(card, matches, uuid, response):
     # Lifetime stats
     lifetime_stats = get_lifetime_stats(response, matches, uuid)
 
-    statted_image.text((1350, 540), "Lifetime Stats", font=large_stat_font, fill=white)
+    statted_image.text((1350, 480), "Lifetime Stats", font=large_stat_font, fill=white)
     for i in range(0, len(lifetime_stats[0])):
-        statted_image.text((1350, 630+i*60), lifetime_stats[0][i], font=stat_font, fill=white)
+        statted_image.text((1350, 570+i*60), lifetime_stats[0][i], font=stat_font, fill=white)
 
     for i in range(0, len(lifetime_stats[1])):
-        if i == 0:
-            statted_image.text((1827-word.calc_length(lifetime_stats[1][i], 40), 630+i*60), lifetime_stats[1][i], font=stat_font, fill=best_colour[0], stroke_fill=best_colour[1], stroke_width=1)
-        elif i == 2:
+        if i == 3:
             rounded_best_ws = min(math.floor(int(lifetime_stats[1][i])/2), len(ws_colour)-1)
             lifetime_stats[1][i] += " wins"
-            statted_image.text((1827-word.calc_length(lifetime_stats[1][i], 40), 630+i*60), lifetime_stats[1][i], font=stat_font, fill=ws_colour[rounded_best_ws])
+            statted_image.text((1827-word.calc_length(lifetime_stats[1][i], 40), 570+i*60), lifetime_stats[1][i], font=stat_font, fill=ws_colour[rounded_best_ws])
         else:
-            statted_image.text((1827-word.calc_length(lifetime_stats[1][i], 40), 630+i*60), lifetime_stats[1][i], font=stat_font, fill=white)
+            statted_image.text((1827-word.calc_length(lifetime_stats[1][i], 40), 570+i*60), lifetime_stats[1][i], font=stat_font, fill=white)
 
     # Major stats
     major_stats = get_major_stats(response)
@@ -107,6 +110,8 @@ def write(card, matches, uuid, response):
 
     for i in range(0, len(major_stats[1])):
         if i == 0:
+            if major_stats[1][i] == "None":
+                major_stats[1][i] = "-"
             statted_image.text((650-word.calc_length(major_stats[1][i], 60), 820+i*80), major_stats[1][i], font=large_stat_font, fill=colour[0], stroke_fill=colour[1], stroke_width=1)
         elif i == 1:
             if major_stats[1][i] != "None":
@@ -181,43 +186,41 @@ def get_season_stats(response, matches, uuid):
     losses = str(response["statistics"]["season"]["loses"]["ranked"])
     games = str(response["statistics"]["season"]["playedMatches"]["ranked"])
     draws = str(int(games) - int(wins) - int(losses))
+    best_elo = str(response["seasonResult"]["highest"])
     ff_loss = str(match.get_ff_loss(response, "season"))
     avg_completion = str(timedelta(milliseconds=match.get_avg_completion(matches, "season", uuid)))[2:7].lstrip("0")
-    playtime = str(match.get_playtime(response, "season"))
 
     return [["W/L/D:",
-             "Games:",
+             "Best ELO:",
              "FF/loss:",
-             "Avg Finish:",
-             "Playtime:"],
+             "Avg Finish:"],
             [f"{wins}/{losses}/{draws}",
-             games,
+             best_elo,
              ff_loss,
-             avg_completion,
-             f"{playtime} h"]]
+             avg_completion]]
 
 def get_lifetime_stats(response, matches, uuid):
-    best_elo = "0" #str(response["bestEloRate"])
+    playtime = str(match.get_playtime(response, "total"))
+    playtime_day = str(match.get_playtime_day(response))
     games = str(response["statistics"]["total"]["playedMatches"]["ranked"])
     best_ws = str(response["statistics"]["total"]["highestWinStreak"]["ranked"])
 
-    return [["Best ELO:",
+    return [["Playtime:",
+             "PTime/day:",
              "Games:",
              "Best WS:"],
-            [best_elo,
+            [f"{playtime} h",
+             f"{playtime_day} m",
              games,
              best_ws]]
 
 def get_major_stats(response):
     elo = str(response["eloRate"])
     rank = str(response["eloRank"])
-    try:
-        win_loss = str(round(response["statistics"]["total"]["wins"]["ranked"] / response["statistics"]["total"]["loses"]["ranked"], 2))
-    except:
-        win_loss = str(response["statistics"]["total"]["wins"]["ranked"])
+    win_loss = str(round(response["statistics"]["season"]["wins"]["ranked"] / max(response["statistics"]["season"]["loses"]["ranked"], 1), 2))
     pb = str(timedelta(milliseconds=response["statistics"]["total"]["bestTime"]["ranked"]))[2:7].lstrip("0")
 
-    return [["Elo:",
+    return [["ELO:",
              "Rank:",
              "Win/loss:",
              "PB:"],

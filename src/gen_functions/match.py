@@ -1,3 +1,4 @@
+import time
 import requests
 from datetime import timedelta
 
@@ -62,9 +63,15 @@ def get_playtime(response, seasonOrTotal):
     hours = round(timedelta(milliseconds=playtime).total_seconds() / 3600, 1)
     return hours
 
+def get_playtime_day(response):
+    playtime_day = response["statistics"]["total"]["playtime"]["ranked"] / (time.time() - response["timestamp"]["firstOnline"]) / 1000
+
+    minutes = round(playtime_day * 24 * 60, 1)
+    return minutes
+
 def get_ff_loss(response, seasonOrTotal):
     forfeits = response["statistics"][seasonOrTotal]["forfeits"]["ranked"]
-    losses = response["statistics"][seasonOrTotal]["loses"]["ranked"]
+    losses = max(response["statistics"][seasonOrTotal]["loses"]["ranked"], 1)
     forfeit_loss = forfeits / losses
 
     '''current_season = get_season()

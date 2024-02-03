@@ -96,6 +96,6 @@ def get_elo_change(recent_matches, uuid):
     elo_change = 0
     for match in recent_matches:
         for player in match["changes"]:
-            if player["uuid"] == uuid:
+            if player["uuid"] == uuid and player["change"]:
                 elo_change += player["change"]
     return elo_change

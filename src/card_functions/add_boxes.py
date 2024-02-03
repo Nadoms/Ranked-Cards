@@ -12,7 +12,7 @@ def write(card, name, response):
     return card
 
 def get_boxes(name, response):
-    boxes = [[1350, 50, 1827, 440], [1350, 540, 1827, 810], [70, 820, 650, 1140], get_name_box(name, response)]
+    boxes = [[1350, 50, 1827, 380], [1350, 480, 1827, 810], [70, 820, 650, 1140], get_name_box(name, response)]
     for box in boxes:
         box[0] -= 40
         box[1] -= 30
