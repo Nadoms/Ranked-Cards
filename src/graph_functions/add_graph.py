@@ -13,7 +13,7 @@ from gen_functions import match, rank
 
 
 def write(uuid, response, type, season):
-    matches = match.get_matches(response["nickname"], season)
+    matches = match.get_matches(response["nickname"], season, True)
     columns = ["Games ago", type, type + " (smoothed)", "Season"]
 
     if len(matches) <= 1:

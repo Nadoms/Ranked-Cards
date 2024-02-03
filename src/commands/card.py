@@ -20,7 +20,7 @@ def main(name, response, discord, pfp):
     card = Image.open(file).convert("RGBA")
 
     then = datetime.now()
-    matches = match.get_matches(name, None)
+    matches = match.get_matches(name, None, False)
     then = splits(then, 0)
     add_boxes.write(card, name, response)
     then = splits(then, 1)
