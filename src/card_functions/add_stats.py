@@ -155,7 +155,7 @@ def write(card, matches, uuid, response):
                 rounded_win_loss = 5
             statted_image.text((650-word.calc_length(major_stats[1][i], 60), 820+i*80), major_stats[1][i], font=large_stat_font, fill=ws_colour[rounded_win_loss])
         elif i == 3:
-            if major_stats[1][i] == ":00":
+            if not major_stats[1][i]:
                 major_stats[1][i] = "-"
                 rounded_pb = -1
             else:
@@ -218,7 +218,9 @@ def get_major_stats(response):
     elo = str(response["eloRate"])
     rank = str(response["eloRank"])
     win_loss = str(round(response["statistics"]["season"]["wins"]["ranked"] / max(response["statistics"]["season"]["loses"]["ranked"], 1), 2))
-    pb = str(timedelta(milliseconds=response["statistics"]["total"]["bestTime"]["ranked"]))[2:7].lstrip("0")
+    pb = response["statistics"]["total"]["bestTime"]["ranked"]
+    if pb:
+        pb = str(timedelta(milliseconds=pb))[2:7].lstrip("0")
 
     return [["ELO:",
              "Rank:",
