@@ -14,7 +14,7 @@ def main(command, name, type, season, match_id):
     print(command, name, type)
     if command == "card":
         img = carding.main(name, response, discord, pfp)
-    elif command == "graph":
+    elif command == "plot":
         img = graphing.main(name, response, type, season)
     elif command == "analyse":
         img = analysing.main(response2, match_id)
