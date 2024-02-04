@@ -13,7 +13,7 @@ from gen_functions import match, rank
 
 
 def write(uuid, response, type, season):
-    matches = match.get_matches(response["nickname"], season, False)
+    matches = match.get_matches(response["nickname"], season, True)
     columns = ["Games ago", type, type + " (smoothed)", "Season"]
 
     if len(matches) <= 1:
@@ -153,7 +153,7 @@ def get_comps(uuid, matches, season):
     remain = 0
 
     for game in matches:
-        if game["result"]["uuid"] != uuid or game["forfeited"] != False:
+        if game["decayed"] or game["result"]["uuid"] != uuid or game["forfeited"] != False:
             continue
 
         comp = game["result"]["time"]
