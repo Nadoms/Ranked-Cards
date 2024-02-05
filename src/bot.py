@@ -318,7 +318,7 @@ def get_close(input_name):
         first = close[0].strip()
         extra += f" Autocorrected to `{first}`"
         
-        if len(close) > 0:
+        if len(close) > 1:
             extra += ", but you may have also meant "
             
         for i in range(1, len(close)):
