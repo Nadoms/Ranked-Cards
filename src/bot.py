@@ -41,10 +41,12 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
     response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=headers).json()
-        
+    
     print(f"\nGenerating card for {input_name}")
+    failed = False
     if response["status"] == "error":
         print("Player not found.")
+        failed = True
         extra, first = get_close(input_name)
 
         if not first:
@@ -78,7 +80,10 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     img.save("card.png")
     with open("card.png", "rb") as f:
         img = File(f)
-    await interaction.followup.send("Player not found." + extra, files=[img])
+    if failed:
+        await interaction.followup.send("Player not found." + extra, files=[img])
+    else:
+        await interaction.followup.send(files=[img])
 
 
 @bot.slash_command(name="connect", description="Connects your minecraft account with your discord account.")
@@ -188,8 +193,10 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
     response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=headers).json()
         
     print(f"\nDrawing {type} graph for {input_name}")
+    failed = False
     if response["status"] == "error":
         print("Player not found.")
+        failed = True
         extra, first = get_close(input_name)
 
         if not first:
@@ -229,7 +236,10 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
     img.save("graph.png")
     with open("graph.png", "rb") as f:
         img = File(f)
-    await interaction.followup.send("Player not found." + extra, files=[img])
+    if failed:
+        await interaction.followup.send("Player not found." + extra, files=[img])
+    else:
+        await interaction.followup.send(files=[img])
 
 
 '''@bot.slash_command(name="analyse", description="Performs an analyses on your most recent match, or the match specified.")

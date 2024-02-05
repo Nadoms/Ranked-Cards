@@ -12,9 +12,11 @@ def write(graph, response):
     white = "#ffffff"
 
     stats = get_stats(response)
-    colour = rank.get_colour(int(stats[1]))
+    colour = rank.get_colour(stats[1])
 
-    if stats[3] != "None":
+    if stats[1] == None:
+        stats[1] = "-"
+    if stats[3] != None:
         rounded_rank = int(stats[3])
         if rounded_rank > 1000:
             rounded_rank = 0
@@ -52,6 +54,10 @@ def write(graph, response):
 
 def get_stats(response):
     elo = str(response["eloRate"])
+    if elo == "None":
+        elo = None
     rank = str(response["eloRank"])
+    if rank == "None":
+        rank = None
 
     return ["Current Elo: ", elo, " / Rank: ", rank]
