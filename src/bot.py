@@ -45,9 +45,20 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     print(f"\nGenerating card for {input_name}")
     if response["status"] == "error":
         print("Player not found.")
-        extra = get_close(input_name)
-        await interaction.response.send_message("Player not found." + extra)
-        return
+        extra, first = get_close(input_name)
+
+        if not first:
+            await interaction.response.send_message("Player not found.")
+            return
+        else:
+            print(f"\nAutocorrected to {first}.")
+            response = requests.get(f"https://mcsrranked.com/api/users/{first}", headers=headers).json()
+
+            if response["status"] == "error":
+                print("Player changed username.")
+                extra = " This player may have changed username."
+                await interaction.response.send_message("Player not found." + extra)
+        
     input_name = response["data"]["nickname"]
     user = await bot.fetch_user(get_uid(response, input_name))
     pfp = user.avatar
@@ -67,7 +78,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     img.save("card.png")
     with open("card.png", "rb") as f:
         img = File(f)
-    await interaction.followup.send(files=[img])
+    await interaction.followup.send("Player not found." + extra, files=[img])
 
 
 @bot.slash_command(name="connect", description="Connects your minecraft account with your discord account.")
@@ -179,9 +190,19 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
     print(f"\nDrawing {type} graph for {input_name}")
     if response["status"] == "error":
         print("Player not found.")
-        extra = get_close(input_name.lower())
-        await interaction.response.send_message("Player not found." + extra)
-        return
+        extra, first = get_close(input_name)
+
+        if not first:
+            await interaction.response.send_message("Player not found.")
+            return
+        else:
+            print(f"\nAutocorrected to {first}.")
+            response = requests.get(f"https://mcsrranked.com/api/users/{first}", headers=headers).json()
+
+            if response["status"] == "error":
+                print("Player changed username.")
+                extra = " This player may have changed username."
+                await interaction.response.send_message("Player not found." + extra)
     
     input_name = response["data"]["nickname"]
     await interaction.response.defer()
@@ -208,7 +229,7 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
     img.save("graph.png")
     with open("graph.png", "rb") as f:
         img = File(f)
-    await interaction.followup.send(files=[img])
+    await interaction.followup.send("Player not found." + extra, files=[img])
 
 
 '''@bot.slash_command(name="analyse", description="Performs an analyses on your most recent match, or the match specified.")
@@ -287,23 +308,29 @@ def get_name(interaction_ctx):
 
 def get_close(input_name):
     extra = ""
+    first = None
+
     file = path.join("src", "players.txt")
     with open(file) as f:
         players = f.readlines()
         close = difflib.get_close_matches(input_name, players)
     if close:
-        extra += " Did you mean "
-        headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
-        for i in range(0, len(close)):
-            player = requests.get(f"https://mcsrranked.com/api/users/{close[i].strip()}", headers=headers).json()["data"]["nickname"]
+        first = close[0].strip()
+        extra += f" Autocorrected to `{first}`"
+        
+        if len(close) > 0:
+            extra += ", but you may have also meant "
+            
+        for i in range(1, len(close)):
+            player = close[i].strip()
             extra += f"`{player}`"
             if i < len(close) - 2:
                 extra += ", "
             elif i == len(close) - 2:
                 extra += " or "
-            else:
-                extra += "?"
-    return extra
+        extra += "."
+
+    return [extra, first]
 
 
 load_dotenv()
