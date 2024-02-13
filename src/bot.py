@@ -1,6 +1,6 @@
 import difflib
 import nextcord
-from nextcord import File, Interaction, SlashOption
+from nextcord import File, Interaction, SlashOption, Embed, Colour
 from nextcord.ext import commands
 from os import getenv, path
 from dotenv import load_dotenv
@@ -240,6 +240,45 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
         await interaction.followup.send("Player not found." + extra, files=[img])
     else:
         await interaction.followup.send(files=[img])
+
+
+@bot.slash_command(name="help", description="Don't know where to start?")
+async def help(interaction: Interaction):
+
+    embed = nextcord.Embed(
+        title = "Ranked Cards - Help and Commands",
+        description = "They for using the MCSR Ranked Cards bot.\nThese are the current available commands:",
+        colour = nextcord.Colour.yellow()
+    )
+    
+    embed.set_thumbnail(url=r"https://mcsrranked.com/_next/image?url=%2Ftest1.png&w=640&q=75")
+    embed.add_field(
+        name = "/card",
+        value = "`Options: Minecraft username`\n`Default: Connected user`\nGenerates the ***statistics card*** for the player that you input",
+        inline = False
+    )
+    embed.add_field(
+        name = "/plot",
+        value = "`Options: Minecraft username, type of data [Elo / Completion time], season [Lifetime / 1/2/3/4]`\n`Defaults: Connected user, Elo, S4`\n***Plots a graph*** for the type of data (Elo / Completion time) across the timeframe (Season 1/2/3/4 / Lifetime) and for the player you specify",
+        inline = False
+    )
+    embed.add_field(
+        name = "/analyse",
+        value = "`Options: Match ID`\nMatch analysis command to be ***coming soon***...",
+        inline = False
+    )
+    embed.add_field(
+        name = "/connect",
+        value = "`Options: Minecraft username`\n***Connects your discord account*** to a Minecraft username so that you don't have to write it when doing the other commands",
+        inline = False
+    )
+    embed.add_field(
+        name = "/disconnect",
+        value = "***Removes the connected Minecraft account*** from your discord, useful if you changed name or switched account",
+        inline = False
+    )
+    
+    await interaction.send(embed=embed)
 
 
 '''@bot.slash_command(name="analyse", description="Performs an analyses on your most recent match, or the match specified.")
