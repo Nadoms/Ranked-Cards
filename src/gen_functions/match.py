@@ -32,10 +32,16 @@ def get_season_matches(name, s, decays):
         i += 1
     return matches
 
-def get_recent_matches(name):
+def get_recent_matches(name, decays):
     matches = []
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
-    response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page=0&count=50&type=2&season={get_season()}", headers=headers).json()["data"]
+
+    if not decays:
+        excludedecay = "&excludedecay"
+    else:
+        excludedecay = ""
+
+    response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page=0&count=50&type=2&season={get_season()}{excludedecay}", headers=headers).json()["data"]
     matches += response
     return matches
 
@@ -55,6 +61,9 @@ def get_last_match(name):
 def get_playtime(response, seasonOrTotal):
     playtime = response["statistics"][seasonOrTotal]["playtime"]["ranked"]
 
+    hours = round(timedelta(milliseconds=playtime).total_seconds() / 3600, 1)
+    return hours
+
     '''current_season = get_season()
     playtime = 0
 
@@ -66,9 +75,6 @@ def get_playtime(response, seasonOrTotal):
             if match["match_season"] == current_season:
                 playtime += match["result"]["time"]'''
 
-    hours = round(timedelta(milliseconds=playtime).total_seconds() / 3600, 1)
-    return hours
-
 def get_playtime_day(response):
     playtime_day = response["statistics"]["total"]["playtime"]["ranked"] / (time.time() - response["timestamp"]["firstOnline"]) / 1000
 
@@ -79,6 +85,9 @@ def get_ff_loss(response, seasonOrTotal):
     forfeits = response["statistics"][seasonOrTotal]["forfeits"]["ranked"]
     losses = max(response["statistics"][seasonOrTotal]["loses"]["ranked"], 1)
     forfeit_loss = forfeits / losses
+
+    forfeit_loss = round(forfeits / losses * 100, 1)
+    return forfeit_loss
 
     '''current_season = get_season()
     forfeits = 0
@@ -99,12 +108,16 @@ def get_ff_loss(response, seasonOrTotal):
 
     if losses == 0:
         return "-"'''
-    
-    forfeit_loss = round(forfeits / losses * 100, 1)
-    return forfeit_loss
 
-def get_avg_completion(matches, seasonOrTotal, uuid):
-    current_season = get_season()
+def get_avg_completion(response, seasonOrTotal):
+    completion_time = response["statistics"][seasonOrTotal]["completionTime"]["ranked"]
+    completions = max(response["statistics"][seasonOrTotal]["completions"]["ranked"], 1)
+
+    avg_completion = round(completion_time / completions, 1)
+    return avg_completion
+
+
+    '''current_season = get_season()
     total_time = 0
     completions = 0
 
@@ -121,12 +134,12 @@ def get_avg_completion(matches, seasonOrTotal, uuid):
         return 0
     
     avg_completion = round(total_time / completions, 0)
-    return avg_completion
+    return avg_completion'''
 
 def get_season():
     return 4
-"""
-    response = requests.get("https://mcsrranked.com/api/matches/?count=1").json()["data"]
-    season = response[0]["match_season"]
-    return season
-"""
+    """
+        response = requests.get("https://mcsrranked.com/api/matches/?count=1").json()["data"]
+        season = response[0]["match_season"]
+        return season
+    """

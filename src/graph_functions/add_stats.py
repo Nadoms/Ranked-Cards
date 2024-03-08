@@ -12,7 +12,6 @@ def write(graph, response):
     white = "#ffffff"
 
     stats = get_stats(response)
-    print(stats)
     colour = rank.get_colour(stats[1])
 
     if stats[1] == None:

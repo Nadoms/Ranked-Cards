@@ -22,7 +22,7 @@ def main(command, name, type, season, match_id):
     img.show()
 
 if __name__ == "__main__":
-    command = "analyse"
+    command = "card"
     name = "Nadoms"
     season = 4
     type = "Completion time"

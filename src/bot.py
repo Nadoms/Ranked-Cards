@@ -60,6 +60,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
                 print("Player changed username.")
                 extra = " This player may have changed username."
                 await interaction.response.send_message("Player not found." + extra)
+                return
         
     input_name = response["data"]["nickname"]
     user = await bot.fetch_user(get_uid(response, input_name))
@@ -210,6 +211,7 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
                 print("Player changed username.")
                 extra = " This player may have changed username."
                 await interaction.response.send_message("Player not found." + extra)
+                return
     
     input_name = response["data"]["nickname"]
     await interaction.response.defer()
@@ -247,7 +249,7 @@ async def help(interaction: Interaction):
 
     embed = nextcord.Embed(
         title = "Ranked Cards - Help and Commands",
-        description = "They for using the MCSR Ranked Cards bot.\nThese are the current available commands:",
+        description = "Thank you for using the MCSR Ranked Cards bot.\nThese are the current available commands:",
         colour = nextcord.Colour.yellow()
     )
     

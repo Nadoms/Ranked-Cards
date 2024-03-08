@@ -6,7 +6,7 @@ import time
 
 from gen_functions import word, rank, match
 
-def write(card, matches, uuid, response):
+def write(card, response):
     statted_image = ImageDraw.Draw(card)
     stat_font = ImageFont.truetype('minecraft_font.ttf', 40)
     large_stat_font = ImageFont.truetype('minecraft_font.ttf', 60)
@@ -21,7 +21,7 @@ def write(card, matches, uuid, response):
     white = "#ffffff"
 
     # Season stats
-    season_stats = get_season_stats(response, matches, uuid)
+    season_stats = get_season_stats(response)
 
     statted_image.text((1350, 50), "Season Stats", font=large_stat_font, fill=white)
     for i in range(0, len(season_stats[0])):
@@ -88,7 +88,7 @@ def write(card, matches, uuid, response):
             statted_image.text((1827-word.calc_length(season_stats[1][i], 40), 140+i*60), season_stats[1][i], font=stat_font, fill=white)
 
     # Lifetime stats
-    lifetime_stats = get_lifetime_stats(response, matches, uuid)
+    lifetime_stats = get_lifetime_stats(response)
 
     statted_image.text((1350, 480), "Lifetime Stats", font=large_stat_font, fill=white)
     for i in range(0, len(lifetime_stats[0])):
@@ -181,14 +181,14 @@ def write(card, matches, uuid, response):
 
     return card
 
-def get_season_stats(response, matches, uuid):
+def get_season_stats(response):
     wins = str(response["statistics"]["season"]["wins"]["ranked"])
     losses = str(response["statistics"]["season"]["loses"]["ranked"])
     games = str(response["statistics"]["season"]["playedMatches"]["ranked"])
     draws = str(int(games) - int(wins) - int(losses))
     best_elo = str(response["seasonResult"]["highest"])
     ff_loss = str(match.get_ff_loss(response, "season"))
-    avg_completion = str(timedelta(milliseconds=match.get_avg_completion(matches, "season", uuid)))[2:7].lstrip("0")
+    avg_completion = str(timedelta(milliseconds=match.get_avg_completion(response, "season")))[2:7].lstrip("0")
 
     return [["W/L/D:",
              "Best ELO:",
@@ -199,7 +199,7 @@ def get_season_stats(response, matches, uuid):
              ff_loss,
              avg_completion]]
 
-def get_lifetime_stats(response, matches, uuid):
+def get_lifetime_stats(response):
     playtime = str(match.get_playtime(response, "total"))
     playtime_day = str(match.get_playtime_day(response))
     games = str(response["statistics"]["total"]["playedMatches"]["ranked"])
