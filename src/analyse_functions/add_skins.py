@@ -8,7 +8,7 @@ def write(analysis, uuids):
     for i in range(0, 2):
         skin = get_skin(uuids[i], i)
         x = int(x_values[i] + (i-1) * skin.size[0])
-        y = 20
+        y = 105
         analysis.paste(skin, (x, y), skin)
     return analysis
 
@@ -19,7 +19,7 @@ def get_skin(uuid, i):
     try:
         yaw = yaws[i]
         headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
-        response = requests.get(f"https://visage.surgeplay.com/head/240/{uuid}?y={yaw}&p=15", headers=headers)
+        response = requests.get(f"https://visage.surgeplay.com/head/250/{uuid}?y={yaw}&p=15", headers=headers)
         skin = Image.open(BytesIO(response.content))
     except:
         skin = get_default_skin()

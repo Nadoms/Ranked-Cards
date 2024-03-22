@@ -1,29 +1,44 @@
-from PIL import ImageDraw
-from PIL import ImageFont
+from os import path
+from PIL import ImageDraw, ImageFont, Image
 
 from gen_functions import word
 
 def write(analysis, names, response):
     named_image = ImageDraw.Draw(analysis)
-    x_values = [650, 1270]
+    x_values = [660, 1260]
 
     for i in range(0, 2):
-        rank = str(response["members"][i]["eloRank"])
+        rank = str(response["players"][i]["eloRank"])
         rank_colour = get_rank_colour(rank)
         if rank == "None":
             rank = "-"
         rank = " #" + rank
+        rank = "" # remove rank
 
         tag = names[i] + rank
-        tag_size = min(word.calc_size(tag, 590), 100)
+        tag_size = min(word.calc_size(tag, 460), 90)
         tag_font = ImageFont.truetype('minecraft_font.ttf', tag_size)
-        x = int(x_values[i] + (i-1) * word.calc_length(tag, tag_size))
-        y = 120 - int(word.horiz_to_vert(tag_size) / 2)
+        text_x = int(x_values[i] + (i-1) * word.calc_length(tag, tag_size))
+        text_y = int(215 - word.horiz_to_vert(tag_size) / 2)
+        if response["players"][i]["uuid"] == response["result"]["uuid"]:
+            colour = "#ffaa00"
+        else:
+            colour = "lightblue"
         
-        named_image.text((x, y), names[i], font=tag_font, fill="#ffffff")
+        named_image.text((text_x, text_y), names[i], font=tag_font, fill=colour)
 
-        x += word.calc_length(names[i], tag_size)+tag_size/5
-        named_image.text((x, y), rank, font=tag_font, fill=rank_colour)
+        text_x += word.calc_length(names[i], tag_size)+tag_size/5
+        named_image.text((text_x, text_y), rank, font=tag_font, fill=rank_colour)
+        
+        if response["players"][i]["uuid"] == response["result"]["uuid"]:
+            file = path.join("src", "pics", "items", "8.webp")
+            crown = Image.open(file)
+            crown = crown.resize((100, 100))
+
+            crown_x = int(x_values[i] + (i*2-1) * (word.calc_length(tag, tag_size) + 70) + (i-1) * crown.size[0])
+            crown_y = int(210 - crown.size[1] / 2)
+
+            analysis.paste(crown, (crown_x, crown_y), crown)
     return analysis
 
 def get_rank_colour(rank):

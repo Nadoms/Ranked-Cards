@@ -6,19 +6,20 @@ def write(analysis, uuids, response, vs_response):
     statted_image = ImageDraw.Draw(analysis)
     stat_size = 30
     stat_font = ImageFont.truetype('minecraft_font.ttf', stat_size)
-    x_values = [900, 1020]
-    y_values = [250, 320, 390]
+    x_values = [890, 1030]
+    y_values = [370, 440, 510, 580]
 
     scores = get_scores(uuids, vs_response)
 
     for i in range(0, 2):
         stats = get_stats(response, scores, uuids, i)
-        legacy_elo_colour = rank.get_colour(int(stats[0]))
-        current_elo_colour = rank.get_colour(int(stats[1]))
+        legacy_elo_colour = rank.get_colour(stats[0])
+        current_elo_colour = rank.get_colour(stats[1])
         score_colour = ["#00ffff", "#122b30"]
-        colours = [legacy_elo_colour, current_elo_colour, score_colour]
+        colours = [legacy_elo_colour, current_elo_colour, score_colour, score_colour]
 
         for j in range(len(stats)):
+            stats[j] = str(stats[j])
             x = int(x_values[i] + (i-1) * word.calc_length(stats[j], stat_size))
             y = y_values[j] - int(word.horiz_to_vert(stat_size) / 2)
 
@@ -27,19 +28,22 @@ def write(analysis, uuids, response, vs_response):
     return analysis
 
 def get_stats(response, scores, uuids, i):
-    current_elo = str(response["members"][i]["eloRate"])
-    for score_change in response["score_changes"]:
+    current_elo = response["players"][i]["eloRate"]
+    for score_change in response["changes"]:
         if score_change["uuid"] == uuids[i]:
-            legacy_elo = str(score_change["score"])
+            legacy_elo = score_change["eloRate"]
 
-    return [legacy_elo, current_elo, scores[i]]
+    return [legacy_elo, current_elo, scores[0][i], scores[1][i]]
 
 def get_scores(uuids, vs_response):
     scores = []
+    overall_changes = []
     for uuid in uuids:
-        score = 0
-        for season in vs_response["win_count"]:
-            score += vs_response["win_count"][season][uuid]
+        score = vs_response["results"]["ranked"][uuid]
         scores.append(str(score))
+        overall_change = vs_response["changes"][uuid]
+        if overall_change >= 0:
+            overall_change = "+" + str(overall_change)
+        overall_changes.append(overall_change)
 
-    return scores
+    return [overall_changes, scores]

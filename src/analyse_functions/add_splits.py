@@ -8,11 +8,11 @@ from gen_functions import word
 # 2 add events
 # 3 analyse
 
-def write(analysis, uuids, response, match_id):
+def write(analysis, uuids, response):
     splitted_image = ImageDraw.Draw(analysis)
-    x_values = [550, 1370]
+    x_values = [480, 1440]
 
-    final_time = response["final_time"]
+    final_time = response["result"]["time"]
     splits = extract_splits(uuids, response, final_time)
     split_colours = ["#afacf9", "#b43234", "#2b2937", "#600000", "#3f5cf9", "#818181", "#e4e7a9"]
     textures = ["overworld", "nether", "bastion", "fortress", "blind", "stronghold", "end"]
@@ -21,7 +21,7 @@ def write(analysis, uuids, response, match_id):
     for i in range(0, 2):
         x = x_values[i]
         advancements.append(process_advancements(splits[i], final_time))
-        splitted_image.rectangle([x-33, 250-8, x+33, 1100+8], fill="#000000", outline="#ffffff", width=4)
+        splitted_image.rectangle([x-33, 350-8, x+33, 1090+8], fill="#000000", outline="#ffffff", width=4)
 
     for i in range(0, 2):
         x = x_values[i]
@@ -31,7 +31,7 @@ def write(analysis, uuids, response, match_id):
         for j in range(len(progressions)):
             y1 = prog_coords[j]
             if j >= len(progressions) - 1:
-                y2 = 1100
+                y2 = 1090
             else:
                 y2 = prog_coords[j+1]
                 
@@ -49,9 +49,6 @@ def write(analysis, uuids, response, match_id):
         side = 1 - 2*i
 
         for j in range(len(events)):
-            if j > 9:
-                continue
-
             icon = get_event_icon(events[j])
 
             side *= -1
@@ -73,6 +70,8 @@ def write(analysis, uuids, response, match_id):
 
         for j in range(len(coords)):
             time = str(timedelta(milliseconds=times[j]))[2:7].lstrip("0")
+            if time[0] == ":":
+                time = "0" + time
             time_size = 25
             time_font = ImageFont.truetype('minecraft_font.ttf', time_size)
 
@@ -81,7 +80,7 @@ def write(analysis, uuids, response, match_id):
 
             side *= -1
 
-            x = x_values[i] + side * 130 + (side-1) * word.calc_length(time, time_size) / 2
+            x = x_values[i] + side * 125 + (side-1) * word.calc_length(time, time_size) / 2
             y = coords[j] - word.horiz_to_vert(time_size) / 2
             
             splitted_image.text((x, y), time, font=time_font, fill="#44ffff")
@@ -91,12 +90,12 @@ def write(analysis, uuids, response, match_id):
 def get_event_icon(event):
     file = path.join("src", "pics", "items", f"{event}.webp")
     icon = Image.open(file)
-    icon = icon.resize((round(icon.size[0]*0.4), round(icon.size[1]*0.4)))
+    icon = icon.resize((60, 60))
     return icon
 
 def process_advancements(splits, final_time):
-    y = 250
-    length = 850
+    y = 350
+    length = 750
     prog_coords = [y]
     progressions = [0]
     prog_times = [0]
@@ -192,27 +191,27 @@ def extract_splits(uuids, response, final_time):
     player_0 = []
     player_1 = []
 
-    for time in timelines:
-        if time["uuid"] == uuids[0]:
-            player_0.append({"timeline": time["timeline"], "time": time["time"]})
-        elif time["uuid"] == uuids[1]:
-            player_1.append({"timeline": time["timeline"], "time": time["time"]})
+    for event in timelines:
+        if event["uuid"] == uuids[0]:
+            player_0.append({"timeline": event["type"], "time": event["time"]})
+        elif event["uuid"] == uuids[1]:
+            player_1.append({"timeline": event["type"], "time": event["time"]})
     
-    if response["forfeit"] == True:
-        if response["winner"] == uuids[0]:
+    if response["forfeited"] == True:
+        if response["result"]["uuid"] == uuids[0]:
             outcome_0 = "win"
             outcome_1 = "forfeit"
-        elif response["winner"] == uuids[1]:
+        elif response["result"]["uuid"] == uuids[1]:
             outcome_0 = "forfeit"
             outcome_1 = "win"
-        elif response["winner"] == None:
+        elif response["result"]["uuid"] == None:
             outcome_0 = "draw"
             outcome_1 = "draw"
     else:
-        if response["winner"] == uuids[0]:
+        if response["result"]["uuid"] == uuids[0]:
             outcome_0 = "finish"
             outcome_1 = "lose"
-        elif response["winner"] == uuids[1]:
+        elif response["result"]["uuid"] == uuids[1]:
             outcome_0 = "lose"
             outcome_1 = "finish"
 

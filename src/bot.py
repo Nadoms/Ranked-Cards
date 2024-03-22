@@ -283,7 +283,7 @@ async def help(interaction: Interaction):
     await interaction.send(embed=embed)
 
 
-'''@bot.slash_command(name="analyse", description="Performs an analyses on your most recent match, or the match specified.")
+@bot.slash_command(name="analyse", description="Performs an analyses on your most recent match, or the match specified.")
 async def analyse(interaction: Interaction, match_id: str = SlashOption(
     "match_id",
     required = False,
@@ -325,7 +325,6 @@ async def analyse(interaction: Interaction, match_id: str = SlashOption(
     with open("analysis.png", "rb") as f:
         img = File(f)
     await interaction.followup.send(files=[img])
-'''
 
 
 def get_uid(response, input_name):
