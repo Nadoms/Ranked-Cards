@@ -31,12 +31,23 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     required = False,
     description="The player to generate a card for.",
     default = ""
+    ), hidden: str = SlashOption(
+    "hidden",
+    required = False,
+    description="Makes it so only you can see it.",
+    default="",
+    choices=["True"]
     )):
     
+    if hidden:
+        hidden = True
+    else:
+        hidden = False
+        
     if not input_name:
         input_name = get_name(interaction)
         if not input_name:
-            await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a minecraft username.")
+            await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a minecraft username.", ephemeral=hidden)
             return
     
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
@@ -50,7 +61,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
         extra, first = get_close(input_name)
 
         if not first:
-            await interaction.response.send_message("Player not found.")
+            await interaction.response.send_message("Player not found.", ephemeral=hidden)
             return
         else:
             print(f"\nAutocorrected to {first}.")
@@ -59,7 +70,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
             if response["status"] == "error":
                 print("Player changed username.")
                 extra = " This player may have changed username."
-                await interaction.response.send_message("Player not found." + extra)
+                await interaction.response.send_message("Player not found." + extra, ephemeral=hidden)
                 return
         
     input_name = response["data"]["nickname"]
@@ -70,21 +81,21 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     discord = str(user)
     if discord[-2:] == "#0":
         discord = discord[:-2]
-    await interaction.response.defer()
+    await interaction.response.defer(ephemeral=hidden)
     
     try:
         img = carding.main(input_name, response, discord, pfp)
     except Exception as e:
         print(e)
-        await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls")
+        await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
 
     img.save("card.png")
     with open("card.png", "rb") as f:
         img = File(f)
     if failed:
-        await interaction.followup.send("Player not found." + extra, files=[img])
+        await interaction.followup.send("Player not found." + extra, files=[img], ephemeral=hidden)
     else:
-        await interaction.followup.send(files=[img])
+        await interaction.followup.send(files=[img], ephemeral=hidden)
 
 
 @bot.slash_command(name="connect", description="Connects your minecraft account with your discord account.")
@@ -182,12 +193,23 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
     description="The season to gather data for.",
     default="4",
     choices=["1", "2", "3", "4", "Lifetime"]
+    ), hidden: str = SlashOption(
+    "hidden",
+    required = False,
+    description="Makes it so only you can see it.",
+    default="",
+    choices=["True"]
     )):
-
+    
+    if hidden:
+        hidden = True
+    else:
+        hidden = False
+        
     if not input_name:
         input_name = get_name(interaction)
         if not input_name:
-            await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a minecraft username.")
+            await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a minecraft username.", ephemeral=hidden)
             return
     
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
@@ -201,7 +223,7 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
         extra, first = get_close(input_name)
 
         if not first:
-            await interaction.response.send_message("Player not found.")
+            await interaction.response.send_message("Player not found.", ephemeral=hidden)
             return
         else:
             print(f"\nAutocorrected to {first}.")
@@ -210,17 +232,17 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
             if response["status"] == "error":
                 print("Player changed username.")
                 extra = " This player may have changed username."
-                await interaction.response.send_message("Player not found." + extra)
+                await interaction.response.send_message("Player not found." + extra, ephemeral=hidden)
                 return
     
     input_name = response["data"]["nickname"]
-    await interaction.response.defer()
+    await interaction.response.defer(ephemeral=hidden)
     
     try:   
         img = graphing.main(input_name, response, type, season)
     except Exception as e:
         print(e)
-        await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls")
+        await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
         return
     
     if img == -1:
@@ -232,16 +254,16 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
             msg2 = f" from season {season}"
         else:
             msg2 = ""
-        await interaction.followup.send(f"`{input_name}` has not enough {msg1}{msg2}.")
+        await interaction.followup.send(f"`{input_name}` has not enough {msg1}{msg2}.", ephemeral=hidden)
         return
 
     img.save("graph.png")
     with open("graph.png", "rb") as f:
         img = File(f)
     if failed:
-        await interaction.followup.send("Player not found." + extra, files=[img])
+        await interaction.followup.send("Player not found." + extra, files=[img], ephemeral=hidden)
     else:
-        await interaction.followup.send(files=[img])
+        await interaction.followup.send(files=[img], ephemeral=hidden)
 
 
 @bot.slash_command(name="help", description="Don't know where to start?")
@@ -249,19 +271,19 @@ async def help(interaction: Interaction):
 
     embed = nextcord.Embed(
         title = "Ranked Cards - Help and Commands",
-        description = "Thank you for using the MCSR Ranked Cards bot.\nThese are the current available commands:",
+        description = "Thank you for using the MCSR Ranked Cards bot, made by Nadoms. Any questions, just dm me :)\nThese are the current available commands:",
         colour = nextcord.Colour.yellow()
     )
     
     embed.set_thumbnail(url=r"https://mcsrranked.com/_next/image?url=%2Ftest1.png&w=640&q=75")
     embed.add_field(
         name = "/card",
-        value = "`Options: Minecraft username`\n`Default: Connected user`\nGenerates the ***statistics card*** for the player that you input",
+        value = "`Options: Minecraft username, hide card`\n`Defaults: Connected user, public`\nGenerates the ***statistics card*** for the player that you input",
         inline = False
     )
     embed.add_field(
         name = "/plot",
-        value = "`Options: Minecraft username, type of data [Elo / Completion time], season [Lifetime / 1/2/3/4]`\n`Defaults: Connected user, Elo, S4`\n***Plots a graph*** for the type of data (Elo / Completion time) across the timeframe (Season 1/2/3/4 / Lifetime) and for the player you specify",
+        value = "`Options: Minecraft username, type of data [Elo / Completion time], season [Lifetime / 1/2/3/4], hide graph`\n`Defaults: Connected user, Elo, S4, public`\n***Plots a graph*** for the type of data (Elo / Completion time) across the timeframe (Season 1/2/3/4 / Lifetime) and for the player you specify",
         inline = False
     )
     embed.add_field(
