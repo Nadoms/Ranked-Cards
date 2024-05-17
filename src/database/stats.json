@@ -1,11 +1,11 @@
 {
     "stats": {
-        "totalCommands": 6796,
-        "totalGenerated": 2969,
+        "totalCommands": 6804,
+        "totalGenerated": 2972,
         "connectedUsers": 223,
         "totalHidden": 0,
         "cards": {
-            "success": 0,
+            "success": 3,
             "fail": 0
         },
         "plots": {
@@ -24,6 +24,7 @@
             "success": 0,
             "fail": 0
         },
-        "helps": 0
+        "backgrounds": 2,
+        "helps": 3
     }
 }

@@ -36,7 +36,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     ), hidden: str = SlashOption(
     "hidden",
     required = False,
-    description="Makes it so only you can see it.",
+    description="Hides my response.",
     default="",
     choices=["True"]
     )):
@@ -118,68 +118,6 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
         update_records("card", interaction.user.id, input_name, hidden, True)
 
 
-@bot.slash_command(name="connect", description="Connects your minecraft account with your discord account.")
-async def connect(interaction: Interaction, input_name: str):
-    
-    uid = str(interaction.user.id)
-    user_exists = False
-    
-    file = path.join("src", "database", "users.json")
-    with open (file, "r") as f:
-        users = json.load(f)
-
-    for user in users["users"]:
-        if uid == user["discord"]:
-            user_exists = True
-        elif input_name.lower() == user["minecraft"].lower():
-            await interaction.response.send_message(f"`{input_name}` is already connected to {bot.get_user(int(user['discord']))}.")
-            update_records("connect", interaction.user.id, input_name, False, False)
-            return
-
-    if not user_exists:
-        new_user = {
-            "minecraft": input_name,
-            "discord": uid,
-            "background": "grass.jpg"
-        }
-        users["users"].append(new_user)
-    else:
-        user["minecraft"] = input_name
-
-    with open (file, "w") as f:
-        users_json = json.dumps(users, indent=4)
-        f.write(users_json)
-    
-    await interaction.response.send_message(f"`{input_name}` has been connected to your discord!")
-    update_records("connect", interaction.user.id, input_name, False, not user_exists)
-    return
-
-
-@bot.slash_command(name="disconnect", description="Disconnects your minecraft account from your discord account.")
-async def disconnect(interaction: Interaction):
-    
-    uid = str(interaction.user.id)
-    
-    file = path.join("src", "database", "users.json")
-    with open (file, "r") as f:
-        users = json.load(f)
-
-    for user in users["users"]:
-        if uid == user["discord"]:
-            users["users"].remove(user)
-
-            with open (file, "w") as f:
-                print(users)
-                users_json = json.dumps(users, indent=4)
-                f.write(users_json)
-            await interaction.response.send_message(f"`{user['minecraft']}` has been disconnected from your discord.")
-            update_records("disconnect", interaction.user.id, user['minecraft'], False, True)
-            return
-        
-    await interaction.response.send_message(f"You are not connected. Please connect your minecraft account with </connect:1149442234513637448> to your discord.")
-    update_records("disconnect", interaction.user.id, "Unknown", False, False)
-
-
 @bot.slash_command(name="plot", description="Illustrates a graph for the player + metric that you choose.")
 async def plot(interaction: Interaction, input_name: str = SlashOption(
     "name",
@@ -201,7 +139,7 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
     ), hidden: str = SlashOption(
     "hidden",
     required = False,
-    description="Makes it so only you can see it.",
+    description="Hides my response.",
     default="",
     choices=["True"]
     )):
@@ -278,58 +216,6 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
         update_records("plot", interaction.user.id, input_name, hidden, True)
 
 
-@bot.slash_command(name="help", description="Don't know where to start?")
-async def help(interaction: Interaction,
-    hidden: str = SlashOption(
-    "hidden",
-    required = False,
-    description="Makes it so only you can see it.",
-    default="",
-    choices=["True"]
-    )):
-    
-    if hidden:
-        hidden = True
-    else:
-        hidden = False
-
-    embed = nextcord.Embed(
-        title = "Ranked Cards - Help and Commands",
-        description = "Thank you for using the MCSR Ranked Cards bot, made by Nadoms. Any questions, just dm me :)\nThese are the current available commands:",
-        colour = nextcord.Colour.yellow()
-    )
-    
-    embed.set_thumbnail(url=r"https://mcsrranked.com/_next/image?url=%2Ftest1.png&w=640&q=75")
-    embed.add_field(
-        name = "/card",
-        value = "`Options: Minecraft username, hide card`\n`Defaults: Connected user, public`\nGenerates the ***statistics card*** for the player that you input",
-        inline = False
-    )
-    embed.add_field(
-        name = "/plot",
-        value = "`Options: Minecraft username, type of data [Elo / Completion time], season [Lifetime / 1/2/3/4], hide graph`\n`Defaults: Connected user, Elo, S4, public`\n***Plots a graph*** for the type of data (Elo / Completion time) across the timeframe (Season 1/2/3/4 / Lifetime) and for the player you specify",
-        inline = False
-    )
-    embed.add_field(
-        name = "/analyse",
-        value = "`Options: Match ID`\nMatch analysis command to be ***coming soon***...",
-        inline = False
-    )
-    embed.add_field(
-        name = "/connect",
-        value = "`Options: Minecraft username`\n***Connects your discord account*** to a Minecraft username so that you don't have to write it when doing the other commands",
-        inline = False
-    )
-    embed.add_field(
-        name = "/disconnect",
-        value = "***Removes the connected Minecraft account*** from your discord, useful if you changed name or switched account",
-        inline = False
-    )
-    
-    await interaction.send(embed=embed, ephemeral=hidden)
-    update_records("help", interaction.user.id, "None", hidden, False)
-
-
 @bot.slash_command(name="analyse", description="Performs an analysis on your most recent match, or the match specified.")
 async def analyse(interaction: Interaction, match_id: str = SlashOption(
     "match_id",
@@ -339,7 +225,7 @@ async def analyse(interaction: Interaction, match_id: str = SlashOption(
     ), hidden: str = SlashOption(
     "hidden",
     required = False,
-    description="Makes it so only you can see it.",
+    description="Hides my response.",
     default="",
     choices=["True"]
     )):
@@ -379,7 +265,7 @@ async def analyse(interaction: Interaction, match_id: str = SlashOption(
         img = analysing.main(response, match_id)
     except Exception as e:
         print(e)
-        await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls")
+        await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
         update_records("analyse", interaction.user.id, match_id, hidden, False)
         return
 
@@ -388,6 +274,185 @@ async def analyse(interaction: Interaction, match_id: str = SlashOption(
         img = File(f)
     await interaction.followup.send(files=[img])
     update_records("analyse", interaction.user.id, match_id, hidden, True)
+
+
+@bot.slash_command(name="customise", description="Allows you to personalise your card. Only applies to connected users.")
+async def customise(interaction: Interaction, background: str = SlashOption(
+    "background",
+    required = True,
+    description="Your background of choice for your card.",
+    default="Classic",
+    choices=["Classic", "Overworld", "Bastion", "Fortress", "Portal", "Stronghold", "The End"]
+    ), hidden: str = SlashOption(
+    "hidden",
+    required = False,
+    description="Hides my response..",
+    default="",
+    choices=["True"]
+    )):
+    
+    if hidden:
+        hidden = True
+    else:
+        hidden = False
+        
+    input_name = get_name(interaction)
+    if not input_name:
+        await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> to customise your card.", ephemeral=hidden)
+        update_records("background", interaction.user.id, background, hidden, False)
+        return
+    
+    uid = str(interaction.user.id)
+    bg_mapping = {
+        "Classic": "grass.jpg",
+        "Overworld": "beach.jpg",
+        "Bastion": "bastion.jpg",
+        "Fortress": "fort.jpg",
+        "Portal": "portal.jpg",
+        "Stronghold": "stronghold.jpg",
+        "The End": "end.jpg"}
+
+    file = path.join("src", "database", "users.json")
+    with open (file, "r") as f:
+        users = json.load(f)
+
+    for user in users["users"]:
+        if uid == user["discord"]:
+            user["background"] = bg_mapping[background]
+            user_exists = True
+            break
+        
+    if not user_exists:
+        await interaction.response.send_message("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
+        update_records("background", interaction.user.id, background, hidden, False)
+        return
+
+    with open (file, "w") as f:
+        users_json = json.dumps(users, indent=4)
+        f.write(users_json)
+    
+    await interaction.response.send_message(f"Updated your card background to {background}!", ephemeral=hidden)
+    update_records("background", interaction.user.id, background, hidden, True)
+    return
+
+
+@bot.slash_command(name="connect", description="Connects your minecraft account with your discord account.")
+async def connect(interaction: Interaction, input_name: str):
+    
+    uid = str(interaction.user.id)
+    user_exists = False
+    
+    file = path.join("src", "database", "users.json")
+    with open (file, "r") as f:
+        users = json.load(f)
+
+    for user in users["users"]:
+        if uid == user["discord"]:
+            user_exists = True
+        elif input_name.lower() == user["minecraft"].lower():
+            await interaction.response.send_message(f"`{input_name}` is already connected to {bot.get_user(int(user['discord']))}.")
+            update_records("connect", interaction.user.id, input_name, False, False)
+            return
+
+    if not user_exists:
+        new_user = {
+            "minecraft": input_name,
+            "discord": uid,
+            "background": "grass.jpg"
+        }
+        users["users"].append(new_user)
+    else:
+        user["minecraft"] = input_name
+
+    with open (file, "w") as f:
+        users_json = json.dumps(users, indent=4)
+        f.write(users_json)
+    
+    await interaction.response.send_message(f"`{input_name}` has been connected to your discord!")
+    update_records("connect", interaction.user.id, input_name, False, not user_exists)
+    return
+
+
+@bot.slash_command(name="disconnect", description="Disconnects your minecraft account from your discord account.")
+async def disconnect(interaction: Interaction):
+    
+    uid = str(interaction.user.id)
+    
+    file = path.join("src", "database", "users.json")
+    with open (file, "r") as f:
+        users = json.load(f)
+
+    for user in users["users"]:
+        if uid == user["discord"]:
+            users["users"].remove(user)
+
+            with open (file, "w") as f:
+                print(users)
+                users_json = json.dumps(users, indent=4)
+                f.write(users_json)
+            await interaction.response.send_message(f"`{user['minecraft']}` has been disconnected from your discord.")
+            update_records("disconnect", interaction.user.id, user['minecraft'], False, True)
+            return
+        
+    await interaction.response.send_message(f"You are not connected. Please connect your minecraft account with </connect:1149442234513637448> to your discord.")
+    update_records("disconnect", interaction.user.id, "Unknown", False, False)
+
+
+@bot.slash_command(name="help", description="Don't know where to start?")
+async def help(interaction: Interaction,
+    hidden: str = SlashOption(
+    "hidden",
+    required = False,
+    description="Hides my response.",
+    default="",
+    choices=["True"]
+    )):
+    
+    if hidden:
+        hidden = True
+    else:
+        hidden = False
+
+    embed = nextcord.Embed(
+        title = "Ranked Cards - Help and Commands",
+        description = "Thanks for using the MCSR Ranked Cards bot, made by @Nadoms. Any questions, just dm me :)\nThese are the current available commands:",
+        colour = nextcord.Colour.yellow()
+    )
+    
+    embed.set_thumbnail(url=r"https://mcsrranked.com/_next/image?url=%2Ftest1.png&w=640&q=75")
+    embed.add_field(
+        name = "/card",
+        value = "`Options: Minecraft username, hide response`\n`Defaults: Connected user, public`\nGenerates the ***statistics card*** for the player that you input.",
+        inline = False
+    )
+    embed.add_field(
+        name = "/plot",
+        value = "`Options: Minecraft username, type of data [Elo / Completion time], season [Lifetime/1/2/3/4/5], hide response`\n`Defaults: Connected user, Elo, S4, public`\n***Plots a graph*** for the type of data (Elo / Completion time) across the timeframe (Season 1/2/3/4 / Lifetime) and for the player you specify.",
+        inline = False
+    )
+    embed.add_field(
+        name = "/analyse",
+        value = "`Options: Match ID, hide response`\nMatch analysis command to be ***coming soon***...",
+        inline = False
+    )
+    embed.add_field(
+        name = "/customise",
+        value = "`Options: Card background, hide response`\n`Defaults: Classic, public`\n***Customises your card*** how you specify, currently with the background.",
+        inline = False
+    )
+    embed.add_field(
+        name = "/connect",
+        value = "`Options: Minecraft username`\n***Connects your discord account*** to a Minecraft username so that you don't have to write it when doing the other commands.",
+        inline = False
+    )
+    embed.add_field(
+        name = "/disconnect",
+        value = "***Removes the connected Minecraft account*** from your discord, useful if you changed name or switched account.",
+        inline = False
+    )
+    
+    await interaction.send(embed=embed, ephemeral=hidden)
+    update_records("help", interaction.user.id, "None", hidden, True)
     
 
 def get_user_info(response, input_name):
@@ -453,7 +518,7 @@ def update_records(command, caller, callee, hidden, completed):
     stats_file = path.join("src", "database", "stats.json")
 
     with open(calls_file, "a") as f:
-        row = f"\n{command},{caller},{callee},{int(time())},{hidden}"
+        row = f"\n{command},{caller},{callee},{int(time())},{hidden},{completed}"
         f.write(row)
 
     with open(stats_file, "r") as f:
@@ -488,6 +553,9 @@ def update_records(command, caller, callee, hidden, completed):
 
     if command == "help":
         stats["stats"]["helps"] += 1
+
+    if command == "background":
+        stats["stats"]["backgrounds"] += 1
 
     if hidden:
         stats["stats"]["totalHidden"] += 1
