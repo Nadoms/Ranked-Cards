@@ -84,7 +84,8 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
                 return
         
     input_name = response["data"]["nickname"]
-    user = await bot.fetch_user(get_uid(response, input_name))
+    uid, background = get_user_info(response, input_name)
+    user = await bot.fetch_user(uid)
     pfp = user.avatar
     if not pfp:
         pfp = "https://cdn.discordapp.com/avatars/343108228890099713/1b4bf25c894af2c68410b0574135d150"
@@ -94,7 +95,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     await interaction.response.defer(ephemeral=hidden)
     
     try:
-        img = carding.main(input_name, response, discord, pfp)
+        img = carding.main(input_name, response, discord, pfp, background)
     except Exception as e:
         print(e)
         await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
@@ -111,22 +112,18 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
 @bot.slash_command(name="connect", description="Connects your minecraft account with your discord account.")
 async def connect(interaction: Interaction, input_name: str):
     
-    file = path.join("src", "users.json")
     uid = str(interaction.user.id)
     user_exists = False
     
+    file = path.join("src", "database", "users.json")
     with open (file, "r") as f:
         users = json.load(f)
 
     for user in users["users"]:
-        mc_name = user["minecraft"]
-        stored_uid = user["discord"]
-
-        if uid == stored_uid:
+        if uid == user["discord"]:
             user_exists = True
-        elif input_name.lower() == mc_name.lower():
-            print(int(stored_uid))
-            await interaction.response.send_message(f"`{input_name}` is already connected to {bot.get_user(int(stored_uid))}.")
+        elif input_name.lower() == user["minecraft"].lower():
+            await interaction.response.send_message(f"`{input_name}` is already connected to {bot.get_user(int(user['discord']))}.")
             return
 
     if not user_exists:
@@ -150,24 +147,21 @@ async def connect(interaction: Interaction, input_name: str):
 @bot.slash_command(name="disconnect", description="Disconnects your minecraft account from your discord account.")
 async def disconnect(interaction: Interaction):
     
-    file = path.join("src", "users.json")
     uid = str(interaction.user.id)
     
+    file = path.join("src", "database", "users.json")
     with open (file, "r") as f:
         users = json.load(f)
 
     for user in users["users"]:
-        mc_name = user["minecraft"]
-        stored_uid = user["discord"]
-
-        if uid == stored_uid:
+        if uid == user["discord"]:
             users["users"].remove(user)
 
             with open (file, "w") as f:
                 print(users)
                 users_json = json.dumps(users, indent=4)
                 f.write(users_json)
-            await interaction.response.send_message(f"`{mc_name}` has been disconnected from your discord.")
+            await interaction.response.send_message(f"`{user['minecraft']}` has been disconnected from your discord.")
             return
         
     await interaction.response.send_message(f"You are not connected. Please connect your minecraft account with </connect:1149442234513637448> to your discord.")
@@ -345,25 +339,24 @@ async def analyse(interaction: Interaction, match_id: str = SlashOption(
     with open("analysis.png", "rb") as f:
         img = File(f)
     await interaction.followup.send(files=[img])
-
-
-def get_uid(response, input_name):
-    if "discord" in response["data"]["connections"]:
-        uid = response["data"]["connections"]["discord"]["id"]
-        return uid
     
-    file = path.join("src", "users.json")
-    
+
+def get_user_info(response, input_name):
+    file = path.join("src", "database", "users.json")
     with open (file, "r") as f:
         users = json.load(f)
 
     for user in users["users"]:
-        mc_name = user["minecraft"]
-        stored_uid = user["discord"]
-        if input_name.lower() == mc_name.lower():
-            return stored_uid
+        if input_name.lower() == user["minecraft"].lower():
+            return user["discord"], user["background"]
         
-    return "343108228890099713"
+    if "discord" in response["data"]["connections"]:
+        uid = response["data"]["connections"]["discord"]["id"]
+        return uid, "grass.jpg"
+        
+    return "343108228890099713", "grass.jpg"
+
+
 
 def get_name(interaction_ctx):
     try:
@@ -371,26 +364,15 @@ def get_name(interaction_ctx):
     except:
         uid = str(interaction_ctx.message.author.id)
 
-    file = path.join("src", "users.json")
-    
+    file = path.join("src", "database", "users.json")
     with open (file, "r") as f:
         users = json.load(f)
 
     for user in users["users"]:
-        mc_name = user["minecraft"]
-        stored_uid = user["discord"]
-        if uid == stored_uid:
-            return mc_name
-
-    file = path.join("src", "connect.txt")
-    with open (file, "r") as f:
-        for line in f:
-            mc_name = line.split(":")[0].strip()
-            stored_uid = line.split(":")[-1].strip()
-            if uid == stored_uid:
-                return mc_name
-        else:
-            return ""
+        if uid == user["discord"]:
+            return user["minecraft"]
+    
+    return ""
 
 def get_close(input_name):
     extra = ""

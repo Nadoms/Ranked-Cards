@@ -10,14 +10,11 @@ from datetime import datetime
 
 from gen_functions import match
 
-def main(name, response, discord, pfp):
+def main(name, response, discord, pfp, background):
     response = response["data"]
     uuid = response["uuid"]
-    pics = ["beach.jpg", "bastion.jpg", "fort.jpg", "portal.jpg", "stronghold.jpg", "end.jpg"]
-    pic = pics[random.randint(0,5)]
-    # if random.randint(0, 100) == 0:
-    #     pic = "end.jpg"
-    file = path.join("src", "pics", "bgs", "custom", pic)
+
+    file = path.join("src", "pics", "bgs", "used", background)
     card = Image.open(file).convert("RGBA").filter(ImageFilter.GaussianBlur(0))
 
     then = datetime.now()
