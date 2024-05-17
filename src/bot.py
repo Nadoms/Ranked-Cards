@@ -461,29 +461,36 @@ def update_records(command, caller, callee, hidden, completed):
 
     stats["stats"]["totalCommands"] += 1
 
-    if completed:
-        if command == "card":
-            stats["stats"]["totalGenerated"] += 1
-            stats["stats"]["cards"] += 1
-        
-        if command == "plot":
-            stats["stats"]["totalGenerated"] += 1
-            stats["stats"]["plots]"] += 1
-        
-        if command == "analyse":
-            stats["stats"]["totalGenerated"] += 1
-            stats["stats"]["analyses"] += 1
-        
-        if command == "connect":
-            stats["stats"]["connectedUsers"] += 1
+    if command == "card":
+        stats["stats"]["totalGenerated"] += 1
+        stats["stats"]["cards"]["success"] += completed
+        stats["stats"]["cards"]["fail"] += 1-completed
+    
+    if command == "plot":
+        stats["stats"]["totalGenerated"] += 1
+        stats["stats"]["plots"]["success"] += completed
+        stats["stats"]["plots"]["fail"] += 1-completed
+    
+    if command == "analyse":
+        stats["stats"]["totalGenerated"] += 1
+        stats["stats"]["analyses"]["success"] += completed
+        stats["stats"]["analyses"]["fail"] += 1-completed
+    
+    if command == "connect":
+        stats["stats"]["connectedUsers"] += 1
+        stats["stats"]["connects"]["success"] += completed
+        stats["stats"]["connects"]["fail"] += 1-completed
 
-        if command == "disconnect":
-            stats["stats"]["connectedUsers"] -= 1
+    if command == "disconnect":
+        stats["stats"]["connectedUsers"] -= 1
+        stats["stats"]["disconnects"]["success"] += completed
+        stats["stats"]["disconnects"]["fail"] += 1-completed
 
-        if hidden:
-            stats["stats"]["totalHidden"] += 1
-    else:
-        stats["stats"]["failures"] += 1
+    if command == "help":
+        stats["stats"]["helps"] += 1
+
+    if hidden:
+        stats["stats"]["totalHidden"] += 1
 
     with open (stats_file, "w") as f:
         stats_json = json.dumps(stats, indent=4)
