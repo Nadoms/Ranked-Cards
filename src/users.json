@@ -1,11 +1,6 @@
 {
     "users": [
         {
-            "minecraft": "Nadoms",
-            "discord": "298936021557706754",
-            "background": "grass.jpg"
-        },
-        {
             "minecraft": "13Characters_",
             "discord": "219514007365746688",
             "background": "grass.jpg"
@@ -1098,6 +1093,11 @@
         {
             "minecraft": "flaxyb",
             "discord": "439025291411849237",
+            "background": "grass.jpg"
+        },
+        {
+            "minecraft": "nadoms",
+            "discord": "298936021557706754",
             "background": "grass.jpg"
         }
     ]

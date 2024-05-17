@@ -61,17 +61,17 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     print(f"\nGenerating card for {input_name}")
     failed = False
     if response["status"] == "error":
-        print("Player not found.")
+        print(f"Player not found (`{input_name}`).")
 
         if connected:
-            await interaction.response.send_message("Player not found. Connect to your new Minecraft username with </connect:1149442234513637448>.", ephemeral=hidden)
+            await interaction.response.send_message(f"Player not found (`{input_name}`). Connect to your new Minecraft username with </connect:1149442234513637448>.", ephemeral=hidden)
             return
         
         failed = True
         extra, first = get_close(input_name)
 
         if not first:
-            await interaction.response.send_message("Player not found.", ephemeral=hidden)
+            await interaction.response.send_message(f"Player not found (`{input_name}`).", ephemeral=hidden)
             return
         else:
             print(f"\nAutocorrected to {first}.")
@@ -80,7 +80,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
             if response["status"] == "error":
                 print("Player changed username.")
                 extra = " This player may have changed username."
-                await interaction.response.send_message("Player not found." + extra, ephemeral=hidden)
+                await interaction.response.send_message(f"Player not found (`{input_name}`). {extra}", ephemeral=hidden)
                 return
         
     input_name = response["data"]["nickname"]
@@ -103,7 +103,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     with open("card.png", "rb") as f:
         img = File(f)
     if failed:
-        await interaction.followup.send("Player not found." + extra, files=[img], ephemeral=hidden)
+        await interaction.followup.send(f"Player not found (`{input_name}`). {extra}", files=[img], ephemeral=hidden)
     else:
         await interaction.followup.send(files=[img], ephemeral=hidden)
 
@@ -162,6 +162,11 @@ async def disconnect(interaction: Interaction):
 
         if uid == stored_uid:
             users["users"].remove(user)
+
+            with open (file, "w") as f:
+                print(users)
+                users_json = json.dumps(users, indent=4)
+                f.write(users_json)
             await interaction.response.send_message(f"`{mc_name}` has been disconnected from your discord.")
             return
         
@@ -211,12 +216,12 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
     print(f"\nDrawing {type} graph for {input_name}")
     failed = False
     if response["status"] == "error":
-        print("Player not found.")
+        print(f"Player not found  (`{input_name}`).")
         failed = True
         extra, first = get_close(input_name)
 
         if not first:
-            await interaction.response.send_message("Player not found.", ephemeral=hidden)
+            await interaction.response.send_message(f"Player not found  (`{input_name}`).", ephemeral=hidden)
             return
         else:
             print(f"\nAutocorrected to {first}.")
@@ -225,13 +230,13 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
             if response["status"] == "error":
                 print("Player changed username.")
                 extra = " This player may have changed username."
-                await interaction.response.send_message("Player not found." + extra, ephemeral=hidden)
+                await interaction.response.send_message(f"Player not found (`{input_name}`). {extra}", ephemeral=hidden)
                 return
     
     input_name = response["data"]["nickname"]
     await interaction.response.defer(ephemeral=hidden)
     
-    try:   
+    try:
         img = graphing.main(input_name, response, type, season)
     except Exception as e:
         print(e)
@@ -254,7 +259,7 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
     with open("graph.png", "rb") as f:
         img = File(f)
     if failed:
-        await interaction.followup.send("Player not found." + extra, files=[img], ephemeral=hidden)
+        await interaction.followup.send(f"Player not found (`{input_name}`). {extra}", files=[img], ephemeral=hidden)
     else:
         await interaction.followup.send(files=[img], ephemeral=hidden)
 
