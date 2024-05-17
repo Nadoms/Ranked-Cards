@@ -1,5 +1,6 @@
 import difflib
 import nextcord
+import json
 from nextcord import File, Interaction, SlashOption, Embed, Colour
 from nextcord.ext import commands
 from os import getenv, path
@@ -109,79 +110,62 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
 
 @bot.slash_command(name="connect", description="Connects your minecraft account with your discord account.")
 async def connect(interaction: Interaction, input_name: str):
-    file = path.join("src", "connect.txt")
-
+    
+    file = path.join("src", "users.json")
     uid = str(interaction.user.id)
-
-    '''user = str(interaction.user)
-    if user[-2:] == "#0":
-        user = user[:-2]'''
-
     user_exists = False
-    mc_exists = False
-
-    with open (file, "r") as f:
-        for line in f:
-            mcname = line.split(":")[0].strip()
-            storeduid = line.split(":")[-1].strip()
-
-            if uid == storeduid:
-                user_exists = True
-                break
-            elif input_name.lower() == mcname.lower():
-                mc_exists = True
-                await interaction.response.send_message(f"`{input_name}` is already connected to {bot.get_user(int(storeduid))}.")
-
-    if user_exists:
-        with open (file, "r") as f:
-            lines = f.readlines()
-
-        with open (file, 'w') as f:
-            for line in lines:
-                mcname = line.split(":")[0].strip()
-                storeduid = line.split(":")[-1].strip()
-                if uid != storeduid:
-                    f.write(line)
-                else:
-                    f.write(f"{input_name}:{uid}\n")
-        await interaction.response.send_message(f"`{input_name}` has been connected to your discord!")
-
-    elif not mc_exists:
-        with open (file, "a") as f:
-            f.write(f"{input_name}:{uid}\n")
-        await interaction.response.send_message(f"`{input_name}` has been connected to your discord!")
-
-
-@bot.slash_command(name="disconnect", description="Disconnects your minecraft account with your discord account.")
-async def disconnect(interaction: Interaction):
-    file = path.join("src", "connect.txt")
-
-    uid = str(interaction.user.id)
-
-    '''user = str(interaction.user)
-    if user[-2:] == "#0":
-        user = user[:-2]'''
     
     with open (file, "r") as f:
-        lines = f.readlines()
+        users = json.load(f)
 
-    with open (file, 'w') as f:
-        disconnected = False
-        my_mcname = ""
+    for user in users["users"]:
+        mc_name = user["minecraft"]
+        stored_uid = user["discord"]
 
-        for line in lines:
-            mcname = line.split(":")[0].strip()
-            storeduid = line.split(":")[-1].strip()
-            if uid != storeduid:
-                f.write(line)
-            else:
-                disconnected = True
-                mymcname = mcname
+        if uid == stored_uid:
+            user_exists = True
+        elif input_name.lower() == mc_name.lower():
+            print(int(stored_uid))
+            await interaction.response.send_message(f"`{input_name}` is already connected to {bot.get_user(int(stored_uid))}.")
+            return
 
-        if disconnected:
-            await interaction.response.send_message(f"`{mymcname}` has been disconnected from your discord.")
-        else:
-            await interaction.response.send_message(f"You are not connected. Please connect your minecraft account with </connect:1149442234513637448> to your discord.")
+    if not user_exists:
+        new_user = {
+            "minecraft": input_name,
+            "discord": uid,
+            "background": "grass.jpg"
+        }
+        users["users"].append(new_user)
+    else:
+        user["minecraft"] = input_name
+
+    with open (file, "w") as f:
+        users_json = json.dumps(users, indent=4)
+        f.write(users_json)
+    
+    await interaction.response.send_message(f"`{input_name}` has been connected to your discord!")
+    return
+
+
+@bot.slash_command(name="disconnect", description="Disconnects your minecraft account from your discord account.")
+async def disconnect(interaction: Interaction):
+    
+    file = path.join("src", "users.json")
+    uid = str(interaction.user.id)
+    
+    with open (file, "r") as f:
+        users = json.load(f)
+
+    for user in users["users"]:
+        mc_name = user["minecraft"]
+        stored_uid = user["discord"]
+
+        if uid == stored_uid:
+            users["users"].remove(user)
+            await interaction.response.send_message(f"`{mc_name}` has been disconnected from your discord.")
+            return
+        
+    await interaction.response.send_message(f"You are not connected. Please connect your minecraft account with </connect:1149442234513637448> to your discord.")
 
 
 @bot.slash_command(name="plot", description="Illustrates a graph for the player + metric that you choose.")
@@ -362,28 +346,44 @@ def get_uid(response, input_name):
     if "discord" in response["data"]["connections"]:
         uid = response["data"]["connections"]["discord"]["id"]
         return uid
-    file = path.join("src", "connect.txt")
+    
+    file = path.join("src", "users.json")
+    
     with open (file, "r") as f:
-        for line in f:
-            if input_name.lower() == line.split(":")[0].lower():
-                uid = line.split(":")[-1]
-                break
-        else:
-            uid = "343108228890099713"
-    return uid
+        users = json.load(f)
+
+    for user in users["users"]:
+        mc_name = user["minecraft"]
+        stored_uid = user["discord"]
+        if input_name.lower() == mc_name.lower():
+            return stored_uid
+        
+    return "343108228890099713"
 
 def get_name(interaction_ctx):
-    file = path.join("src", "connect.txt")
     try:
         uid = str(interaction_ctx.user.id)
     except:
         uid = str(interaction_ctx.message.author.id)
+
+    file = path.join("src", "users.json")
+    
+    with open (file, "r") as f:
+        users = json.load(f)
+
+    for user in users["users"]:
+        mc_name = user["minecraft"]
+        stored_uid = user["discord"]
+        if uid == stored_uid:
+            return mc_name
+
+    file = path.join("src", "connect.txt")
     with open (file, "r") as f:
         for line in f:
-            mcname = line.split(":")[0].strip()
-            storeduid = line.split(":")[-1].strip()
-            if uid == storeduid:
-                return mcname
+            mc_name = line.split(":")[0].strip()
+            stored_uid = line.split(":")[-1].strip()
+            if uid == stored_uid:
+                return mc_name
         else:
             return ""
 
