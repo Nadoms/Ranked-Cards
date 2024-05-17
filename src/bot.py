@@ -5,6 +5,7 @@ from nextcord import File, Interaction, SlashOption, Embed, Colour
 from nextcord.ext import commands
 from os import getenv, path
 from dotenv import load_dotenv
+from time import time
 
 import requests
 from commands import card as carding
@@ -51,6 +52,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
         input_name = get_name(interaction)
         if not input_name:
             await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a minecraft username.", ephemeral=hidden)
+            update_records("card", interaction.user.id, "Unknown", hidden, False)
             return
         if input_name:
             connected = True
@@ -65,6 +67,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
 
         if connected:
             await interaction.response.send_message(f"Player not found (`{input_name}`). Connect to your new Minecraft username with </connect:1149442234513637448>.", ephemeral=hidden)
+            update_records("card", interaction.user.id, input_name, hidden, False)
             return
         
         failed = True
@@ -72,6 +75,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
 
         if not first:
             await interaction.response.send_message(f"Player not found (`{input_name}`).", ephemeral=hidden)
+            update_records("card", interaction.user.id, input_name, hidden, False)
             return
         else:
             print(f"\nAutocorrected to {first}.")
@@ -81,6 +85,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
                 print("Player changed username.")
                 extra = " This player may have changed username."
                 await interaction.response.send_message(f"Player not found (`{input_name}`). {extra}", ephemeral=hidden)
+                update_records("card", interaction.user.id, input_name, hidden, False)
                 return
         
     input_name = response["data"]["nickname"]
@@ -99,14 +104,18 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     except Exception as e:
         print(e)
         await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
+        update_records("card", interaction.user.id, input_name, hidden, False)
+        return
 
     img.save("card.png")
     with open("card.png", "rb") as f:
         img = File(f)
     if failed:
         await interaction.followup.send(f"Player not found (`{input_name}`). {extra}", files=[img], ephemeral=hidden)
+        update_records("card", interaction.user.id, input_name, hidden, True)
     else:
         await interaction.followup.send(files=[img], ephemeral=hidden)
+        update_records("card", interaction.user.id, input_name, hidden, True)
 
 
 @bot.slash_command(name="connect", description="Connects your minecraft account with your discord account.")
@@ -124,6 +133,7 @@ async def connect(interaction: Interaction, input_name: str):
             user_exists = True
         elif input_name.lower() == user["minecraft"].lower():
             await interaction.response.send_message(f"`{input_name}` is already connected to {bot.get_user(int(user['discord']))}.")
+            update_records("connect", interaction.user.id, input_name, False, False)
             return
 
     if not user_exists:
@@ -141,6 +151,7 @@ async def connect(interaction: Interaction, input_name: str):
         f.write(users_json)
     
     await interaction.response.send_message(f"`{input_name}` has been connected to your discord!")
+    update_records("connect", interaction.user.id, input_name, False, not user_exists)
     return
 
 
@@ -162,9 +173,11 @@ async def disconnect(interaction: Interaction):
                 users_json = json.dumps(users, indent=4)
                 f.write(users_json)
             await interaction.response.send_message(f"`{user['minecraft']}` has been disconnected from your discord.")
+            update_records("disconnect", interaction.user.id, user['minecraft'], False, True)
             return
         
     await interaction.response.send_message(f"You are not connected. Please connect your minecraft account with </connect:1149442234513637448> to your discord.")
+    update_records("disconnect", interaction.user.id, "Unknown", False, False)
 
 
 @bot.slash_command(name="plot", description="Illustrates a graph for the player + metric that you choose.")
@@ -202,6 +215,7 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
         input_name = get_name(interaction)
         if not input_name:
             await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a minecraft username.", ephemeral=hidden)
+            update_records("plot", interaction.user.id, "Unknown", hidden, False)
             return
     
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
@@ -216,6 +230,7 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
 
         if not first:
             await interaction.response.send_message(f"Player not found  (`{input_name}`).", ephemeral=hidden)
+            update_records("plot", interaction.user.id, input_name, hidden, False)
             return
         else:
             print(f"\nAutocorrected to {first}.")
@@ -225,6 +240,7 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
                 print("Player changed username.")
                 extra = " This player may have changed username."
                 await interaction.response.send_message(f"Player not found (`{input_name}`). {extra}", ephemeral=hidden)
+                update_records("plot", interaction.user.id, input_name, hidden, False)
                 return
     
     input_name = response["data"]["nickname"]
@@ -235,6 +251,7 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
     except Exception as e:
         print(e)
         await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
+        update_records("plot", interaction.user.id, input_name, hidden, False)
         return
     
     if img == -1:
@@ -247,6 +264,7 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
         else:
             msg2 = ""
         await interaction.followup.send(f"`{input_name}` has not enough {msg1}{msg2}.", ephemeral=hidden)
+        update_records("plot", interaction.user.id, input_name, hidden, False)
         return
 
     img.save("graph.png")
@@ -254,12 +272,26 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
         img = File(f)
     if failed:
         await interaction.followup.send(f"Player not found (`{input_name}`). {extra}", files=[img], ephemeral=hidden)
+        update_records("plot", interaction.user.id, input_name, hidden, True)
     else:
         await interaction.followup.send(files=[img], ephemeral=hidden)
+        update_records("plot", interaction.user.id, input_name, hidden, True)
 
 
 @bot.slash_command(name="help", description="Don't know where to start?")
-async def help(interaction: Interaction):
+async def help(interaction: Interaction,
+    hidden: str = SlashOption(
+    "hidden",
+    required = False,
+    description="Makes it so only you can see it.",
+    default="",
+    choices=["True"]
+    )):
+    
+    if hidden:
+        hidden = True
+    else:
+        hidden = False
 
     embed = nextcord.Embed(
         title = "Ranked Cards - Help and Commands",
@@ -294,28 +326,42 @@ async def help(interaction: Interaction):
         inline = False
     )
     
-    await interaction.send(embed=embed)
+    await interaction.send(embed=embed, ephemeral=hidden)
+    update_records("help", interaction.user.id, "None", hidden, False)
 
 
-@bot.slash_command(name="analyse", description="Performs an analyses on your most recent match, or the match specified.")
+@bot.slash_command(name="analyse", description="Performs an analysis on your most recent match, or the match specified.")
 async def analyse(interaction: Interaction, match_id: str = SlashOption(
     "match_id",
     required = False,
     description="The match to perform an analysis on.",
     default=None
+    ), hidden: str = SlashOption(
+    "hidden",
+    required = False,
+    description="Makes it so only you can see it.",
+    default="",
+    choices=["True"]
     )):
+    
+    if hidden:
+        hidden = True
+    else:
+        hidden = False
 
     input_name = get_name(interaction)
     uuid = None
     if not match_id:
         if not input_name:
             await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a match ID.")
+            update_records("analyse", interaction.user.id, "Unknown", hidden, False)
             return
 
         print(f"\nFinding {input_name}'s last match")
         uuid, match_id = match.get_last_match(input_name)
         if not match_id:
             await interaction.response.send_message("Player has no matches from this season.")
+            update_records("analyse", interaction.user.id, match_id, hidden, False)
             return
 
     print(f"\nAnalysing match {match_id}")
@@ -324,6 +370,7 @@ async def analyse(interaction: Interaction, match_id: str = SlashOption(
     if response["status"] == "error":
         print("Match not found.")
         await interaction.response.send_message("Match not found.")
+        update_records("analyse", interaction.user.id, match_id, hidden, False)
         return
     
     await interaction.response.defer()
@@ -333,12 +380,14 @@ async def analyse(interaction: Interaction, match_id: str = SlashOption(
     except Exception as e:
         print(e)
         await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls")
+        update_records("analyse", interaction.user.id, match_id, hidden, False)
         return
 
     img.save("analysis.png")
     with open("analysis.png", "rb") as f:
         img = File(f)
     await interaction.followup.send(files=[img])
+    update_records("analyse", interaction.user.id, match_id, hidden, True)
     
 
 def get_user_info(response, input_name):
@@ -355,7 +404,6 @@ def get_user_info(response, input_name):
         return uid, "grass.jpg"
         
     return "343108228890099713", "grass.jpg"
-
 
 
 def get_name(interaction_ctx):
@@ -378,8 +426,8 @@ def get_close(input_name):
     extra = ""
     first = None
 
-    file = path.join("src", "players.txt")
-    with open(file) as f:
+    file = path.join("src", "database", "players.txt")
+    with open(file, "r") as f:
         players = f.readlines()
         close = difflib.get_close_matches(input_name, players)
     if close:
@@ -399,6 +447,47 @@ def get_close(input_name):
         extra += "."
 
     return [extra, first]
+
+def update_records(command, caller, callee, hidden, completed):
+    calls_file = path.join("src", "database", "calls.csv")
+    stats_file = path.join("src", "database", "stats.json")
+
+    with open(calls_file, "a") as f:
+        row = f"\n{command},{caller},{callee},{int(time())},{hidden}"
+        f.write(row)
+
+    with open(stats_file, "r") as f:
+        stats = json.load(f)
+
+    stats["stats"]["totalCommands"] += 1
+
+    if completed:
+        if command == "card":
+            stats["stats"]["totalGenerated"] += 1
+            stats["stats"]["cards"] += 1
+        
+        if command == "plot":
+            stats["stats"]["totalGenerated"] += 1
+            stats["stats"]["plots]"] += 1
+        
+        if command == "analyse":
+            stats["stats"]["totalGenerated"] += 1
+            stats["stats"]["analyses"] += 1
+        
+        if command == "connect":
+            stats["stats"]["connectedUsers"] += 1
+
+        if command == "disconnect":
+            stats["stats"]["connectedUsers"] -= 1
+
+        if hidden:
+            stats["stats"]["totalHidden"] += 1
+    else:
+        stats["stats"]["failures"] += 1
+
+    with open (stats_file, "w") as f:
+        stats_json = json.dumps(stats, indent=4)
+        f.write(stats_json)
 
 
 load_dotenv()
