@@ -11,7 +11,7 @@ def write(graph):
     other_font = ImageFont.truetype('minecraft_font.ttf', 12)
 
     othered_image.text((795-word.calc_length(get_date(), 12), 5), get_date(), font=other_font, fill="yellow")
-    othered_image.text((795-word.calc_length("mcsrranked.com/discord", 12), 25), "mcsrranked.com/discord", font=other_font, fill="lightblue")
+    othered_image.text((795-word.calc_length("Bot created by Nadoms", 12), 25), "Bot created by Nadoms", font=other_font, fill="lightblue")
     logo = get_logo()
     graph.paste(logo, (725, 35), logo)
 

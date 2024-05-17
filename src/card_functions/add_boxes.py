@@ -1,13 +1,21 @@
-from PIL import ImageDraw
+from PIL import ImageDraw, Image
 import requests
 
 from gen_functions import word
 from card_functions import add_name
 
 def write(card, name, response):
-    boxed_image = ImageDraw.Draw(card)
+    boxed_card = card.copy()
+    boxed_image = ImageDraw.Draw(boxed_card)
+
     for box in get_boxes(name, response):
-        boxed_image.rectangle(box, fill="#122b30", outline="#000000", width=10)
+        boxed_image.rectangle(box, fill="#000000") #122b30
+
+    card = Image.blend(card, boxed_card, 0.6)
+    outlined_image = ImageDraw.Draw(card)
+
+    for box in get_boxes(name, response):
+        outlined_image.rectangle(box, outline="#000000", width=8)
     
     return card
 

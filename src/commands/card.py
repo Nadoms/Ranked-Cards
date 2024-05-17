@@ -4,7 +4,7 @@ from card_functions import add_boxes, add_history, add_name, add_stats, \
 
 import requests
 import random
-from PIL import Image
+from PIL import Image, ImageFilter
 from os import path
 from datetime import datetime
 
@@ -13,16 +13,17 @@ from gen_functions import match
 def main(name, response, discord, pfp):
     response = response["data"]
     uuid = response["uuid"]
-    pic = "grass.jpg"
-    if random.randint(0, 100) == 0:
-        pic = "end.jpg"
-    file = path.join("src", "pics", "bgs", pic)
-    card = Image.open(file).convert("RGBA")
+    pics = ["beach.jpg", "bastion.jpg", "fort.jpg", "portal.jpg", "stronghold.jpg", "end.jpg"]
+    pic = pics[random.randint(0,5)]
+    # if random.randint(0, 100) == 0:
+    #     pic = "end.jpg"
+    file = path.join("src", "pics", "bgs", "custom", pic)
+    card = Image.open(file).convert("RGBA").filter(ImageFilter.GaussianBlur(5))
 
     then = datetime.now()
     matches = match.get_recent_matches(name, False)
     then = splits(then, 0)
-    add_boxes.write(card, name, response)
+    card = add_boxes.write(card, name, response)
     then = splits(then, 1)
     add_name.write(card, name, response)
     then = splits(then, 2)

@@ -191,8 +191,8 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
     "season",
     required = False,
     description="The season to gather data for.",
-    default="4",
-    choices=["1", "2", "3", "4", "Lifetime"]
+    default="5",
+    choices=["1", "2", "3", "4", "5", "Lifetime"]
     ), hidden: str = SlashOption(
     "hidden",
     required = False,
