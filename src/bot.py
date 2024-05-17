@@ -43,12 +43,16 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
         hidden = True
     else:
         hidden = False
+
+    connected = False
         
     if not input_name:
         input_name = get_name(interaction)
         if not input_name:
             await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a minecraft username.", ephemeral=hidden)
             return
+        if input_name:
+            connected = True
     
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
     response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=headers).json()
@@ -57,6 +61,11 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     failed = False
     if response["status"] == "error":
         print("Player not found.")
+
+        if connected:
+            await interaction.response.send_message("Player not found. Connect to your new Minecraft username with </connect:1149442234513637448>.", ephemeral=hidden)
+            return
+        
         failed = True
         extra, first = get_close(input_name)
 
@@ -69,7 +78,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
 
             if response["status"] == "error":
                 print("Player changed username.")
-                extra = f" `{first}` may have changed username."
+                extra = " This player may have changed username."
                 await interaction.response.send_message("Player not found." + extra, ephemeral=hidden)
                 return
         
