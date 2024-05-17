@@ -14,8 +14,6 @@ def write(card, matches, uuid, response):
         historyed_image.text((200, 700), "User has no matches played.", font=history_font, fill="white")
         return card
     
-    width = 540
-    historyed_image.rectangle([360-width/2, 707, 360+width/2, 775], fill="#122b30", outline="#000000", width=8)
     historyed_image.rectangle([30, 665, 690, 715], fill="#ffffff", outline="#000000", width=8)
 
     blocks = get_blocks(recent_matches)

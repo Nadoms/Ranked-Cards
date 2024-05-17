@@ -18,7 +18,7 @@ def main(name, response, discord, pfp):
     # if random.randint(0, 100) == 0:
     #     pic = "end.jpg"
     file = path.join("src", "pics", "bgs", "custom", pic)
-    card = Image.open(file).convert("RGBA").filter(ImageFilter.GaussianBlur(5))
+    card = Image.open(file).convert("RGBA").filter(ImageFilter.GaussianBlur(0))
 
     then = datetime.now()
     matches = match.get_recent_matches(name, False)

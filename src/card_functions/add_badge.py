@@ -13,22 +13,15 @@ def write(card, response):
     x = 190
     y = 500
     circled_image = ImageDraw.Draw(card)
-    circled_image.ellipse([round(x-dim*0.75),
-                           round(y-dim*0.75),
-                           round(x+dim*0.75),
-                           round(y+dim*0.75)],
-                           fill=(18, 43, 48),
-                           outline="#000000",
-                           width=12)
     
     circled_image.ellipse([round(x-dim*0.7),
                            round(y-dim*0.7),
                            round(x+dim*0.7),
                            round(y+dim*0.7)],
-                           outline=(6, 15, 16),
+                           outline=rank.get_colour(response["eloRate"])[2],
                            width=8)
     
-    if response["eloRate"] and response["eloRate"] >= 2000:
+    if response["eloRate"] >= 2000:
         circled_image.ellipse([round(x-dim*0.7),
                         round(y-dim*0.7),
                         round(x+dim*0.7),
@@ -40,22 +33,29 @@ def write(card, response):
                             round(y-dim*0.7),
                             round(x+dim*0.7),
                             round(y+dim*0.7)],
-                            fill=rank.get_colour(response["eloRate"])[0], # "#add8e6"
+                            fill=rank.get_colour(response["eloRate"])[0],
                             width=8,
                             start=270,
                             end=rank.get_degree(response["eloRate"]))
     
-    circled_image.ellipse([round(x-dim*0.67),
-                           round(y-dim*0.67),
-                           round(x+dim*0.67),
-                           round(y+dim*0.67)],
+    circled_image.ellipse([round(x-dim*0.66),
+                           round(y-dim*0.66),
+                           round(x+dim*0.66),
+                           round(y+dim*0.66)],
+                           outline="#ffffff",
+                           width=7)
+    
+    circled_image.ellipse([round(x-dim*0.66),
+                           round(y-dim*0.66),
+                           round(x+dim*0.66),
+                           round(y+dim*0.66)],
                            outline="#000000",
-                           width=5)
+                           width=4)
     
     card.paste(badge, (round(x-dim/2), round(y-dim/2)), badge)
 
     tier = get_tier(response)
-    x = 565
+    x = 555
     y = 475
     rank_size = 80
     division_size = 140

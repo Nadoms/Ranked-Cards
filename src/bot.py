@@ -69,7 +69,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
 
             if response["status"] == "error":
                 print("Player changed username.")
-                extra = " This player may have changed username."
+                extra = f" `{first}` may have changed username."
                 await interaction.response.send_message("Player not found." + extra, ephemeral=hidden)
                 return
         
