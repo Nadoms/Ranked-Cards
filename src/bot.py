@@ -341,6 +341,7 @@ async def connect(interaction: Interaction, input_name: str):
     
     uid = str(interaction.user.id)
     user_exists = False
+    user_id = 0
     
     file = path.join("src", "database", "users.json")
     with open (file, "r") as f:
@@ -349,6 +350,7 @@ async def connect(interaction: Interaction, input_name: str):
     for user in users["users"]:
         if uid == user["discord"]:
             user_exists = True
+            user_id = users["users"].index(user)
         elif input_name.lower() == user["minecraft"].lower():
             await interaction.response.send_message(f"`{input_name}` is already connected to {bot.get_user(int(user['discord']))}.")
             update_records("connect", interaction.user.id, input_name, False, False)
@@ -362,7 +364,7 @@ async def connect(interaction: Interaction, input_name: str):
         }
         users["users"].append(new_user)
     else:
-        user["minecraft"] = input_name
+        users["users"][user_id]["minecraft"] = input_name
 
     with open (file, "w") as f:
         users_json = json.dumps(users, indent=4)
@@ -514,6 +516,8 @@ def get_close(input_name):
     return [extra, first]
 
 def update_records(command, caller, callee, hidden, completed):
+    if updates_disabled:
+        return
     calls_file = path.join("src", "database", "calls.csv")
     stats_file = path.join("src", "database", "stats.json")
 
@@ -564,6 +568,6 @@ def update_records(command, caller, callee, hidden, completed):
         stats_json = json.dumps(stats, indent=4)
         f.write(stats_json)
 
-
+updates_disabled = True
 load_dotenv()
 bot.run(getenv("TEST_TOKEN"))
