@@ -68,15 +68,15 @@ def write(card, response):
                 rounded_avg_completion = -1
             else:
                 rounded_avg_completion = int(season_stats[1][i].split(":")[0])
-            if rounded_avg_completion >= 30:
+            if rounded_avg_completion >= 28:
                 rounded_avg_completion = 0
-            elif rounded_avg_completion >= 27:
+            elif rounded_avg_completion >= 25:
                 rounded_avg_completion = 1
-            elif rounded_avg_completion >= 21:
+            elif rounded_avg_completion >= 18:
                 rounded_avg_completion = 2
-            elif rounded_avg_completion >= 15:
+            elif rounded_avg_completion >= 14:
                 rounded_avg_completion = 3
-            elif rounded_avg_completion >= 13:
+            elif rounded_avg_completion >= 11:
                 rounded_avg_completion = 4
             elif rounded_avg_completion >= 6:
                 rounded_avg_completion = 5
@@ -160,17 +160,17 @@ def write(card, response):
                 rounded_pb = -1
             else:
                 rounded_pb = int(major_stats[1][i].split(":")[0])
-            if rounded_pb >= 28:
+            if rounded_pb >= 27:
                 rounded_pb = 0
-            elif rounded_pb >= 23:
+            elif rounded_pb >= 22:
                 rounded_pb = 1
-            elif rounded_pb >= 15:
+            elif rounded_pb >= 14:
                 rounded_pb = 2
-            elif rounded_pb >= 11:
+            elif rounded_pb >= 10:
                 rounded_pb = 3
-            elif rounded_pb >= 9:
+            elif rounded_pb >= 8:
                 rounded_pb = 4
-            elif rounded_pb >= 6:
+            elif rounded_pb >= 5:
                 rounded_pb = 5
             else:
                 rounded_pb = 0
