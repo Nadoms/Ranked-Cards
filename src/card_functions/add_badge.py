@@ -21,7 +21,7 @@ def write(card, response):
                            outline=rank.get_colour(response["eloRate"])[2],
                            width=8)
     
-    if response["eloRate"] >= 2000:
+    if response["eloRate"] and response["eloRate"] >= 2000:
         circled_image.ellipse([round(x-dim*0.7),
                         round(y-dim*0.7),
                         round(x+dim*0.7),
