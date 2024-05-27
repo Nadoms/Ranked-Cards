@@ -88,6 +88,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
                 update_records("card", interaction.user.id, input_name, hidden, False)
                 return
         
+    old_input = input_name
     input_name = response["data"]["nickname"]
     uid, background = get_user_info(response, input_name)
     user = await bot.fetch_user(uid)
@@ -111,7 +112,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     with open("card.png", "rb") as f:
         img = File(f)
     if failed:
-        await interaction.followup.send(f"Player not found (`{input_name}`). {extra}", files=[img], ephemeral=hidden)
+        await interaction.followup.send(f"Player not found (`{old_input}`). {extra}", files=[img], ephemeral=hidden)
         update_records("card", interaction.user.id, input_name, hidden, True)
     else:
         await interaction.followup.send(files=[img], ephemeral=hidden)
@@ -181,6 +182,7 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
                 update_records("plot", interaction.user.id, input_name, hidden, False)
                 return
     
+    old_input = input_name
     input_name = response["data"]["nickname"]
     await interaction.response.defer(ephemeral=hidden)
     
@@ -209,7 +211,7 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
     with open("graph.png", "rb") as f:
         img = File(f)
     if failed:
-        await interaction.followup.send(f"Player not found (`{input_name}`). {extra}", files=[img], ephemeral=hidden)
+        await interaction.followup.send(f"Player not found (`{old_input}`). {extra}", files=[img], ephemeral=hidden)
         update_records("plot", interaction.user.id, input_name, hidden, True)
     else:
         await interaction.followup.send(files=[img], ephemeral=hidden)
