@@ -4,26 +4,39 @@ from gen_functions import word, rank
 
 def write(analysis, uuids, response, vs_response):
     statted_image = ImageDraw.Draw(analysis)
-    stat_size = 30
+    stat_size = 20
     stat_font = ImageFont.truetype('minecraft_font.ttf', stat_size)
-    x_values = [890, 1030]
-    y_values = [370, 440, 510, 580]
+    middle = 600
+    x_values = [middle+375, middle-375]
+    y_values = [165, 195, 225, 255]
 
     scores = get_scores(uuids, vs_response)
 
     for i in range(0, 2):
         stats = get_stats(response, scores, uuids, i)
-        legacy_elo_colour = rank.get_colour(stats[0])
-        current_elo_colour = rank.get_colour(stats[1])
+        legacy_elo_colour = rank.get_colour(stats[0][1])[:2]
+        current_elo_colour = rank.get_colour(stats[1][1])[:2]
         score_colour = ["#00ffff", "#122b30"]
-        colours = [legacy_elo_colour, current_elo_colour, score_colour, score_colour]
+        colours = [legacy_elo_colour, current_elo_colour]
 
         for j in range(len(stats)):
-            stats[j] = str(stats[j])
-            x = int(x_values[i] + (i-1) * word.calc_length(stats[j], stat_size))
-            y = y_values[j] - int(word.horiz_to_vert(stat_size) / 2)
+            overall_line = ""
+            for k in range(len(stats[j])):
+                stats[j][k] = str(stats[j][k])
+                overall_line += stats[j][k]
+            
+            x = int(x_values[i] - i * word.calc_length(overall_line, stat_size))
 
-            statted_image.text((x, y), stats[j], font=stat_font, fill=colours[j][0], stroke_fill=colours[j][1], stroke_width=1)
+            for k in range(len(stats[j])):
+                y = y_values[j] - int(word.horiz_to_vert(stat_size) / 2) + i*180
+
+                if k == 1 and j <= 1:
+                    f_colour, s_colour = colours[j]
+                else:
+                    f_colour, s_colour = score_colour
+                statted_image.text((x, y), stats[j][k], font=stat_font, fill=f_colour, stroke_fill=s_colour, stroke_width=1)
+
+                x += int(word.calc_length(stats[j][k], stat_size)) + stat_size/7
         
     return analysis
 
@@ -33,17 +46,21 @@ def get_stats(response, scores, uuids, i):
         if score_change["uuid"] == uuids[i]:
             legacy_elo = score_change["eloRate"]
 
-    return [legacy_elo, current_elo, scores[0][i], scores[1][i]]
+    return [["was ", legacy_elo, " elo"], ["now is ", current_elo, " elo"], [scores[0][i]], [scores[1][i]]]
 
 def get_scores(uuids, vs_response):
     scores = []
     overall_changes = []
+
     for uuid in uuids:
         score = vs_response["results"]["ranked"][uuid]
-        scores.append(str(score))
+        scores.append(str(score) + " total wins")
+
         overall_change = vs_response["changes"][uuid]
         if overall_change >= 0:
-            overall_change = "+" + str(overall_change)
+            overall_change = "+" + str(overall_change) + " elo taken"
+        else:
+            overall_change = "-" + str(overall_change) + " elo lost"
         overall_changes.append(overall_change)
 
-    return [overall_changes, scores]
+    return [scores, overall_changes]

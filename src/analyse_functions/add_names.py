@@ -5,7 +5,10 @@ from gen_functions import word
 
 def write(analysis, names, response):
     named_image = ImageDraw.Draw(analysis)
-    x_values = [660, 1260]
+    middle = 600
+    icon_x_values = [middle-510, middle+510]
+    x_values = [middle+50, middle-50]
+    y_values = [210, 390]
 
     for i in range(0, 2):
         rank = str(response["players"][i]["eloRank"])
@@ -13,13 +16,13 @@ def write(analysis, names, response):
         if rank == "None":
             rank = "-"
         rank = " #" + rank
-        rank = "" # remove rank
+        rank = "" # FIX: remove rank
 
         tag = names[i] + rank
-        tag_size = min(word.calc_size(tag, 460), 90)
+        tag_size = min(word.calc_size(tag, 500), 75)
         tag_font = ImageFont.truetype('minecraft_font.ttf', tag_size)
-        text_x = int(x_values[i] + (i-1) * word.calc_length(tag, tag_size))
-        text_y = int(215 - word.horiz_to_vert(tag_size) / 2)
+        text_x = int(x_values[i] - word.calc_length(tag, tag_size) / 2)
+        text_y = int(y_values[i] - word.horiz_to_vert(tag_size) / 2)
         if response["players"][i]["uuid"] == response["result"]["uuid"]:
             colour = "#ffaa00"
         else:
@@ -31,14 +34,18 @@ def write(analysis, names, response):
         named_image.text((text_x, text_y), rank, font=tag_font, fill=rank_colour)
         
         if response["players"][i]["uuid"] == response["result"]["uuid"]:
-            file = path.join("src", "pics", "items", "8.webp")
-            crown = Image.open(file)
-            crown = crown.resize((100, 100))
+            icon_name = "8.webp"
+        else:
+            icon_name = "10.webp"
+        file = path.join("src", "pics", "items", icon_name)
+        icon = Image.open(file)
+        icon = icon.resize((100, 100))
 
-            crown_x = int(x_values[i] + (i*2-1) * (word.calc_length(tag, tag_size) + 70) + (i-1) * crown.size[0])
-            crown_y = int(210 - crown.size[1] / 2)
+        icon_x = int(icon_x_values[i] - icon.size[0] / 2)
+        icon_y = int(y_values[i] - icon.size[1] / 2)
 
-            analysis.paste(crown, (crown_x, crown_y), crown)
+        analysis.paste(icon, (icon_x, icon_y), icon)
+
     return analysis
 
 def get_rank_colour(rank):

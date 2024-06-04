@@ -4,12 +4,14 @@ from io import BytesIO
 from os import path
 
 def write(analysis, uuids):
-    x_values = [910, 1010]
+    middle = 600
+    x_values = [middle-220, middle+220]
+    y_values = [100, 275]
+
     for i in range(0, 2):
         skin = get_skin(uuids[i], i)
         x = int(x_values[i] + (i-1) * skin.size[0])
-        y = 105
-        analysis.paste(skin, (x, y), skin)
+        analysis.paste(skin, (x, y_values[i]), skin)
     return analysis
 
 def get_skin(uuid, i):

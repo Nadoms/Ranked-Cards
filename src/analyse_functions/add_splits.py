@@ -10,18 +10,21 @@ from gen_functions import word
 
 def write(analysis, uuids, response):
     splitted_image = ImageDraw.Draw(analysis)
-    x_values = [480, 1440]
+    middle = 600
+    x_values = [middle-100, middle+100]
+    y_values = [550, 1800]
+    x_padding = 50
+    y_padding = 8
 
     final_time = response["result"]["time"]
     splits = extract_splits(uuids, response, final_time)
-    split_colours = ["#afacf9", "#b43234", "#2b2937", "#600000", "#3f5cf9", "#818181", "#e4e7a9"]
     textures = ["overworld", "nether", "bastion", "fortress", "blind", "stronghold", "end"]
     advancements = []
 
     for i in range(0, 2):
-        x = x_values[i]
+        rect_coords = [x_values[i]-x_padding, y_values[0]-y_padding, x_values[i]+x_padding, y_values[1]+y_padding]
         advancements.append(process_advancements(splits[i], final_time))
-        splitted_image.rectangle([x-33, 350-8, x+33, 1090+8], fill="#000000", outline="#ffffff", width=4)
+        splitted_image.rectangle(rect_coords, fill="#000000", outline="#ffffff", width=4)
 
     for i in range(0, 2):
         x = x_values[i]
@@ -31,7 +34,7 @@ def write(analysis, uuids, response):
         for j in range(len(progressions)):
             y1 = prog_coords[j]
             if j >= len(progressions) - 1:
-                y2 = 1090
+                y2 = 1800
             else:
                 y2 = prog_coords[j+1]
                 
@@ -41,19 +44,15 @@ def write(analysis, uuids, response):
             mask = Image.new("L", analysis.size, 0)
             draw = ImageDraw.Draw(mask)
             draw.rectangle([x-25, y1, x+25, y2], fill="#ffffff", outline="#000000", width=2)
-            analysis = Image.composite(texture, analysis, mask)
     
     for i in range(0, 2):
         event_coords = advancements[i][3]
         events = advancements[i][4]
-        side = 1 - 2*i
 
         for j in range(len(events)):
             icon = get_event_icon(events[j])
 
-            side *= -1
-
-            x = x_values[i] + side * 80 - int(icon.size[0]/2)
+            x = x_values[i] + (2*i-1) * 105 - int(icon.size[0]/2)
             y = event_coords[j] - int(icon.size[1]/2)
 
             analysis.paste(icon, (x, y), icon)
@@ -66,21 +65,18 @@ def write(analysis, uuids, response):
     for i in range(0, 2):
         coords = advancements[i][3]
         times = advancements[i][5]
-        side = 1 - 2*i
 
         for j in range(len(coords)):
             time = str(timedelta(milliseconds=times[j]))[2:7].lstrip("0")
             if time[0] == ":":
                 time = "0" + time
-            time_size = 25
+            time_size = 35
             time_font = ImageFont.truetype('minecraft_font.ttf', time_size)
 
             if j == 0:
                 time = "START!"
 
-            side *= -1
-
-            x = x_values[i] + side * 125 + (side-1) * word.calc_length(time, time_size) / 2
+            x = x_values[i] + (2*i-1) * 160 + (i-1) * word.calc_length(time, time_size)
             y = coords[j] - word.horiz_to_vert(time_size) / 2
             
             splitted_image.text((x, y), time, font=time_font, fill="#44ffff")
@@ -90,12 +86,12 @@ def write(analysis, uuids, response):
 def get_event_icon(event):
     file = path.join("src", "pics", "items", f"{event}.webp")
     icon = Image.open(file)
-    icon = icon.resize((60, 60))
+    icon = icon.resize((80, 80))
     return icon
 
 def process_advancements(splits, final_time):
-    y = 350
-    length = 750
+    y = 550
+    length = 1800 - y
     prog_coords = [y]
     progressions = [0]
     prog_times = [0]

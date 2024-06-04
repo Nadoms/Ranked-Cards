@@ -8,7 +8,8 @@ from os import path
 from gen_functions import word
 
 def write(analysis, response):
-    x_values = [880, 960, 1040]
+    middle = 600
+    x_values = [middle-80, middle, middle+80]
     y = 90
 
     seed = get_seed(response)
@@ -39,7 +40,6 @@ def write(analysis, response):
     id_x = x_values[1] - word.calc_length(id, id_size) / 2
     id_y = round(y - word.horiz_to_vert(id_size) / 2) - 60
     infoed_image.text((id_x, id_y), id, font=id_font, fill="yellow")
-
 
     return analysis
 

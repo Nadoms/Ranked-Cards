@@ -87,7 +87,7 @@ def get_desc(wl, recent_matches, uuid, response):
 
     winstreak = response["statistics"]["season"]["currentWinStreak"]["ranked"]
 
-    description = ["Winstreak: ",  str(winstreak), " / Elo change: ", elo_change] #"W/L/D: ", str(wl.count(0)), "/", str(wl.count(1)), "/", str(wl.count(2)),
+    description = ["Winstreak: ",  str(winstreak), " / ELO change: ", elo_change] #"W/L/D: ", str(wl.count(0)), "/", str(wl.count(1)), "/", str(wl.count(2)),
     return description
 
 def get_elo_change(recent_matches, uuid):

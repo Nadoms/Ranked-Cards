@@ -17,9 +17,7 @@ def main(response, match_id):
         return -1
     vs_response = vs_response["data"]
 
-    bg = random.randint(1, 5)
-    file = path.join("src", "pics", "bgs", f"nether{bg}.jpg")
-    analysis = Image.open(file)
+    analysis = Image.new("RGB", (1200, 1920), "#424549")
 
     then = datetime.now()
     analysis = add_shapes.write(analysis, names, response) # done! for now
