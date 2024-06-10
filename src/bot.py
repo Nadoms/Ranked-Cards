@@ -250,7 +250,7 @@ async def match(interaction: Interaction, match_id: str = SlashOption(
             update_records("match", interaction.user.id, match_id, hidden, False)
             return
 
-    print(f"\Charting match {match_id}")
+    print(f"\nCharting match {match_id}")
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
     response = requests.get(f"https://mcsrranked.com/api/matches/{match_id}", headers=headers).json()
     if response["status"] == "error":

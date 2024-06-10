@@ -37,7 +37,7 @@ def write(chart, uuids, response, vs_response):
                     f_colour, s_colour = colours[j]
                 else:
                     f_colour, s_colour = score_colour
-                statted_image.text((x, y), stats[j][k], font=stat_font, fill=f_colour)
+                statted_image.text((x, y), stats[j][k], font=stat_font, fill=f_colour, stroke_fill=s_colour, stroke_width=1)
 
                 x += int(word.calc_length(stats[j][k], stat_size))
         
