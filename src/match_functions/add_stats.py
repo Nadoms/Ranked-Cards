@@ -2,12 +2,12 @@ from PIL import ImageDraw, ImageFont
 
 from gen_functions import word, rank
 
-def write(analysis, uuids, response, vs_response):
-    statted_image = ImageDraw.Draw(analysis)
+def write(chart, uuids, response, vs_response):
+    statted_image = ImageDraw.Draw(chart)
     stat_size = 20
     stat_font = ImageFont.truetype('minecraft_font.ttf', stat_size)
     middle = 600
-    x_values = [middle+375, middle-375]
+    x_values = [middle+370, middle-370]
     y_values = [165, 195, 225, 255]
 
     scores = get_scores(uuids, vs_response)
@@ -22,7 +22,10 @@ def write(analysis, uuids, response, vs_response):
         for j in range(len(stats)):
             overall_line = ""
             for k in range(len(stats[j])):
-                stats[j][k] = str(stats[j][k])
+                if not stats[j][k]:
+                    stats[j][k] = "unranked"
+                else:
+                    stats[j][k] = str(stats[j][k])
                 overall_line += stats[j][k]
             
             x = int(x_values[i] - i * word.calc_length(overall_line, stat_size))
@@ -34,19 +37,20 @@ def write(analysis, uuids, response, vs_response):
                     f_colour, s_colour = colours[j]
                 else:
                     f_colour, s_colour = score_colour
-                statted_image.text((x, y), stats[j][k], font=stat_font, fill=f_colour, stroke_fill=s_colour, stroke_width=1)
+                statted_image.text((x, y), stats[j][k], font=stat_font, fill=f_colour)
 
-                x += int(word.calc_length(stats[j][k], stat_size)) + stat_size/7
+                x += int(word.calc_length(stats[j][k], stat_size))
         
-    return analysis
+    return chart
 
 def get_stats(response, scores, uuids, i):
     current_elo = response["players"][i]["eloRate"]
+    legacy_elo = None
     for score_change in response["changes"]:
         if score_change["uuid"] == uuids[i]:
             legacy_elo = score_change["eloRate"]
 
-    return [["was ", legacy_elo, " elo"], ["now is ", current_elo, " elo"], [scores[0][i]], [scores[1][i]]]
+    return [["was ", legacy_elo, " elo"], ["now ", current_elo, " elo"], [scores[0][i]], [scores[1][i]]]
 
 def get_scores(uuids, vs_response):
     scores = []
@@ -54,13 +58,16 @@ def get_scores(uuids, vs_response):
 
     for uuid in uuids:
         score = vs_response["results"]["ranked"][uuid]
-        scores.append(str(score) + " total wins")
+        str_score = str(score) + " total win"
+        if score != 1:
+            str_score += "s"
+        scores.append(str_score)
 
         overall_change = vs_response["changes"][uuid]
         if overall_change >= 0:
             overall_change = "+" + str(overall_change) + " elo taken"
         else:
-            overall_change = "-" + str(overall_change) + " elo lost"
+            overall_change = str(overall_change) + " elo lost"
         overall_changes.append(overall_change)
 
     return [scores, overall_changes]

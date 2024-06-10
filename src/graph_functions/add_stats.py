@@ -2,7 +2,7 @@ from PIL import ImageDraw, ImageFont
 import requests
 from datetime import timedelta
 
-from gen_functions import word, rank, match
+from gen_functions import games, word, rank
 
 def write(graph, response):
     statted_image = ImageDraw.Draw(graph)
@@ -45,11 +45,11 @@ def write(graph, response):
     
     x = 125
     statted_image.text((x, 60), stats[0], font=stat_font, fill=white)
-    x += word.calc_length(stats[0], stat_size)+stat_size/7
+    x += word.calc_length(stats[0], stat_size)
     statted_image.text((x, 60), stats[1], font=stat_font, fill=colour[0], stroke_fill=colour[1], stroke_width=1)
-    x += word.calc_length(stats[1], stat_size)+stat_size/7
+    x += word.calc_length(stats[1], stat_size)
     statted_image.text((x, 60), stats[2], font=stat_font, fill=white)
-    x += word.calc_length(stats[2], stat_size)+stat_size/7
+    x += word.calc_length(stats[2], stat_size)
     statted_image.text((x, 60), stats[3], font=stat_font, fill=rank_colour[rounded_rank])
         
     return graph

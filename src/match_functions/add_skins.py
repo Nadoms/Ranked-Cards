@@ -3,7 +3,7 @@ import requests
 from io import BytesIO
 from os import path
 
-def write(analysis, uuids):
+def write(chart, uuids):
     middle = 600
     x_values = [middle-220, middle+220]
     y_values = [100, 275]
@@ -11,8 +11,8 @@ def write(analysis, uuids):
     for i in range(0, 2):
         skin = get_skin(uuids[i], i)
         x = int(x_values[i] + (i-1) * skin.size[0])
-        analysis.paste(skin, (x, y_values[i]), skin)
-    return analysis
+        chart.paste(skin, (x, y_values[i]), skin)
+    return chart
 
 def get_skin(uuid, i):
     mid = 35

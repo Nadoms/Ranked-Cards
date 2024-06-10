@@ -2,21 +2,21 @@ from PIL import Image, ImageDraw, ImageFont
 
 from gen_functions import word
 
-def write(analysis, names, response): # FIX: remove dead params
-    analysis = analysis.convert("RGBA")
+def write(chart, names, response): # FIX: remove dead params
+    chart = chart.convert("RGBA")
     info_size = 20
     info_font = ImageFont.truetype('minecraft_font.ttf', info_size)
 
-    overlay = Image.new('RGBA', analysis.size, (0, 0, 0)+(0,))
+    overlay = Image.new('RGBA', chart.size, (0, 0, 0)+(0,))
     draw = ImageDraw.Draw(overlay)
     opacity = 128
 
     for box in get_boxes():
         draw.rectangle(box, fill=(0, 0, 0)+(opacity,), outline=(255, 255, 255)+(opacity,), width=5)
 
-    analysis = Image.alpha_composite(analysis, overlay)
+    chart = Image.alpha_composite(chart, overlay)
     
-    shaped_image = ImageDraw.Draw(analysis)
+    shaped_image = ImageDraw.Draw(chart)
 
     for line in get_lines():
         shaped_image.line(line, fill="#cccccc", width=5)
@@ -27,7 +27,7 @@ def write(analysis, names, response): # FIX: remove dead params
         y = texts_pos[1][i] - int(word.horiz_to_vert(info_size) / 2)
         shaped_image.text((x, y), texts_pos[0][i], font=info_font, fill="#ffff00")
     
-    return analysis
+    return chart
 
 def get_lines():
     lines = []

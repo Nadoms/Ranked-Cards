@@ -4,14 +4,10 @@ from PIL import ImageDraw, Image, ImageFont
 
 from gen_functions import word
 
-# 1. label splits with times
-# 2 add events
-# 3 analyse
-
-def write(analysis, uuids, response):
-    splitted_image = ImageDraw.Draw(analysis)
+def write(chart, uuids, response):
+    splitted_image = ImageDraw.Draw(chart)
     middle = 600
-    x_values = [middle-100, middle+100]
+    x_values = [middle-70, middle+70]
     y_values = [550, 1800]
     x_padding = 50
     y_padding = 8
@@ -41,13 +37,19 @@ def write(analysis, uuids, response):
             file = path.join("src", "pics", "textures", "cleantextures", f"{textures[progressions[j]]}.jpg")
             texture = Image.open(file)
 
-            mask = Image.new("L", analysis.size, 0)
+            mask = Image.new("L", chart.size, 0)
             draw = ImageDraw.Draw(mask)
-            draw.rectangle([x-25, y1, x+25, y2], fill="#ffffff", outline="#000000", width=2)
+            draw.rectangle([x-42, y1+3, x+42, y2-3], fill="#ffffff", outline="#000000", width=2)
+            chart = Image.composite(texture, chart, mask)
+
+            outlined_image = ImageDraw.Draw(chart)
+            outlined_image.rectangle([x-42, y1+3, x+42, y2-3], outline="#ffffff", width=2)
+
     
     for i in range(0, 2):
         event_coords = advancements[i][3]
         events = advancements[i][4]
+        is_shifted = False
 
         for j in range(len(events)):
             icon = get_event_icon(events[j])
@@ -55,16 +57,20 @@ def write(analysis, uuids, response):
             x = x_values[i] + (2*i-1) * 105 - int(icon.size[0]/2)
             y = event_coords[j] - int(icon.size[1]/2)
 
-            analysis.paste(icon, (x, y), icon)
+            if 0 <= event_coords[j] - event_coords[j-1] <= 40 and not is_shifted:
+                x += (2*i-1) * 220
+                is_shifted = True
+            else:
+                is_shifted = False
 
-            # line = [(x-50, y), (x+50, y)]
-            # evented_image.line(line, fill="#ffff00", width=3)
-            # evented_image.text((x, y), "", fill="#ffff00")
-    splitted_image = ImageDraw.Draw(analysis)
+            chart.paste(icon, (x, y), icon)
+
+    splitted_image = ImageDraw.Draw(chart)
 
     for i in range(0, 2):
         coords = advancements[i][3]
         times = advancements[i][5]
+        is_shifted = False
 
         for j in range(len(coords)):
             time = str(timedelta(milliseconds=times[j]))[2:7].lstrip("0")
@@ -78,10 +84,16 @@ def write(analysis, uuids, response):
 
             x = x_values[i] + (2*i-1) * 160 + (i-1) * word.calc_length(time, time_size)
             y = coords[j] - word.horiz_to_vert(time_size) / 2
+
+            if 0 <= coords[j] - coords[j-1] <= 40 and not is_shifted:
+                x += (2*i-1) * 220
+                is_shifted = True
+            else:
+                is_shifted = False
             
             splitted_image.text((x, y), time, font=time_font, fill="#44ffff")
 
-    return analysis
+    return chart
 
 def get_event_icon(event):
     file = path.join("src", "pics", "items", f"{event}.webp")

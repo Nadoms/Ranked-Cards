@@ -4,7 +4,7 @@ import requests
 from datetime import timedelta
 import time
 
-from gen_functions import word, rank, match
+from gen_functions import games, word, rank
 
 def write(card, response):
     statted_image = ImageDraw.Draw(card)
@@ -184,11 +184,11 @@ def write(card, response):
 def get_season_stats(response):
     wins = str(response["statistics"]["season"]["wins"]["ranked"])
     losses = str(response["statistics"]["season"]["loses"]["ranked"])
-    games = str(response["statistics"]["season"]["playedMatches"]["ranked"])
-    draws = str(int(games) - int(wins) - int(losses))
+    plays = str(response["statistics"]["season"]["playedMatches"]["ranked"])
+    draws = str(int(plays) - int(wins) - int(losses))
     best_elo = str(response["seasonResult"]["highest"])
-    ff_loss = str(match.get_ff_loss(response, "season"))
-    avg_completion = str(timedelta(milliseconds=match.get_avg_completion(response, "season")))[2:7].lstrip("0")
+    ff_loss = str(games.get_ff_loss(response, "season"))
+    avg_completion = str(timedelta(milliseconds=games.get_avg_completion(response, "season")))[2:7].lstrip("0")
 
     return [["W/L/D:",
              "Best ELO:",
@@ -200,9 +200,9 @@ def get_season_stats(response):
              avg_completion]]
 
 def get_lifetime_stats(response):
-    playtime = str(match.get_playtime(response, "total"))
-    playtime_day = str(match.get_playtime_day(response))
-    games = str(response["statistics"]["total"]["playedMatches"]["ranked"])
+    playtime = str(games.get_playtime(response, "total"))
+    playtime_day = str(games.get_playtime_day(response))
+    plays = str(response["statistics"]["total"]["playedMatches"]["ranked"])
     best_ws = str(response["statistics"]["total"]["highestWinStreak"]["ranked"])
 
     return [["Playtime:",
@@ -211,7 +211,7 @@ def get_lifetime_stats(response):
              "Best WS:"],
             [f"{playtime} h",
              f"{playtime_day} m",
-             games,
+             plays,
              best_ws]]
 
 def get_major_stats(response):

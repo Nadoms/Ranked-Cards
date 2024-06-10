@@ -4,7 +4,7 @@ import requests
 import sys
 from commands import card as carding
 from commands import graph as graphing
-from commands import analyse as analysing
+from commands import match as analysing
 
 def main(command, name, type, season, match_id):
     response = requests.get(f"https://mcsrranked.com/api/users/{name}").json()
@@ -16,20 +16,22 @@ def main(command, name, type, season, match_id):
         img = carding.main(name, response, discord, pfp, "grass.jpg")
     elif command == "plot":
         img = graphing.main(name, response, type, season)
-    elif command == "analyse":
+    elif command == "match":
         img = analysing.main(response2, match_id)
         
+    img.save("test.png")
     img.show()
 
 if __name__ == "__main__":
     command = "card"
     name = "Nadoms"
-    season = 4
+    season = 5
     type = "Completion time"
     match_id = 853645
     if len(sys.argv) >= 3:
         command = sys.argv[1]
         name = sys.argv[2]
+        match_id = sys.argv[2]
     if len(sys.argv) >= 4:
         season = sys.argv[3]
     if len(sys.argv) >= 5:

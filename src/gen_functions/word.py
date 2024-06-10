@@ -1,7 +1,9 @@
 def calc_length(word, size):
     length = len(word) * 6 - 1
     for letter in word:
-        if letter in " i.:,!":
+        if letter == " ":
+            length -= 4
+        elif letter in " i.:,!":
             length -= 4
         elif letter == "l":
             length -= 3
@@ -15,7 +17,9 @@ def calc_length(word, size):
 def calc_size(word, desired_length):
     length = len(word) * 6 - 1
     for letter in word:
-        if letter in " i.:,! ":
+        if letter == " ":
+            length -= 5
+        elif letter in " i.:,!":
             length -= 4
         elif letter == "l":
             length -= 3

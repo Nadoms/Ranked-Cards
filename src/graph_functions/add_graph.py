@@ -9,11 +9,11 @@ import seaborn as sns
 import pandas as pd
 from scipy.interpolate import make_interp_spline
 
-from gen_functions import match, rank
+from gen_functions import games, rank
 
 
 def write(uuid, response, type, season):
-    matches = match.get_matches(response["nickname"], season, True)
+    matches = games.get_matches(response["nickname"], season, True)
     columns = ["Games ago", type, type + " (smoothed)", "Season"]
 
     if len(matches) <= 1:
@@ -85,7 +85,7 @@ def write(uuid, response, type, season):
 
     # Vertical season lines.
     if season == "Lifetime":
-        prev_season = match.get_season()
+        prev_season = games.get_season()
         for i in range(0, len(data)-1):
             season = data["Season"].loc[data.index[i]]
             if prev_season != season:

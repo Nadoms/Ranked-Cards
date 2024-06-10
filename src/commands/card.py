@@ -8,7 +8,7 @@ from PIL import Image, ImageFilter
 from os import path
 from datetime import datetime
 
-from gen_functions import match
+from gen_functions import games
 
 def main(name, response, discord, pfp, background):
     response = response["data"]
@@ -18,7 +18,7 @@ def main(name, response, discord, pfp, background):
     card = Image.open(file).convert("RGBA").filter(ImageFilter.GaussianBlur(0))
 
     then = datetime.now()
-    matches = match.get_recent_matches(name, False)
+    matches = games.get_recent_matches(name, False)
     then = splits(then, 0)
     card = add_boxes.write(card, name, response)
     then = splits(then, 1)

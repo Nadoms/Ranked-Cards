@@ -1,7 +1,7 @@
 from PIL import ImageDraw, ImageFont
 import requests
 
-from gen_functions import rank, match, word
+from gen_functions import word
 
 def write(card, matches, uuid, response):
     history_font = ImageFont.truetype('minecraft_font.ttf', 26)
@@ -35,7 +35,7 @@ def write(card, matches, uuid, response):
 
     for i in range(len(description)):
         historyed_image.text((x, 723), description[i], font=history_font, fill=desc_colour[i])
-        x += word.calc_length(description[i], 26)+26/7
+        x += word.calc_length(description[i], 26)
     
     return card
 

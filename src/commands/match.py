@@ -1,5 +1,5 @@
 import random
-from analyse_functions import add_info, add_names, add_shapes, add_stats, add_skins, add_splits, add_context, add_pentagon, add_other
+from match_functions import add_info, add_names, add_shapes, add_stats, add_skins, add_splits, add_context, add_pentagon, add_other
 
 import requests
 from PIL import Image
@@ -17,29 +17,29 @@ def main(response, match_id):
         return -1
     vs_response = vs_response["data"]
 
-    analysis = Image.new("RGB", (1200, 1920), "#424549")
+    chart = Image.new("RGB", (1200, 1920), "#313338")
 
     then = datetime.now()
-    analysis = add_shapes.write(analysis, names, response) # done! for now
+    chart = add_shapes.write(chart, names, response)
     then = splits(then, 0)
-    analysis = add_names.write(analysis, names, response) # done!
+    chart = add_names.write(chart, names, response)
     then = splits(then, 1)
-    analysis = add_stats.write(analysis, uuids, response, vs_response) # yup!
+    chart = add_stats.write(chart, uuids, response, vs_response)
     then = splits(then, 2)
-    analysis = add_skins.write(analysis, uuids) # yes!
+    chart = add_skins.write(chart, uuids)
     then = splits(then, 3)
-    analysis = add_splits.write(analysis, uuids, response) # oh dear god...
+    chart = add_splits.write(chart, uuids, response)
     then = splits(then, 4)
-    analysis = add_context.write(analysis, names, response, match_id)
+    chart = add_context.write(chart, names, response, match_id)
     then = splits(then, 5)
-    analysis = add_pentagon.write(analysis, names, response, match_id)
+    chart = add_pentagon.write(chart, names, response, match_id)
     then = splits(then, 6)
-    analysis = add_other.write(analysis)
+    chart = add_info.write(chart, response)
     then = splits(then, 7)
-    analysis = add_info.write(analysis, response)
-    then = splits(then, 7)
+    chart = add_other.write(chart)
+    then = splits(then, 8)
 
-    return analysis
+    return chart
 
 def splits(then, process):
     processes = ["Drawing boxes",
@@ -49,6 +49,7 @@ def splits(then, process):
      "Comparing splits",
      "Generating context",
      "Pentagoning pentgagon",
+     "Adding seed info",
      "Final touchups"]
     now = datetime.now()
     diff = round((now - then).total_seconds() * 1000)

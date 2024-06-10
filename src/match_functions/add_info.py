@@ -7,7 +7,7 @@ from os import path
 
 from gen_functions import word
 
-def write(analysis, response):
+def write(chart, response):
     middle = 600
     x_values = [middle-80, middle, middle+80]
     y = 90
@@ -15,9 +15,9 @@ def write(analysis, response):
     seed = get_seed(response)
     seed_x = round(x_values[1] - seed.size[0] / 2)
     seed_y = round(y - seed.size[1] / 2)
-    analysis.paste(seed, (seed_x, seed_y), seed)
+    chart.paste(seed, (seed_x, seed_y), seed)
 
-    infoed_image = ImageDraw.Draw(analysis)
+    infoed_image = ImageDraw.Draw(chart)
     info_size = 25
     id_size = 20
     info_font = ImageFont.truetype('minecraft_font.ttf', info_size)
@@ -41,13 +41,13 @@ def write(analysis, response):
     id_y = round(y - word.horiz_to_vert(id_size) / 2) - 60
     infoed_image.text((id_x, id_y), id, font=id_font, fill="yellow")
 
-    return analysis
+    return chart
 
 def get_seed(response):
     seed_type = response["seedType"].lower()
     file = path.join("src", "pics", "stuctures", f"{seed_type}.png")
     seed = Image.open(file)
-    seed = seed.resize((60, 60), resample=Image.NEAREST)
+    seed = seed.resize((80, 80), resample=Image.NEAREST)
     return seed
 
 def get_delta(response):

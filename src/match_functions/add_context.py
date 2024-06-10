@@ -1,8 +1,8 @@
-from gen_functions import match, rank
+from gen_functions import games, rank
 
-def write(analysis, name, response, match_id):
+def write(chart, name, response, match_id):
     insights = get_insights(response)
-    return analysis
+    return chart
 
 def get_insights(response):
     insights = {

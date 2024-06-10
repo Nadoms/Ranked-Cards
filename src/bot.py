@@ -8,10 +8,8 @@ from dotenv import load_dotenv
 from time import time
 
 import requests
-from commands import card as carding
-from commands import graph as graphing
-from commands import analyse as analysing
-from gen_functions import match
+from commands import card as carding, graph as graphing, match as matching
+from gen_functions import games
 
 intents = intents=nextcord.Intents.all()
 intents.members = True
@@ -218,11 +216,11 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
         update_records("plot", interaction.user.id, input_name, hidden, True)
 
 
-@bot.slash_command(name="analyse", description="Performs an analysis on your most recent match, or the match specified.")
-async def analyse(interaction: Interaction, match_id: str = SlashOption(
+@bot.slash_command(name="match", description="Produces a chart on your most recent match, or the match specified.")
+async def match(interaction: Interaction, match_id: str = SlashOption(
     "match_id",
     required = False,
-    description="The match to perform an analysis on.",
+    description="The match ID to draw a chart of.",
     default=None
     ), hidden: str = SlashOption(
     "hidden",
@@ -241,41 +239,47 @@ async def analyse(interaction: Interaction, match_id: str = SlashOption(
     uuid = None
     if not match_id:
         if not input_name:
-            await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a match ID.")
-            update_records("analyse", interaction.user.id, "Unknown", hidden, False)
+            await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a match ID.", ephemeral=hidden)
+            update_records("match", interaction.user.id, "Unknown", hidden, False)
             return
 
         print(f"\nFinding {input_name}'s last match")
-        uuid, match_id = match.get_last_match(input_name)
+        uuid, match_id = games.get_last_match(input_name)
         if not match_id:
-            await interaction.response.send_message("Player has no matches from this season.")
-            update_records("analyse", interaction.user.id, match_id, hidden, False)
+            await interaction.response.send_message("Player has no matches from this season.", ephemeral=hidden)
+            update_records("match", interaction.user.id, match_id, hidden, False)
             return
 
-    print(f"\nAnalysing match {match_id}")
+    print(f"\Charting match {match_id}")
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
     response = requests.get(f"https://mcsrranked.com/api/matches/{match_id}", headers=headers).json()
     if response["status"] == "error":
         print("Match not found.")
-        await interaction.response.send_message("Match not found.")
-        update_records("analyse", interaction.user.id, match_id, hidden, False)
+        await interaction.response.send_message(f"Match not found. (`{match_id}`)", ephemeral=hidden)
+        update_records("match", interaction.user.id, match_id, hidden, False)
         return
     
-    await interaction.response.defer()
+    elif response["data"]["type"] >= 3:
+        print("Match is invalid.")
+        await interaction.response.send_message(f"Match must be a ranked or casual game. (`{match_id}`)", ephemeral=hidden)
+        update_records("match", interaction.user.id, match_id, hidden, False)
+        return
+    
+    await interaction.response.defer(ephemeral=hidden)
     
     try:
-        img = analysing.main(response, match_id)
+        img = matching.main(response, match_id)
     except Exception as e:
         print(e)
         await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
-        update_records("analyse", interaction.user.id, match_id, hidden, False)
+        update_records("match", interaction.user.id, match_id, hidden, False)
         return
 
-    img.save("analysis.png")
-    with open("analysis.png", "rb") as f:
+    img.save("chart.png")
+    with open("chart.png", "rb") as f:
         img = File(f)
-    await interaction.followup.send(files=[img])
-    update_records("analyse", interaction.user.id, match_id, hidden, True)
+    await interaction.followup.send(files=[img], ephemeral=hidden)
+    update_records("match", interaction.user.id, match_id, hidden, True)
 
 
 @bot.slash_command(name="customise", description="Allows you to personalise your card. Only applies to connected users.")
@@ -435,8 +439,8 @@ async def help(interaction: Interaction,
         inline = False
     )
     embed.add_field(
-        name = "/analyse",
-        value = "`Options: Match ID, hide response`\nMatch analysis command to be ***coming soon***...",
+        name = "/match",
+        value = "`Options: Match ID, hide response`\n`Defaults: Last ranked match played, public`\n***Draws a chart*** visualising two player's splits in a game.",
         inline = False
     )
     embed.add_field(
@@ -542,10 +546,10 @@ def update_records(command, caller, callee, hidden, completed):
         stats["stats"]["plots"]["success"] += completed
         stats["stats"]["plots"]["fail"] += 1-completed
     
-    if command == "analyse":
+    if command == "match":
         stats["stats"]["totalGenerated"] += 1
-        stats["stats"]["analyses"]["success"] += completed
-        stats["stats"]["analyses"]["fail"] += 1-completed
+        stats["stats"]["matches"]["success"] += completed
+        stats["stats"]["matches"]["fail"] += 1-completed
     
     if command == "connect":
         stats["stats"]["connectedUsers"] += 1
@@ -570,6 +574,6 @@ def update_records(command, caller, callee, hidden, completed):
         stats_json = json.dumps(stats, indent=4)
         f.write(stats_json)
 
-updates_disabled = True
 load_dotenv()
+updates_disabled = True
 bot.run(getenv("TEST_TOKEN"))

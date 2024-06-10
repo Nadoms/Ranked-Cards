@@ -3,8 +3,8 @@ from PIL import ImageDraw, ImageFont, Image
 
 from gen_functions import word
 
-def write(analysis, names, response):
-    named_image = ImageDraw.Draw(analysis)
+def write(chart, names, response):
+    named_image = ImageDraw.Draw(chart)
     middle = 600
     icon_x_values = [middle-510, middle+510]
     x_values = [middle+50, middle-50]
@@ -44,9 +44,9 @@ def write(analysis, names, response):
         icon_x = int(icon_x_values[i] - icon.size[0] / 2)
         icon_y = int(y_values[i] - icon.size[1] / 2)
 
-        analysis.paste(icon, (icon_x, icon_y), icon)
+        chart.paste(icon, (icon_x, icon_y), icon)
 
-    return analysis
+    return chart
 
 def get_rank_colour(rank):
     rank_colours = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52ba", "#cd7f32", "#c0c0c0", "#ffd700"]
