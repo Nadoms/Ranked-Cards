@@ -33,6 +33,9 @@ def write(chart, uuids, response):
                 y2 = 1800
             else:
                 y2 = prog_coords[j+1]
+            
+            if y2 - y1 < 6:
+                continue
                 
             file = path.join("src", "pics", "textures", "cleantextures", f"{textures[progressions[j]]}.jpg")
             texture = Image.open(file)
