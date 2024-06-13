@@ -24,10 +24,11 @@ def get_skin(uuid, i):
         response = requests.get(f"https://visage.surgeplay.com/head/250/{uuid}?y={yaw}&p=15", headers=headers)
         skin = Image.open(BytesIO(response.content))
     except:
-        skin = get_default_skin()
+        skin = get_default_skin(i)
     return skin
 
-def get_default_skin():
-    file = path.join("src", "pics", "other", "default_head.webp")
+def get_default_skin(i):
+    right_left = ["r", "l"]
+    file = path.join("src", "pics", "other", f"{right_left[i]}small_default_head.webp")
     skin = Image.open(file)
     return skin

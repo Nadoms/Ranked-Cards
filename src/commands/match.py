@@ -1,5 +1,5 @@
 import random
-from match_functions import add_info, add_names, add_shapes, add_stats, add_skins, add_splits, add_context, add_pentagon, add_other
+from match_functions import add_info, add_names, add_shapes, add_stats, add_skins, add_splits, add_other
 
 import requests
 from PIL import Image
@@ -30,14 +30,10 @@ def main(response, match_id):
     then = splits(then, 3)
     chart = add_splits.write(chart, uuids, response)
     then = splits(then, 4)
-    chart = add_context.write(chart, names, response, match_id)
-    then = splits(then, 5)
-    chart = add_pentagon.write(chart, names, response, match_id)
-    then = splits(then, 6)
     chart = add_info.write(chart, response)
-    then = splits(then, 7)
+    then = splits(then, 5)
     chart = add_other.write(chart)
-    then = splits(then, 8)
+    then = splits(then, 6)
 
     return chart
 
@@ -47,8 +43,6 @@ def splits(then, process):
      "Calculating stats",
      "Finding skins",
      "Comparing splits",
-     "Generating context",
-     "Pentagoning pentgagon",
      "Adding seed info",
      "Final touchups"]
     now = datetime.now()
