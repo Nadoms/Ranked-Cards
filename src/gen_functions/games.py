@@ -2,6 +2,7 @@ import time
 import requests
 from datetime import timedelta
 
+
 def get_matches(name, season, decays):
     if season == "Lifetime":
         matches = []
@@ -12,6 +13,7 @@ def get_matches(name, season, decays):
             season = get_season()
         matches = get_season_matches(name, season, decays)
     return matches
+
 
 def get_season_matches(name, s, decays):
     matches = []
@@ -32,6 +34,7 @@ def get_season_matches(name, s, decays):
         i += 1
     return matches
 
+
 def get_recent_matches(name, decays):
     matches = []
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
@@ -44,6 +47,7 @@ def get_recent_matches(name, decays):
     response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page=0&count=50&type=2&season={get_season()}{excludedecay}", headers=headers).json()["data"]
     matches += response
     return matches
+
 
 def get_last_match(name):
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
@@ -58,28 +62,20 @@ def get_last_match(name):
     else:
         return [uuid, matches_response["data"][0]["id"]]
 
+
 def get_playtime(response, seasonOrTotal):
     playtime = response["statistics"][seasonOrTotal]["playtime"]["ranked"]
 
     hours = round(timedelta(milliseconds=playtime).total_seconds() / 3600, 1)
     return hours
 
-    '''current_season = get_season()
-    playtime = 0
-
-    for match in matches:
-        if not match["is_decay"]:
-            if not season:
-                playtime += match["result"]["time"]
-                continue
-            if match["match_season"] == current_season:
-                playtime += match["result"]["time"]'''
 
 def get_playtime_day(response):
     playtime_day = response["statistics"]["total"]["playtime"]["ranked"] / (time.time() - response["timestamp"]["firstOnline"]) / 1000
 
     minutes = round(playtime_day * 24 * 60, 1)
     return minutes
+
 
 def get_ff_loss(response, seasonOrTotal):
     forfeits = response["statistics"][seasonOrTotal]["forfeits"]["ranked"]
@@ -89,25 +85,6 @@ def get_ff_loss(response, seasonOrTotal):
     forfeit_loss = round(forfeits / losses * 100, 1)
     return forfeit_loss
 
-    '''current_season = get_season()
-    forfeits = 0
-    losses = 0
-
-    for match in matches:
-        if not match["is_decay"]:
-            if not season:
-                if match["winner"] != uuid and match["winner"]:
-                    losses += 1
-                    if match["forfeit"] == True:
-                        forfeits += 1
-            elif match["match_season"] == current_season:
-                if match["winner"] != uuid and match["winner"]:
-                    losses += 1
-                    if match["forfeit"] == True:
-                        forfeits += 1
-
-    if losses == 0:
-        return "-"'''
 
 def get_avg_completion(response, seasonOrTotal):
     completion_time = response["statistics"][seasonOrTotal]["completionTime"]["ranked"]
@@ -117,24 +94,39 @@ def get_avg_completion(response, seasonOrTotal):
     return avg_completion
 
 
-    '''current_season = get_season()
-    total_time = 0
-    completions = 0
+def get_detailed_matches(name, uuid, min_comps, target_games):
+    detailed_matches = []
+    num_comps = 0
+    num_games = 0
+    i = 0
+    s = 5
+    response = "PLACEHOLDER"
+    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
 
-    for match in matches:
-        if match["result"]["uuid"] == uuid and match["forfeited"] == False:
-            if seasonOrTotal == "total":
-                total_time += match["result"]["time"]
-                completions += 1
-            elif match["season"] == current_season:
-                total_time += match["result"]["time"]
-                completions += 1
+    while s >= 4:
+        print(i, s, num_games, num_comps)
+        response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page={i}&season={s}&count=50&type=2&excludedecay", headers=headers).json()["data"]
 
-    if completions == 0:
-        return 0
-    
-    avg_completion = round(total_time / completions, 0)
-    return avg_completion'''
+        for match in response:
+            match_id = match["id"]
+            match_response = requests.get(f"https://mcsrranked.com/api/matches/{match_id}", headers=headers).json()["data"]
+            detailed_matches.append(match_response)
+            num_games += 1
+
+            if match_response["forfeited"] == False and match_response["result"]["uuid"] == uuid:
+                num_comps += 1
+
+            if num_games >= target_games and num_comps >= min_comps:
+                return detailed_matches
+                
+        i += 1
+
+        if response == []:
+            i = 0
+            s -= 1
+
+    return detailed_matches
+
 
 def get_season():
     return 5
