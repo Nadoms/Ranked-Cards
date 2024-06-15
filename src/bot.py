@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from time import time
 
 import requests
-from commands import card as carding, graph as graphing, match as matching
+from commands import card as carding, graph as graphing, match as matching, analysis as analysing
 from gen_functions import games
 
 intents = intents=nextcord.Intents.all()
@@ -52,8 +52,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
             await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a minecraft username.", ephemeral=hidden)
             update_records("card", interaction.user.id, "Unknown", hidden, False)
             return
-        if input_name:
-            connected = True
+        connected = True
     
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
     response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=headers).json()
@@ -147,6 +146,8 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
         hidden = True
     else:
         hidden = False
+
+    connected = False
         
     if not input_name:
         input_name = get_name(interaction)
@@ -154,6 +155,7 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
             await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a minecraft username.", ephemeral=hidden)
             update_records("plot", interaction.user.id, "Unknown", hidden, False)
             return
+        connected = True
     
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
     response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=headers).json()
@@ -162,6 +164,12 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
     failed = False
     if response["status"] == "error":
         print(f"Player not found  (`{input_name}`).")
+        
+        if connected:
+            await interaction.response.send_message(f"Player not found (`{input_name}`). Connect to your new Minecraft username with </connect:1149442234513637448>.", ephemeral=hidden)
+            update_records("plot", interaction.user.id, input_name, hidden, False)
+            return
+        
         failed = True
         extra, first = get_close(input_name)
 
@@ -280,6 +288,50 @@ async def match(interaction: Interaction, match_id: str = SlashOption(
         img = File(f)
     await interaction.followup.send(files=[img], ephemeral=hidden)
     update_records("match", interaction.user.id, match_id, hidden, True)
+
+
+@bot.slash_command(name="analysis", description="Analyses your last 50 completions to visualise how you stack up against the playerbase.")
+async def analysis(interaction: Interaction, hidden: str = SlashOption(
+    "hidden",
+    required = False,
+    description="Hides my response.",
+    default="",
+    choices=["True"]
+    )):
+    
+    if hidden:
+        hidden = True
+    else:
+        hidden = False
+
+    input_name = get_name(interaction)
+    if not input_name:
+        await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> to use this command.", ephemeral=hidden)
+        update_records("analysis", interaction.user.id, "Unknown", hidden, False)
+        return
+
+    print(f"\nAnalysing {input_name}'s completions")
+
+    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
+    response = requests.get(f"https://mcsrranked.com/api/players/{input_name}", headers=headers).json()
+    if response["status"] == "error":
+        print("Player not found.")
+        await interaction.response.send_message(f"Player not found. (`{input_name}`) Connect to your new Minecraft username with </connect:1149442234513637448>.", ephemeral=hidden)
+        update_records("analysis", interaction.user.id, input_name, hidden, False)
+        return
+    
+    await interaction.response.defer(ephemeral=hidden)
+    
+    try:
+        head, split_penta, ow_penta = analysing.main(response)
+    except Exception as e:
+        print(e)
+        await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
+        update_records("analysis", interaction.user.id, input_name, hidden, False)
+        return
+    
+    await interaction.followup.send("yo", ephemeral=hidden)
+    update_records("analysis", interaction.user.id, input_name, hidden, True)
 
 
 @bot.slash_command(name="customise", description="Allows you to personalise your card. Only applies to connected users.")
