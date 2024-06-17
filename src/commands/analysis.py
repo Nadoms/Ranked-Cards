@@ -10,21 +10,23 @@ from gen_functions import games
 def main(response):
     response = response["data"]
     uuid = response["uuid"]
-    name = response["nick"]
+    name = response["nickname"]
 
     split_penta = Image.new("RGB", (400, 400), "#313338")
     ow_penta = Image.new("RGB", (400, 400), "#313338")
 
     then = datetime.now()
-    detailed_matches = games.get_detailed_matches(name, 30, 150)
+    detailed_matches = games.get_detailed_matches(name, uuid, 1, 10)
+    if detailed_matches == -1:
+        return -1
     then = splits(then, 0)
-    skin = get_skin(uuid)
+    skin = get_skin.main(uuid)
     then = splits(then, 1)
-    comments = get_comments(response, detailed_matches)
+    comments = get_comments.main(response, detailed_matches)
     then = splits(then, 2)
-    split_comm, split_penta = split_insights(response, detailed_matches)
+    split_comm, split_penta = split_insights.main(detailed_matches)
     then = splits(then, 3)
-    ow_comm, ow_penta = ow_insights(response, detailed_matches)
+    ow_comm, ow_penta = ow_insights.main(detailed_matches)
     then = splits(then, 4)
 
     text = {"general": comments, "splits": split_comm, "ow": ow_comm}
@@ -32,7 +34,7 @@ def main(response):
     return skin, text, split_penta, ow_penta
 
 def splits(then, process):
-    processes = ["Collecting data"
+    processes = ["Collecting data",
      "Finding skin",
      "Generating insights",
      "Constructing split pentagon",
@@ -44,7 +46,6 @@ def splits(then, process):
     return now
 
 if __name__ == "__main__":
-    input_name = "nadoms"
+    input_name = "Nadoms"
     response = requests.get(f"https://mcsrranked.com/api/users/{input_name}").json()
-    type = "elo"
-    main(input_name, response, type).show()
+    main(response).show()

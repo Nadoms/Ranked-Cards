@@ -3,7 +3,7 @@ import requests
 from io import BytesIO
 from os import path
 
-def __init__(self, uuid):
+def main(uuid):
     try:
         skin = get_skin(uuid)
     except:

@@ -125,6 +125,9 @@ def get_detailed_matches(name, uuid, min_comps, target_games):
             i = 0
             s -= 1
 
+    if num_comps == 0:
+        return -1
+
     return detailed_matches
 
 

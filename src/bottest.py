@@ -4,7 +4,8 @@ import requests
 import sys
 from commands import card as carding
 from commands import graph as graphing
-from commands import match as analysing
+from commands import match as matching
+from commands import analysis as analysing
 
 def main(command, name, type, season, match_id):
     response = requests.get(f"https://mcsrranked.com/api/users/{name}").json()
@@ -17,7 +18,9 @@ def main(command, name, type, season, match_id):
     elif command == "plot":
         img = graphing.main(name, response, type, season)
     elif command == "match":
-        img = analysing.main(response2, match_id)
+        img = matching.main(response2, match_id)
+    elif command == "analysis":
+        img = analysing.main(response)
         
     img.save("test.png")
     img.show()
