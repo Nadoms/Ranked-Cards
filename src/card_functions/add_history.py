@@ -11,7 +11,9 @@ def write(card, matches, uuid, response):
 
     recent_matches = last_few(matches, 10)
     if not recent_matches:
-        historyed_image.text((200, 700), "User has no matches played.", font=history_font, fill="white")
+        msg = "User has no matches played."
+        x = 360-word.calc_length(msg, 26)/2
+        historyed_image.text((x, 723), msg, font=history_font, fill="white")
         return card
     
     historyed_image.rectangle([30, 665, 690, 715], fill="#ffffff", outline="#000000", width=8)

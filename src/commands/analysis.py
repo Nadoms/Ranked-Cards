@@ -16,7 +16,7 @@ def main(response):
     ow_penta = Image.new("RGB", (400, 400), "#313338")
 
     then = datetime.now()
-    detailed_matches = games.get_detailed_matches(name, uuid, 0, 0)
+    detailed_matches = games.get_detailed_matches(name, uuid, 10, 10)
     if detailed_matches == -1:
         return -1
     then = splits(then, 0)

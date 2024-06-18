@@ -2,6 +2,7 @@ from os import path
 import numpy as np
 import math
 from PIL import Image, ImageDraw, ImagePath
+import random
 
 def main(uuid, detailed_matches):
     average_splits = get_avg_splits(uuid, detailed_matches)
@@ -35,13 +36,10 @@ def get_avg_splits(uuid, detailed_matches):
 
         prev_event = "ow"
         prev_time = 0
-        print(f"CHECKING MATCH {match['id']}")
 
         for event in reversed(match["timelines"]):
             if event["uuid"] != uuid:
                 continue
-
-            print(f"Checking event {event['type']}, currently in {prev_event} split.")
 
             if event["type"] == "projectelo.timeline.reset":
                 prev_time = event["time"]
@@ -49,7 +47,6 @@ def get_avg_splits(uuid, detailed_matches):
 
             elif event["type"] in event_mapping.keys():
                 split_length = event["time"] - prev_time
-                print(f"New split detected, {event_mapping[event['type']]}! Last split took {split_length}")
                 total_splits[prev_event] += split_length
                 number_splits[prev_event] += 1
 
@@ -104,7 +101,7 @@ def get_ranked_splits(average_splits):
         if len(splits_final_boss[key]) == 0:
             ranked_splits[key] = 0
         else:
-            ranked_splits[key] = round(ranked_splits[key] / len(splits_final_boss[key]), 2)
+            ranked_splits[key] = 1 - round(ranked_splits[key] / len(splits_final_boss[key]), 2)
 
     print(ranked_splits)
     return ranked_splits
@@ -115,30 +112,59 @@ def get_polygon(ranked_splits):
     middle = img_size / 2
     init_prop = 1.2
     proportions = [init_prop, init_prop * 4/3, init_prop * 2, init_prop * 4, 10000]
+    angles = [(i * (2 * math.pi) - 0.5 * math.pi) / sides for i in range(sides)]
+    angles.insert(0, angles.pop())
+    split_mapping = ["ow", "bastion", "fortress", "blind", "stronghold"]
 
-    polygon_frame = Image.new("RGB", (img_size, img_size), "#313338")
-    polygon = ImageDraw.Draw(polygon_frame)
+    polygon_frame = Image.new("RGBA", (img_size, img_size), "#313338")
+    frame_draw = ImageDraw.Draw(polygon_frame)
+
+    polygon_size = middle / init_prop
+    xy = [ 
+        ((math.cos(th) + init_prop) * polygon_size, 
+        (math.sin(th) + init_prop) * polygon_size) 
+        for th in angles
+    ]
+    frame_draw.polygon(xy, fill="#413348", width=4)
+
+    for i in range(sides):
+        polygon_size = middle / init_prop
+        th = (i * (2 * math.pi) - 0.5 * math.pi) / sides
+        xy = [(middle, middle),
+            ((math.cos(th) + init_prop) * polygon_size, 
+            (math.sin(th) + init_prop) * polygon_size)
+        ]
+        frame_draw.line(xy, fill="#515368", width=3)
 
     for proportion in proportions:
-        polygon_size = middle * proportion
+        polygon_size = middle / proportion
         xy = [ 
             ((math.cos(th) + proportion) * polygon_size, 
             (math.sin(th) + proportion) * polygon_size) 
-            for th in [(i * (2 * math.pi) - 0.5 * math.pi) / sides for i in range(sides)] 
+            for th in angles 
         ]
         if proportion == init_prop:
-            polygon.polygon(xy, outline ="#ffffff", width=4)
+            frame_draw.polygon(xy, outline="#ffffff", width=6)
         else:
-            polygon.polygon(xy, outline ="#515358", width=3)
+            frame_draw.polygon(xy, outline="#515368", width=3)
 
-    for i in range(sides):
-        polygon_size = middle * init_prop
-        th = (i * (2 * math.pi) - 0.5 * math.pi) / sides
-        xy = [(middle, middle),
-            ((math.cos(th) + proportion) * polygon_size, 
-            (math.sin(th) + proportion) * polygon_size)
-        ]
 
-    polygon_frame.show()
+    polygon_stats = polygon_frame.copy()
+    stats_draw = ImageDraw.Draw(polygon_frame)
+
+    xy = []
+    for i in range(len(angles)):
+        val = ranked_splits[split_mapping[i]]
+        proportion = init_prop / val
+        polygon_size = middle / proportion
+        xy.append(
+            ((math.cos(angles[i]) + proportion) * polygon_size,
+            (math.sin(angles[i]) + proportion) * polygon_size)
+        )
+    stats_draw.polygon(xy, fill="#7163b8", outline="#fad43d", width=4)
+
+
+    polygon = Image.blend(polygon_frame, polygon_stats, 0.4)
+    polygon.show()
 
     return polygon
