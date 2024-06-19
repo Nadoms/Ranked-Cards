@@ -113,7 +113,7 @@ def get_ranked_splits(average_splits):
         if len(splits_final_boss[key]) == 0:
             ranked_splits[key] = 0
         else:
-            ranked_splits[key] = 1 - round(ranked_splits[key] / len(splits_final_boss[key]), 2)
+            ranked_splits[key] = round(1 - ranked_splits[key] / len(splits_final_boss[key]), 2)
 
     print(ranked_splits)
     return ranked_splits

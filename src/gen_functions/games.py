@@ -104,7 +104,6 @@ def get_detailed_matches(name, uuid, min_comps, target_games):
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
 
     while s >= 4:
-        print(i, s, num_games, num_comps)
         response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page={i}&season={s}&count=50&type=2&excludedecay", headers=headers).json()["data"]
 
         for match in response:
@@ -117,6 +116,8 @@ def get_detailed_matches(name, uuid, min_comps, target_games):
                 num_comps += 1
 
             if num_games >= target_games and num_comps >= min_comps:
+                print(f"Targets met ({target_games} games and {min_comps} completions)")
+                print(f"Extracted {num_games} games including {num_comps} completions")
                 return detailed_matches
                 
         i += 1
@@ -127,6 +128,9 @@ def get_detailed_matches(name, uuid, min_comps, target_games):
 
     if num_comps == 0:
         return -1
+    
+    print(f"Targets not met ({target_games} games and {min_comps})")
+    print(f"Extracted {num_games} games including {num_comps} completions")
 
     return detailed_matches
 

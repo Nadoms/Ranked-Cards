@@ -17,16 +17,19 @@ def main(path):
             data[1].append(int(line[1]))
 
     # Casting and plotting the data.
-    X = torch.FloatTensor(data[0])
-    Y = torch.FloatTensor(data[1])
+    order = np.argsort(data[0])
+    X_raw = torch.FloatTensor(data[0])[order]
+    Y_raw = torch.FloatTensor(data[1])[order]
+    X = X_raw.apply_(lambda x : x * 1e-5)
+    Y = Y_raw.apply_(lambda x : x * 1e-3)
 
-    W = [torch.tensor(3500.0, requires_grad=True),
-         torch.tensor(-0.01, requires_grad=True),
+    W = [torch.tensor(0.0, requires_grad=True),
+         torch.tensor(0.0, requires_grad=True),
          torch.tensor(0.0, requires_grad=True)]
 
-    step_sizes = [0.001, 0.0000000000001, 0.00000000000000000000000001]
+    step_sizes = [0.01, 0.01, 0.001]
     loss_list = []
-    iter = 2000
+    iter = 200
     
     for i in range(iter):
         Y_pred = forward(X, W)
@@ -34,22 +37,22 @@ def main(path):
         loss_list.append(loss.item())
         loss.backward()
         
-        for i in range(len(W)):
-            W[i].data = W[i].data - step_sizes[i] * W[i].grad.data
-            W[i].grad.data.zero_()
+        for j in range(len(W)):
+            W[j].data = W[j].data - step_sizes[j] * W[j].grad.data
+            W[j].grad.data.zero_()
             
         print(f"{i},\t{loss.item()},\t{[w.item() for w in W]}")
 
     # Plotting the loss after each iteration
-    plt.plot(loss_list, 'r')
-    plt.tight_layout()
-    plt.grid('True', color='y')
-    plt.xlabel("Epochs/Iterations")
-    plt.ylabel("Loss")
-    plt.show()
+    # plt.plot(loss_list, 'r')
+    # plt.tight_layout()
+    # plt.grid('True', color='y')
+    # plt.xlabel("Epochs/Iterations")
+    # plt.ylabel("Loss")
+    # plt.show()
     
-    plt.plot(X.numpy(), Y.numpy(), 'b+', label='Y')
-    plt.plot(X.numpy(), Y_pred.detach().numpy(), 'r', label='pred')
+    plt.plot(X.numpy(), Y.numpy(), 'b.', label='Y')
+    plt.plot(X.numpy(), Y_pred.detach().numpy(), 'y', label='pred', linewidth=3)
     plt.xlabel('x')
     plt.ylabel('y')
     plt.legend()
@@ -61,7 +64,7 @@ def main(path):
 def forward(x, W):
     sum = 0
     for i in range(len(W)):
-        sum += W[i] * (x ** i)
+        sum += W[i] * (x ** (i-1))
     return sum
 
 
