@@ -27,9 +27,9 @@ def main(path):
          torch.tensor(0.0, requires_grad=True),
          torch.tensor(0.0, requires_grad=True)]
 
-    step_sizes = [0.01, 0.01, 0.001]
+    step_sizes = [10.0, 1.0, 0.1]
     loss_list = []
-    iter = 200
+    iter = 20000
     
     for i in range(iter):
         Y_pred = forward(X, W)
@@ -63,8 +63,10 @@ def main(path):
 # Defining the function for forward pass for prediction
 def forward(x, W):
     sum = 0
-    for i in range(len(W)):
-        sum += W[i] * (x ** (i-1))
+    sum = W[0] / (x + W[1]) + W[2]
+
+    # for i in range(len(W)):
+    #     sum += W[i] * (x ** (i-1))
     return sum
 
 
