@@ -1,8 +1,20 @@
 from os import path
 import numpy as np
 import math
-from PIL import Image, ImageDraw, ImagePath
+from PIL import Image, ImageDraw, ImageFont
 import random
+
+from gen_functions import word
+
+sides = 5
+init_prop = 1.4
+img_size_x = 960
+img_size_y = 720
+middle = img_size_y / 2
+offset_x = (img_size_x - img_size_y) / 2
+offset_y = 20
+angles = [(i * (2 * math.pi) - 0.5 * math.pi) / sides for i in range(sides)]
+angles.insert(0, angles.pop())
 
 def main(uuid, detailed_matches):
     average_splits = get_avg_splits(uuid, detailed_matches)
@@ -107,22 +119,16 @@ def get_ranked_splits(average_splits):
     return ranked_splits
 
 def get_polygon(ranked_splits):
-    sides = 5
-    img_size = 720
-    middle = img_size / 2
-    init_prop = 1.2
     proportions = [init_prop, init_prop * 4/3, init_prop * 2, init_prop * 4, 10000]
-    angles = [(i * (2 * math.pi) - 0.5 * math.pi) / sides for i in range(sides)]
-    angles.insert(0, angles.pop())
     split_mapping = ["ow", "bastion", "fortress", "blind", "stronghold"]
 
-    polygon_frame = Image.new("RGBA", (img_size, img_size), "#313338")
+    polygon_frame = Image.new("RGBA", (img_size_x, img_size_y), "#313338")
     frame_draw = ImageDraw.Draw(polygon_frame)
 
     polygon_size = middle / init_prop
-    xy = [ 
-        ((math.cos(th) + init_prop) * polygon_size, 
-        (math.sin(th) + init_prop) * polygon_size) 
+    xy = [
+        ((math.cos(th) + init_prop) * polygon_size + offset_x, 
+        (math.sin(th) + init_prop) * polygon_size + offset_y) 
         for th in angles
     ]
     frame_draw.polygon(xy, fill="#413348", width=4)
@@ -130,17 +136,17 @@ def get_polygon(ranked_splits):
     for i in range(sides):
         polygon_size = middle / init_prop
         th = (i * (2 * math.pi) - 0.5 * math.pi) / sides
-        xy = [(middle, middle),
-            ((math.cos(th) + init_prop) * polygon_size, 
-            (math.sin(th) + init_prop) * polygon_size)
+        xy = [(middle + offset_x, middle + offset_y),
+            ((math.cos(th) + init_prop) * polygon_size + offset_x, 
+            (math.sin(th) + init_prop) * polygon_size + offset_y)
         ]
         frame_draw.line(xy, fill="#515368", width=3)
 
     for proportion in proportions:
         polygon_size = middle / proportion
         xy = [ 
-            ((math.cos(th) + proportion) * polygon_size, 
-            (math.sin(th) + proportion) * polygon_size) 
+            ((math.cos(th) + proportion) * polygon_size + offset_x, 
+            (math.sin(th) + proportion) * polygon_size + offset_y) 
             for th in angles 
         ]
         if proportion == init_prop:
@@ -158,13 +164,57 @@ def get_polygon(ranked_splits):
         proportion = init_prop / val
         polygon_size = middle / proportion
         xy.append(
-            ((math.cos(angles[i]) + proportion) * polygon_size,
-            (math.sin(angles[i]) + proportion) * polygon_size)
+            ((math.cos(angles[i]) + proportion) * polygon_size + offset_x,
+            (math.sin(angles[i]) + proportion) * polygon_size + offset_y)
         )
-    stats_draw.polygon(xy, fill="#7163b8", outline="#fad43d", width=4)
-
+    stats_draw.polygon(xy, fill="#716388", outline="#a1d3f8", width=4)
 
     polygon = Image.blend(polygon_frame, polygon_stats, 0.4)
+    add_text(polygon, ranked_splits)
+
     polygon.show()
 
     return polygon
+
+def add_text(polygon, ranked_splits):
+    text_prop = init_prop * 0.95
+    xy = []
+    titles = ["Overworld", "Bastion", "Fortress", "Blind", "Stronghold"]
+    splits_index = ["ow", "bastion", "fortress", "blind", "stronghold"]
+    text_draw = ImageDraw.Draw(polygon)
+    title_size = 30
+    title_font = ImageFont.truetype('minecraft_font.ttf', title_size)
+    stat_size = 20
+    stat_font = ImageFont.truetype('minecraft_font.ttf', stat_size)
+
+    for i in range(len(angles)):
+        polygon_size = middle / text_prop
+        xy.append(
+            [(math.cos(angles[i]) + text_prop) * polygon_size + offset_x,
+            (math.sin(angles[i]) + text_prop) * polygon_size + offset_y]
+        )
+
+    for i in range(sides):
+        if i == 0:
+            xy[i][1] -= word.horiz_to_vert(title_size) + word.horiz_to_vert(stat_size)
+
+        elif i < math.floor(sides / 2):
+            xy[i][0] += word.calc_length("Stronghold", title_size) / 2
+            xy[i][1] -= (word.horiz_to_vert(title_size) + word.horiz_to_vert(stat_size)) / 2
+
+        elif math.floor(sides / 2) <= i <= math.ceil(sides / 2):
+            xy[i][0]
+
+        elif math.ceil(sides / 2) < i:
+            xy[i][0] -= word.calc_length("Stronghold", title_size) / 2
+            xy[i][1] -= (word.horiz_to_vert(title_size) + word.horiz_to_vert(stat_size)) / 2
+
+
+    for i in range(sides):
+        xy[i][0] -= word.calc_length(titles[i], title_size) / 2
+        text_draw.text(xy[i], titles[i], font=title_font, fill="#ffffff")
+
+        stat = f"Top {round((1-ranked_splits[splits_index[i]]) * 100)}%"
+        xy[i][0] += word.calc_length(titles[i], title_size) / 2 - word.calc_length(stat, stat_size) / 2
+        xy[i][1] += word.horiz_to_vert(title_size)
+        text_draw.text(xy[i], stat, font=stat_font, fill="#ffffff")
