@@ -33,3 +33,9 @@ def calc_size(word, desired_length):
 def horiz_to_vert(size):
     size = round(size * 7 / 5)
     return size
+
+def percentify(proportion):
+    if proportion >= 0.5:
+        return f"Top {round((1-proportion) * 100, 1)}%"
+    elif proportion < 0.5:
+        return f"Bottom {round(proportion * 100, 1)}%"

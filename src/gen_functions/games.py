@@ -90,7 +90,8 @@ def get_avg_completion(response, seasonOrTotal):
     completion_time = response["statistics"][seasonOrTotal]["completionTime"]["ranked"]
     completions = max(response["statistics"][seasonOrTotal]["completions"]["ranked"], 1)
 
-    avg_completion = round(completion_time / completions, 1)
+    avg_completion = round(completion_time / completions)
+    print(avg_completion)
     return avg_completion
 
 

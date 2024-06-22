@@ -17,9 +17,13 @@ angles = [(i * (2 * math.pi) - 0.5 * math.pi) / sides for i in range(sides)]
 angles.insert(0, angles.pop())
 
 def main(uuid, detailed_matches):
-    average_splits = get_avg_splits(uuid, detailed_matches)
+    average_splits, average_deaths = get_avg_splits(uuid, detailed_matches)
     ranked_splits = get_ranked_splits(average_splits)
     polygon = get_polygon(ranked_splits)
+
+    comments = {}
+    comments["best"], comments["worst"] = get_best_worst(ranked_splits)
+    comments["death"] = get_death_comments(average_deaths)
 
     return 0, 1
 
@@ -27,11 +31,14 @@ def get_avg_splits(uuid, detailed_matches):
     number_splits = {
         "ow": 0, "nether": 0, "bastion": 0, "fortress": 0, "blind": 0, "stronghold": 0, "end": 0
     }
-    total_splits = {
+    time_splits = {
         "ow": 0, "nether": 0, "bastion": 0, "fortress": 0, "blind": 0, "stronghold": 0, "end": 0
     }
     average_splits = {
-        "ow": 0,"nether": 0,"bastion": 0,"fortress": 0,"blind": 0,"stronghold": 0,"end": 0
+        "ow": 0, "nether": 0, "bastion": 0, "fortress": 0, "blind": 0, "stronghold": 0, "end": 0
+    }
+    average_deaths = {
+        "ow": 0, "nether": 0, "bastion": 0, "fortress": 0, "blind": 0, "stronghold": 0, "end": 0
     }
     event_mapping = {
         "story.enter_the_nether": "nether",
@@ -59,22 +66,32 @@ def get_avg_splits(uuid, detailed_matches):
 
             elif event["type"] in event_mapping.keys():
                 split_length = event["time"] - prev_time
-                total_splits[prev_event] += split_length
+                time_splits[prev_event] += split_length
                 number_splits[prev_event] += 1
 
                 prev_time = event["time"]
                 prev_event = event_mapping[event["type"]]
+
+            elif event["type"] == "projectelo.timeline.death":
+                average_deaths[prev_event] += 1
+        
+        if match["result"]["uuid"] == uuid and match["forfeited"] == False:
+            split_length = match["result"]["time"] - prev_time
+            time_splits[prev_event] += split_length
+            number_splits[prev_event] += 1
     
     for key in average_splits:
         if number_splits[key] == 0:
             average_splits[key] = 0
+            average_deaths[key] = 0
         else:
-            average_splits[key] = round(total_splits[key] / number_splits[key], 2)
+            average_splits[key] = round(time_splits[key] / number_splits[key], 3)
+            average_deaths[key] = round(average_deaths[key] / number_splits[key], 3)
 
-    print(total_splits)
     print(average_splits)
+    print(average_deaths)
 
-    return average_splits
+    return average_splits, average_deaths
 
 def get_ranked_splits(average_splits):
     ranked_splits = {
@@ -104,7 +121,7 @@ def get_ranked_splits(average_splits):
             splits = f.readline().strip().split(",")
             if not splits[0]:
                 break
-            for i in range(6):
+            for i in range(7):
                 if splits[i] != "FALSE":
                     splits_final_boss[splits_index[i]].append(int(splits[i]))
 
@@ -113,14 +130,14 @@ def get_ranked_splits(average_splits):
         if len(splits_final_boss[key]) == 0:
             ranked_splits[key] = 0
         else:
-            ranked_splits[key] = round(1 - ranked_splits[key] / len(splits_final_boss[key]), 2)
+            ranked_splits[key] = round(1 - ranked_splits[key] / len(splits_final_boss[key]), 3)
 
     print(ranked_splits)
     return ranked_splits
 
 def get_polygon(ranked_splits):
     proportions = [init_prop, init_prop * 4/3, init_prop * 2, init_prop * 4, 10000]
-    split_mapping = ["ow", "bastion", "fortress", "blind", "stronghold"]
+    split_mapping = ["ow", "bastion", "fortress", "blind", "end"]
 
     polygon_frame = Image.new("RGBA", (img_size_x, img_size_y), "#313338")
     frame_draw = ImageDraw.Draw(polygon_frame)
@@ -161,8 +178,12 @@ def get_polygon(ranked_splits):
     xy = []
     for i in range(len(angles)):
         val = ranked_splits[split_mapping[i]]
-        proportion = init_prop / val
+        if val == 0:
+            proportion = 100000
+        else:
+            proportion = init_prop / val
         polygon_size = middle / proportion
+        
         xy.append(
             ((math.cos(angles[i]) + proportion) * polygon_size + offset_x,
             (math.sin(angles[i]) + proportion) * polygon_size + offset_y)
@@ -176,11 +197,12 @@ def get_polygon(ranked_splits):
 
     return polygon
 
+
 def add_text(polygon, ranked_splits):
     text_prop = init_prop * 0.95
     xy = []
-    titles = ["Overworld", "Bastion", "Fortress", "Blind", "Stronghold"]
-    splits_index = ["ow", "bastion", "fortress", "blind", "stronghold"]
+    titles = ["Overworld", "Bastion", "Fortress", "Blind", "The End"]
+    splits_index = ["ow", "bastion", "fortress", "blind", "end"]
     text_draw = ImageDraw.Draw(polygon)
     title_size = 30
     title_font = ImageFont.truetype('minecraft_font.ttf', title_size)
@@ -214,7 +236,49 @@ def add_text(polygon, ranked_splits):
         xy[i][0] -= word.calc_length(titles[i], title_size) / 2
         text_draw.text(xy[i], titles[i], font=title_font, fill="#ffffff")
 
-        stat = f"Top {round((1-ranked_splits[splits_index[i]]) * 100)}%"
+        stat = word.percentify(ranked_splits[splits_index[i]])
         xy[i][0] += word.calc_length(titles[i], title_size) / 2 - word.calc_length(stat, stat_size) / 2
         xy[i][1] += word.horiz_to_vert(title_size)
         text_draw.text(xy[i], stat, font=stat_font, fill="#ffffff")
+
+
+def get_best_worst(ranked_splits):
+    best_comments = {
+        "ow": "You can handle the variety of overworld very well. Getting ahead early is key!",
+        "nether": "You excel at navigating nether terrain and finding structures.",
+        "bastion": "Routing bastions is your strongest split.",
+        "fortress": "Blaze fighting is your strong suit.",
+        "post_blind": "Measuring eyes, nether pearl travel and stronghold nav is where you shine.",
+        "end": "You're at your best when taking down the ender dragon."
+    }
+    worst_comments = {
+        "ow": "Your overworld routing is slower than your other splits. Remember to practice every type of overworld!",
+        "nether": "Your terrain nav to the bastion is slower than expected. Try to think through all of the different terrain decisions you can make.",
+        "bastion": "Your bastion routing is slower than other splits. There are tons of tools to practice routing, so this is the easiest to improve on!",
+        "fortress": "You often falter a little in your fortress split. Make sure drop RD for strays on the way to the spawner, and practice your blaze bed.",
+        "post_blind": "You slow down when measuring eyes, pearling to coords and finding the portal room. This split is often overlooked, so practice it!",
+        "end": "You relax your aggression a bit more when you reach the end. Always go for halfbow or try a zero cycle."
+    }
+
+    max_key = ""
+    max_val = 0
+    min_key = ""
+    min_val = 1000000000000000000
+    
+    for key in ranked_splits:
+        if ranked_splits[key] > max_val:
+            max_val = ranked_splits[key]
+            max_key = key
+
+        elif ranked_splits[key] < min_val:
+            min_val = ranked_splits[key]
+            min_key = key
+
+    print(best_comments[max_key])
+    print(worst_comments[min_key])
+
+    return [best_comments[max_key], worst_comments[min_key]]
+
+
+def get_death_comments(average_deaths):
+    pass

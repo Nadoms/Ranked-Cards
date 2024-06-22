@@ -42,6 +42,8 @@ def main():
                     death_types[prev_event] += 1
                     prev_event = "ow"
                     resets += 1
+                elif event == "completed":
+                    continue
                 else:
                     enters[event] += 1
                     prev_event = event
