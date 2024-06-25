@@ -6,14 +6,16 @@ import random
 
 from gen_functions import word
 
-sides = 5
+sides = 6
 init_prop = 1.4
 img_size_x = 960
 img_size_y = 720
 middle = img_size_y / 2
-offset_x = (img_size_x - img_size_y) / 2
-offset_y = 20
-angles = [(i * (2 * math.pi) - 0.5 * math.pi) / sides for i in range(sides)]
+offset_x = (img_size_x - img_size_y) / 2 # 6 sides 1/6 5 sides 1/10 4 sides 0
+offset_y = 0
+angles = [(i * (2 * math.pi)) / sides -
+          math.pi / 2 +
+          2 * math.pi / sides for i in range(sides)]
 angles.insert(0, angles.pop())
 
 def main(uuid, detailed_matches):
@@ -88,8 +90,8 @@ def get_avg_splits(uuid, detailed_matches):
             average_splits[key] = round(time_splits[key] / number_splits[key], 3)
             average_deaths[key] = round(average_deaths[key] / number_splits[key], 3)
 
-    print(average_splits)
-    print(average_deaths)
+    print("split", average_splits)
+    print("death", average_deaths)
 
     return average_splits, average_deaths
 
@@ -113,7 +115,7 @@ def get_ranked_splits(average_splits):
         "end": []
     }
 
-    file = path.join("src", "database", "mcsrstats", "ordered.csv")
+    file = path.join("src", "database", "mcsrstats", "player_splits.csv")
     splits_index = ["ow", "nether", "bastion", "fortress", "blind", "stronghold", "end"]
     with open(file, "r") as f:
 
@@ -132,33 +134,36 @@ def get_ranked_splits(average_splits):
         else:
             ranked_splits[key] = round(1 - ranked_splits[key] / len(splits_final_boss[key]), 3)
 
-    print(ranked_splits)
+    print("ranke", ranked_splits)
     return ranked_splits
 
 def get_polygon(ranked_splits):
     proportions = [init_prop, init_prop * 4/3, init_prop * 2, init_prop * 4, 10000]
-    split_mapping = ["ow", "bastion", "fortress", "blind", "end"]
+    split_mapping = ["ow", "bastion", "fortress", "blind", "stronghold", "end"]
 
     polygon_frame = Image.new("RGBA", (img_size_x, img_size_y), "#313338")
     frame_draw = ImageDraw.Draw(polygon_frame)
 
+    # Filling the polygon
     polygon_size = middle / init_prop
     xy = [
         ((math.cos(th) + init_prop) * polygon_size + offset_x, 
         (math.sin(th) + init_prop) * polygon_size + offset_y) 
         for th in angles
     ]
-    frame_draw.polygon(xy, fill="#413348", width=4)
+    frame_draw.polygon(xy, fill="#413348")
 
-    for i in range(sides):
+    # Drawing the outward lines of the polygon
+    for th in angles:
         polygon_size = middle / init_prop
-        th = (i * (2 * math.pi) - 0.5 * math.pi) / sides
+        # th = (i * (2 * math.pi) - 0.5 * math.pi) / sides
         xy = [(middle + offset_x, middle + offset_y),
             ((math.cos(th) + init_prop) * polygon_size + offset_x, 
             (math.sin(th) + init_prop) * polygon_size + offset_y)
         ]
         frame_draw.line(xy, fill="#515368", width=3)
 
+    # Drawing the edge of the polygons
     for proportion in proportions:
         polygon_size = middle / proportion
         xy = [ 
@@ -171,10 +176,10 @@ def get_polygon(ranked_splits):
         else:
             frame_draw.polygon(xy, outline="#515368", width=3)
 
-
     polygon_stats = polygon_frame.copy()
     stats_draw = ImageDraw.Draw(polygon_frame)
 
+    # Drawing the player's polygon
     xy = []
     for i in range(len(angles)):
         val = ranked_splits[split_mapping[i]]
@@ -201,8 +206,8 @@ def get_polygon(ranked_splits):
 def add_text(polygon, ranked_splits):
     text_prop = init_prop * 0.95
     xy = []
-    titles = ["Overworld", "Bastion", "Fortress", "Blind", "The End"]
-    splits_index = ["ow", "bastion", "fortress", "blind", "end"]
+    titles = ["Overworld", "Bastion", "Fortress", "Blind", "Stronghold", "The End"]
+    splits_index = ["ow", "bastion", "fortress", "blind", "stronghold", "end"]
     text_draw = ImageDraw.Draw(polygon)
     title_size = 30
     title_font = ImageFont.truetype('minecraft_font.ttf', title_size)
@@ -221,14 +226,14 @@ def add_text(polygon, ranked_splits):
             xy[i][1] -= word.horiz_to_vert(title_size) + word.horiz_to_vert(stat_size)
 
         elif i < math.floor(sides / 2):
-            xy[i][0] += word.calc_length("Stronghold", title_size) / 2
+            xy[i][0] += word.calc_length("Strongholdd", title_size) / 2
             xy[i][1] -= (word.horiz_to_vert(title_size) + word.horiz_to_vert(stat_size)) / 2
 
         elif math.floor(sides / 2) <= i <= math.ceil(sides / 2):
             xy[i][0]
 
         elif math.ceil(sides / 2) < i:
-            xy[i][0] -= word.calc_length("Stronghold", title_size) / 2
+            xy[i][0] -= word.calc_length("Strongholdd", title_size) / 2
             xy[i][1] -= (word.horiz_to_vert(title_size) + word.horiz_to_vert(stat_size)) / 2
 
 
@@ -248,7 +253,8 @@ def get_best_worst(ranked_splits):
         "nether": "You excel at navigating nether terrain and finding structures.",
         "bastion": "Routing bastions is your strongest split.",
         "fortress": "Blaze fighting is your strong suit.",
-        "post_blind": "Measuring eyes, nether pearl travel and stronghold nav is where you shine.",
+        "blind": "Measuring eyes and nether pearl travel is where you shine.",
+        "stronghold": "You are exceptional at finding the portal room quickly.",
         "end": "You're at your best when taking down the ender dragon."
     }
     worst_comments = {
@@ -256,7 +262,8 @@ def get_best_worst(ranked_splits):
         "nether": "Your terrain nav to the bastion is slower than expected. Try to think through all of the different terrain decisions you can make.",
         "bastion": "Your bastion routing is slower than other splits. There are tons of tools to practice routing, so this is the easiest to improve on!",
         "fortress": "You often falter a little in your fortress split. Make sure drop RD for strays on the way to the spawner, and practice your blaze bed.",
-        "post_blind": "You slow down when measuring eyes, pearling to coords and finding the portal room. This split is often overlooked, so practice it!",
+        "blind": "You slow down when measuring eyes and pearling to coords. This split is often overlooked, so practice it!",
+        "stronghold": "Your stronghold nav isn't as fast as your other splits, make sure to practice premptive - even around mineshafts.",
         "end": "You relax your aggression a bit more when you reach the end. Always go for halfbow or try a zero cycle."
     }
 

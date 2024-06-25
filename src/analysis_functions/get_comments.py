@@ -45,7 +45,6 @@ def get_attr_ranked(value, attr_type):
     ranked_attr = round(np.searchsorted(attrs, value) / len(attrs), 3)
     if attr_type == "elo":
         ranked_attr = 1 - ranked_attr
-    print(ranked_attr)
     return ranked_attr
 
 def get_elo_equivalent(value, attr_type):
@@ -56,7 +55,6 @@ def get_elo_equivalent(value, attr_type):
 
     value *= 10e-7
     model = models[attr_type]
-    print(model, value)
 
     elo = model["a"] / (value + model["b"]) + model["c"]
     elo = round(elo * 10e2)
