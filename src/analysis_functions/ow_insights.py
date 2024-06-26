@@ -1,16 +1,17 @@
+from datetime import timedelta
 from os import path
 import numpy as np
 import math
 from PIL import Image, ImageDraw, ImageFont
 
-from gen_functions import word
+from gen_functions import numb, word
 
 sides = 5
-init_prop = 1.4
+init_prop = 1.6
 img_size_x = 960
-img_size_y = 720
+img_size_y = 640
 middle = img_size_y / 2
-offset_x = (img_size_x - img_size_y) / 2 # 6 sides 1/6 5 sides 1/10 4 sides 0
+offset_x = (img_size_x - img_size_y) / 2
 offset_y = 20
 angles = [(i * (2 * math.pi)) / sides -
           math.pi / 2 +
@@ -21,6 +22,8 @@ def main(uuid, detailed_matches):
     average_ows = get_avg_ows(uuid, detailed_matches)
     ranked_ows = get_ranked_ows(average_ows)
     polygon = get_polygon(ranked_ows)
+    polygon = add_text(polygon, average_ows, ranked_ows)
+    polygon.show()
 
     comments = {}
     comments["best"], comments["worst"] = get_best_worst(ranked_ows)
@@ -66,8 +69,6 @@ def get_avg_ows(uuid, detailed_matches):
         else:
             average_ows[ow_key] = round(time_ows[ow_key] / number_ows[ow_key])
 
-    print("ow", average_ows)
-
     return average_ows
 
 def get_ranked_ows(average_ows):
@@ -105,7 +106,7 @@ def get_polygon(ranked_ows):
     proportions = [init_prop, init_prop * 4/3, init_prop * 2, init_prop * 4, 10000]
     ow_mapping = ["bt", "dt", "rp", "ship", "village"]
 
-    polygon_frame = Image.new("RGBA", (img_size_x, img_size_y), "#313338")
+    polygon_frame = Image.new('RGBA', (img_size_x, img_size_y), (255, 0, 0, 0))
     frame_draw = ImageDraw.Draw(polygon_frame)
 
     # Filling the polygon
@@ -160,19 +161,16 @@ def get_polygon(ranked_ows):
     stats_draw.polygon(xy, fill="#716388", outline="#a1d3f8", width=4)
 
     polygon = Image.blend(polygon_frame, polygon_stats, 0.4)
-    add_text(polygon, ranked_ows)
-
-    polygon.show()
 
     return polygon
 
 
-def add_text(polygon, ranked_ows):
+def add_text(polygon, average_ows, ranked_ows):
     text_prop = init_prop * 0.95
     xy = []
     percentiles = [0.3, 0.5, 0.7, 0.9, 0.95, 1.0]
     percentile_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#3f82ff", "#ffd700"]
-    titles = ["BT", "Temple", "Ruined Portal", "Shipwreck", "Village"]
+    titles = ["Buried Treasure", "Temple", "Ruined Portal", "Shipwreck", "Village"]
     ow_mapping = ["bt", "dt", "rp", "ship", "village"]
 
     text_draw = ImageDraw.Draw(polygon)
@@ -193,31 +191,40 @@ def add_text(polygon, ranked_ows):
             xy[i][1] -= word.horiz_to_vert(title_size) + word.horiz_to_vert(stat_size)
 
         elif i < math.floor(sides / 2):
-            xy[i][0] += word.calc_length("Ruined Portal", title_size) / 2
-            xy[i][1] -= (word.horiz_to_vert(title_size) + word.horiz_to_vert(stat_size)) / 2
+            xy[i][0] += word.calc_length("Strongholdddd", title_size) / 2
+            xy[i][1] -= word.horiz_to_vert(title_size) / 2 + word.horiz_to_vert(stat_size) / 2
 
-        elif math.floor(sides / 2) <= i <= math.ceil(sides / 2):
-            xy[i][0]
+        elif i == math.ceil(sides / 2) and sides % 2 == 1:
+            xy[i][0] -= word.calc_length("Strongholdddd", title_size) / 8
+
+        elif i == math.floor(sides / 2) and sides % 2 == 1:
+            xy[i][0] += word.calc_length("Strongholdddd", title_size) / 8
 
         elif math.ceil(sides / 2) < i:
-            xy[i][0] -= word.calc_length("Ruined Portal", title_size) / 2
-            xy[i][1] -= (word.horiz_to_vert(title_size) + word.horiz_to_vert(stat_size)) / 2
-
+            xy[i][0] -= word.calc_length("Strongholdddd", title_size) / 2
+            xy[i][1] -= word.horiz_to_vert(title_size) / 2 + word.horiz_to_vert(stat_size) / 2
 
     for i in range(sides):
-        xy[i][0] -= word.calc_length(titles[i], title_size) / 2
-        text_draw.text(xy[i], titles[i], font=title_font, fill="#ffffff")
 
-        stat = word.percentify(ranked_ows[ow_mapping[i]])
         s_colour = percentile_colour[0]
         for j in range(len(percentiles)):
             if ranked_ows[ow_mapping[i]] < percentiles[j]:
                 s_colour = percentile_colour[j]
                 break
+        if average_ows[ow_mapping[i]] == 1000000000000:
+            stat = "No data"
+        else:
+            time = numb.digital_time(average_ows[ow_mapping[i]])
+            stat = f"{time} / {word.percentify(ranked_ows[ow_mapping[i]])}"
+
+        xy[i][0] -= word.calc_length(titles[i], title_size) / 2
+        text_draw.text(xy[i], titles[i], font=title_font, fill="#ffffff", stroke_fill="#000000", stroke_width=2)
 
         xy[i][0] += word.calc_length(titles[i], title_size) / 2 - word.calc_length(stat, stat_size) / 2
         xy[i][1] += word.horiz_to_vert(title_size)
-        text_draw.text(xy[i], stat, font=stat_font, fill=s_colour)
+        text_draw.text(xy[i], stat, font=stat_font, fill=s_colour, stroke_fill="#000000", stroke_width=2)
+
+    return polygon
 
 
 def get_best_worst(ranked_ows):

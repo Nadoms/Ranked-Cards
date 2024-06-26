@@ -2,7 +2,7 @@ from datetime import timedelta
 from os import path
 from PIL import ImageDraw, Image, ImageFont
 
-from gen_functions import word
+from gen_functions import numb, word
 
 def write(chart, uuids, response):
     splitted_image = ImageDraw.Draw(chart)
@@ -76,9 +76,7 @@ def write(chart, uuids, response):
         is_shifted = False
 
         for j in range(len(coords)):
-            time = str(timedelta(milliseconds=times[j]))[2:7].lstrip("0")
-            if time[0] == ":":
-                time = "0" + time
+            time = numb.digital_time(times[j])
             time_size = 35
             time_font = ImageFont.truetype('minecraft_font.ttf', time_size)
 

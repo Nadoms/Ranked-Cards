@@ -5,7 +5,7 @@ import requests
 from io import BytesIO
 from os import path
 
-from gen_functions import word
+from gen_functions import numb, word
 
 def write(chart, response):
     middle = 600
@@ -30,7 +30,7 @@ def write(chart, response):
     left_x = x_values[0] - word.calc_length(left_text, info_size)
     infoed_image.text((left_x, text_y), left_text, font=info_font, fill="lightblue")
 
-    time = get_time(response)
+    time = numb.digital_time(response["result"]["time"])
     result = get_result(response)
     right_text = f"Seed {result} at {time}"
     right_x = x_values[2]
@@ -59,11 +59,6 @@ def get_delta(response):
         return f"{floor(delta_date.total_seconds() / 3600)} hour(s) ago"
     else:
         return f"{floor(delta_date.total_seconds() / 60)} minute(s) ago"
-    
-def get_time(response):
-    time = response["result"]["time"]
-    time = str(timedelta(milliseconds=time))[2:7].lstrip("0")
-    return time
 
 def get_result(response):
     if response["forfeited"]:

@@ -1,3 +1,5 @@
+import gen_functions.numb as numb
+
 def calc_length(word, size):
     length = len(word) * 6 - 1
     for letter in word:
@@ -36,9 +38,9 @@ def horiz_to_vert(size):
 
 def percentify(proportion):
     if proportion >= 0.5:
-        return f"Top {round((1-proportion) * 100, 1)}%"
+        return f"Top {numb.round_sf((1-proportion) * 100, 2)}%"
     elif proportion < 0.5:
-        return f"Bottom {round(proportion * 100, 1)}%"
+        return f"Bottom {numb.round_sf(proportion * 100, 2)}%"
 
 def get_raw_time(time):
     raw_time = 0

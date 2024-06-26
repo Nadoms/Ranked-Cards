@@ -1,16 +1,17 @@
+from datetime import timedelta
 from os import path
 import numpy as np
 import math
 from PIL import Image, ImageDraw, ImageFont
 
-from gen_functions import word
+from gen_functions import word, numb
 
 sides = 6
-init_prop = 1.4
+init_prop = 1.6
 img_size_x = 960
-img_size_y = 720
+img_size_y = 640
 middle = img_size_y / 2
-offset_x = (img_size_x - img_size_y) / 2 # 6 sides 1/6 5 sides 1/10 4 sides 0
+offset_x = (img_size_x - img_size_y) / 2
 offset_y = 0
 angles = [(i * (2 * math.pi)) / sides -
           math.pi / 2 +
@@ -21,6 +22,8 @@ def main(uuid, detailed_matches):
     average_splits, average_deaths = get_avg_splits(uuid, detailed_matches)
     ranked_splits = get_ranked_splits(average_splits)
     polygon = get_polygon(ranked_splits)
+    polygon = add_text(polygon, average_splits, ranked_splits)
+    polygon.show()
 
     comments = {}
     comments["best"], comments["worst"] = get_best_worst(ranked_splits)
@@ -83,7 +86,7 @@ def get_avg_splits(uuid, detailed_matches):
     
     for key in average_splits:
         if number_splits[key] == 0:
-            average_splits[key] = 1000000000000
+            average_splits[key] = 1000000000
             average_deaths[key] = 0
         else:
             average_splits[key] = round(time_splits[key] / number_splits[key])
@@ -115,7 +118,7 @@ def get_ranked_splits(average_splits):
     }
 
     file = path.join("src", "database", "mcsrstats", "player_splits.csv")
-    splits_index = ["ow", "nether", "bastion", "fortress", "blind", "stronghold", "end"]
+    split_mapping = ["ow", "nether", "bastion", "fortress", "blind", "stronghold", "end"]
     with open(file, "r") as f:
 
         while True:
@@ -124,7 +127,7 @@ def get_ranked_splits(average_splits):
                 break
             for i in range(7):
                 if splits[i] != "FALSE":
-                    splits_final_boss[splits_index[i]].append(int(splits[i]))
+                    splits_final_boss[split_mapping[i]].append(int(splits[i]))
 
     for key in splits_final_boss:
         ranked_splits[key] = np.searchsorted(splits_final_boss[key], average_splits[key])
@@ -140,7 +143,7 @@ def get_polygon(ranked_splits):
     proportions = [init_prop, init_prop * 4/3, init_prop * 2, init_prop * 4, 10000]
     split_mapping = ["ow", "bastion", "fortress", "blind", "stronghold", "end"]
 
-    polygon_frame = Image.new("RGBA", (img_size_x, img_size_y), "#313338")
+    polygon_frame = Image.new('RGBA', (img_size_x, img_size_y), (255, 0, 0, 0))
     frame_draw = ImageDraw.Draw(polygon_frame)
 
     # Filling the polygon
@@ -195,20 +198,17 @@ def get_polygon(ranked_splits):
     stats_draw.polygon(xy, fill="#716388", outline="#a1d3f8", width=4)
 
     polygon = Image.blend(polygon_frame, polygon_stats, 0.4)
-    add_text(polygon, ranked_splits)
-
-    polygon.show()
 
     return polygon
 
 
-def add_text(polygon, ranked_splits):
+def add_text(polygon, average_splits, ranked_splits):
     text_prop = init_prop * 0.95
     xy = []
     percentiles = [0.3, 0.5, 0.7, 0.9, 0.95, 1.0]
     percentile_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#3f82ff", "#ffd700"]
     titles = ["Overworld", "Bastion", "Fortress", "Blind", "Stronghold", "The End"]
-    splits_index = ["ow", "bastion", "fortress", "blind", "stronghold", "end"]
+    split_mapping = ["ow", "bastion", "fortress", "blind", "stronghold", "end"]
 
     text_draw = ImageDraw.Draw(polygon)
     title_size = 30
@@ -228,31 +228,40 @@ def add_text(polygon, ranked_splits):
             xy[i][1] -= word.horiz_to_vert(title_size) + word.horiz_to_vert(stat_size)
 
         elif i < math.floor(sides / 2):
-            xy[i][0] += word.calc_length("Strongholdd", title_size) / 2
-            xy[i][1] -= (word.horiz_to_vert(title_size) + word.horiz_to_vert(stat_size)) / 2
+            xy[i][0] += word.calc_length("Strongholddddd", title_size) / 2
+            xy[i][1] -= word.horiz_to_vert(title_size) / 2 + word.horiz_to_vert(stat_size) / 2
 
-        elif math.floor(sides / 2) <= i <= math.ceil(sides / 2):
-            xy[i][0]
+        elif i == math.ceil(sides / 2) and sides % 2 == 1:
+            xy[i][0] -= word.calc_length("Strongholdddd", title_size) / 8
+
+        elif i == math.floor(sides / 2) and sides % 2 == 1:
+            xy[i][0] += word.calc_length("Strongholdddd", title_size) / 8
 
         elif math.ceil(sides / 2) < i:
-            xy[i][0] -= word.calc_length("Strongholdd", title_size) / 2
-            xy[i][1] -= (word.horiz_to_vert(title_size) + word.horiz_to_vert(stat_size)) / 2
-
+            xy[i][0] -= word.calc_length("Strongholddddd", title_size) / 2
+            xy[i][1] -= word.horiz_to_vert(title_size) / 2 + word.horiz_to_vert(stat_size) / 2
 
     for i in range(sides):
-        xy[i][0] -= word.calc_length(titles[i], title_size) / 2
-        text_draw.text(xy[i], titles[i], font=title_font, fill="#ffffff")
 
-        stat = word.percentify(ranked_splits[splits_index[i]])
         s_colour = percentile_colour[0]
         for j in range(len(percentiles)):
-            if ranked_splits[splits_index[i]] < percentiles[j]:
+            if ranked_splits[split_mapping[i]] < percentiles[j]:
                 s_colour = percentile_colour[j]
                 break
+        if average_splits[split_mapping[i]] == 1000000000000:
+            stat = "No data"
+        else:
+            time = numb.digital_time(average_splits[split_mapping[i]])
+            stat = f"{time} / {word.percentify(ranked_splits[split_mapping[i]])}"
+
+        xy[i][0] -= word.calc_length(titles[i], title_size) / 2
+        text_draw.text(xy[i], titles[i], font=title_font, fill="#ffffff", stroke_fill="#000000", stroke_width=2)
 
         xy[i][0] += word.calc_length(titles[i], title_size) / 2 - word.calc_length(stat, stat_size) / 2
         xy[i][1] += word.horiz_to_vert(title_size)
-        text_draw.text(xy[i], stat, font=stat_font, fill=s_colour)
+        text_draw.text(xy[i], stat, font=stat_font, fill=s_colour, stroke_fill="#000000", stroke_width=2)
+
+    return polygon
 
 
 def get_best_worst(ranked_splits):

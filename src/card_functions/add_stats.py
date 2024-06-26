@@ -4,7 +4,7 @@ import requests
 from datetime import timedelta
 import time
 
-from gen_functions import games, word, rank
+from gen_functions import games, word, rank, numb
 
 def write(card, response):
     statted_image = ImageDraw.Draw(card)
@@ -188,7 +188,7 @@ def get_season_stats(response):
     draws = str(int(plays) - int(wins) - int(losses))
     best_elo = str(response["seasonResult"]["highest"])
     ff_loss = str(games.get_ff_loss(response, "season"))
-    avg_completion = str(timedelta(milliseconds=games.get_avg_completion(response, "season")))[2:7].lstrip("0")
+    avg_completion = numb.digital_time(games.get_avg_completion(response, "season"))
 
     return [["W/L/D:",
              "Best ELO:",
@@ -220,7 +220,7 @@ def get_major_stats(response):
     win_loss = str(round(response["statistics"]["season"]["wins"]["ranked"] / max(response["statistics"]["season"]["loses"]["ranked"], 1), 2))
     pb = response["statistics"]["total"]["bestTime"]["ranked"]
     if pb:
-        pb = str(timedelta(milliseconds=pb))[2:7].lstrip("0")
+        pb = numb.digital_time(pb)
 
     return [["ELO:",
              "Rank:",
