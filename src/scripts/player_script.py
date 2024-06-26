@@ -1,7 +1,6 @@
 from os import path
 
 def main():
-    players = []
     player_times = {
 
     }
@@ -43,8 +42,7 @@ def main():
             for event in timeline:
                 event = event.split(",")
 
-                if event[2] not in players:
-                    players.append(event[2])
+                if event[2] not in player_times.keys():
                     player_times[event[2]] = {
                         "ow": 0, "nether": 0, "bastion": 0, "fortress": 0, "blind": 0, "stronghold": 0, "end": 0
                     }

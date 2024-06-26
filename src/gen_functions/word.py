@@ -39,3 +39,12 @@ def percentify(proportion):
         return f"Top {round((1-proportion) * 100, 1)}%"
     elif proportion < 0.5:
         return f"Bottom {round(proportion * 100, 1)}%"
+
+def get_raw_time(time):
+    raw_time = 0
+    time = list(reversed(time.split(":")))
+
+    for i in range(len(time)):
+        raw_time += int(time[i]) * (60 ** i)
+    
+    return raw_time * 1000

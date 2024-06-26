@@ -2,7 +2,6 @@ from os import path
 import numpy as np
 import math
 from PIL import Image, ImageDraw, ImageFont
-import random
 
 from gen_functions import word
 
@@ -84,10 +83,10 @@ def get_avg_splits(uuid, detailed_matches):
     
     for key in average_splits:
         if number_splits[key] == 0:
-            average_splits[key] = 0
+            average_splits[key] = 1000000000000
             average_deaths[key] = 0
         else:
-            average_splits[key] = round(time_splits[key] / number_splits[key], 3)
+            average_splits[key] = round(time_splits[key] / number_splits[key])
             average_deaths[key] = round(average_deaths[key] / number_splits[key], 3)
 
     print("split", average_splits)
@@ -206,12 +205,15 @@ def get_polygon(ranked_splits):
 def add_text(polygon, ranked_splits):
     text_prop = init_prop * 0.95
     xy = []
+    percentiles = [0.3, 0.5, 0.7, 0.9, 0.95, 1.0]
+    percentile_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#3f82ff", "#ffd700"]
     titles = ["Overworld", "Bastion", "Fortress", "Blind", "Stronghold", "The End"]
     splits_index = ["ow", "bastion", "fortress", "blind", "stronghold", "end"]
+
     text_draw = ImageDraw.Draw(polygon)
     title_size = 30
     title_font = ImageFont.truetype('minecraft_font.ttf', title_size)
-    stat_size = 20
+    stat_size = 25
     stat_font = ImageFont.truetype('minecraft_font.ttf', stat_size)
 
     for i in range(len(angles)):
@@ -242,9 +244,15 @@ def add_text(polygon, ranked_splits):
         text_draw.text(xy[i], titles[i], font=title_font, fill="#ffffff")
 
         stat = word.percentify(ranked_splits[splits_index[i]])
+        s_colour = percentile_colour[0]
+        for j in range(len(percentiles)):
+            if ranked_splits[splits_index[i]] < percentiles[j]:
+                s_colour = percentile_colour[j]
+                break
+
         xy[i][0] += word.calc_length(titles[i], title_size) / 2 - word.calc_length(stat, stat_size) / 2
         xy[i][1] += word.horiz_to_vert(title_size)
-        text_draw.text(xy[i], stat, font=stat_font, fill="#ffffff")
+        text_draw.text(xy[i], stat, font=stat_font, fill=s_colour)
 
 
 def get_best_worst(ranked_splits):

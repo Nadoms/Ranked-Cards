@@ -43,7 +43,7 @@ def get_attr_ranked(value, attr_type):
             attrs.append(int(attr[0]))
             
     ranked_attr = round(np.searchsorted(attrs, value) / len(attrs), 3)
-    if attr_type == "elo":
+    if attr_type != "elo":
         ranked_attr = 1 - ranked_attr
     return ranked_attr
 
