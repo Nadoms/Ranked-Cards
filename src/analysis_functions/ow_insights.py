@@ -1,4 +1,3 @@
-from datetime import timedelta
 from os import path
 import numpy as np
 import math
@@ -7,12 +6,12 @@ from PIL import Image, ImageDraw, ImageFont
 from gen_functions import numb, word
 
 sides = 5
-init_prop = 1.6
+init_prop = 1.8
 img_size_x = 960
-img_size_y = 640
+img_size_y = 760
 middle = img_size_y / 2
 offset_x = (img_size_x - img_size_y) / 2
-offset_y = 20
+offset_y = 60
 angles = [(i * (2 * math.pi)) / sides -
           math.pi / 2 +
           2 * math.pi / sides for i in range(sides)]
@@ -23,12 +22,11 @@ def main(uuid, detailed_matches):
     ranked_ows = get_ranked_ows(average_ows)
     polygon = get_polygon(ranked_ows)
     polygon = add_text(polygon, average_ows, ranked_ows)
-    polygon.show()
 
     comments = {}
     comments["best"], comments["worst"] = get_best_worst(ranked_ows)
 
-    return 0, 1
+    return comments, polygon
 
 def get_avg_ows(uuid, detailed_matches):
     number_ows = {
@@ -92,7 +90,6 @@ def get_ranked_ows(average_ows):
                     ows_final_boss[ows_index[i]].append(int(ows[i]))
 
     for ow_key in ows_final_boss:
-        print(ow_key, average_ows[ow_key])
         ranked_ows[ow_key] = np.searchsorted(ows_final_boss[ow_key], average_ows[ow_key])
         if len(ows_final_boss[ow_key]) == 0:
             ranked_ows[ow_key] = 0
@@ -106,7 +103,7 @@ def get_polygon(ranked_ows):
     proportions = [init_prop, init_prop * 4/3, init_prop * 2, init_prop * 4, 10000]
     ow_mapping = ["bt", "dt", "rp", "ship", "village"]
 
-    polygon_frame = Image.new('RGBA', (img_size_x, img_size_y), (255, 0, 0, 0))
+    polygon_frame = Image.new('RGBA', (img_size_x, img_size_y), (0, 0, 0, 0))
     frame_draw = ImageDraw.Draw(polygon_frame)
 
     # Filling the polygon
@@ -174,10 +171,17 @@ def add_text(polygon, average_ows, ranked_ows):
     ow_mapping = ["bt", "dt", "rp", "ship", "village"]
 
     text_draw = ImageDraw.Draw(polygon)
+    big_size = 50
+    big_font = ImageFont.truetype('minecraft_font.ttf', big_size)
     title_size = 30
     title_font = ImageFont.truetype('minecraft_font.ttf', title_size)
     stat_size = 25
     stat_font = ImageFont.truetype('minecraft_font.ttf', stat_size)
+
+    big_title = "Overworld Performance"
+    big_x = (img_size_x - word.calc_length(big_title, big_size)) / 2
+    big_y = offset_y - 20
+    text_draw.text((big_x, big_y), big_title, font=big_font, fill="#ffffff", stroke_fill="#000000", stroke_width=3)
 
     for i in range(len(angles)):
         polygon_size = middle / text_prop
@@ -191,17 +195,17 @@ def add_text(polygon, average_ows, ranked_ows):
             xy[i][1] -= word.horiz_to_vert(title_size) + word.horiz_to_vert(stat_size)
 
         elif i < math.floor(sides / 2):
-            xy[i][0] += word.calc_length("Strongholdddd", title_size) / 2
+            xy[i][0] += word.calc_length("Strongholdddl", title_size) / 2
             xy[i][1] -= word.horiz_to_vert(title_size) / 2 + word.horiz_to_vert(stat_size) / 2
 
         elif i == math.ceil(sides / 2) and sides % 2 == 1:
-            xy[i][0] -= word.calc_length("Strongholdddd", title_size) / 8
+            xy[i][0] -= word.calc_length("Strongholdddl", title_size) / 8
 
         elif i == math.floor(sides / 2) and sides % 2 == 1:
-            xy[i][0] += word.calc_length("Strongholdddd", title_size) / 8
+            xy[i][0] += word.calc_length("Strongholdddl", title_size) / 8
 
         elif math.ceil(sides / 2) < i:
-            xy[i][0] -= word.calc_length("Strongholdddd", title_size) / 2
+            xy[i][0] -= word.calc_length("Strongholdddl", title_size) / 2
             xy[i][1] -= word.horiz_to_vert(title_size) / 2 + word.horiz_to_vert(stat_size) / 2
 
     for i in range(sides):

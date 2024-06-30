@@ -1,4 +1,4 @@
-from analysis_functions import get_skin, get_comments, split_insights, ow_insights
+from analysis_functions import get_skin, get_comments, split_insights, ow_insights, combine
 
 import requests
 from PIL import Image
@@ -12,8 +12,8 @@ def main(response):
     uuid = response["uuid"]
     name = response["nickname"]
 
-    split_penta = Image.new("RGB", (400, 400), "#313338")
-    ow_penta = Image.new("RGB", (400, 400), "#313338")
+    split_polygon = Image.new("RGB", (400, 400), "#313338")
+    ow_polygon = Image.new("RGB", (400, 400), "#313338")
 
     then = datetime.now()
     detailed_matches = games.get_detailed_matches(name, uuid, 0, 10)
@@ -24,22 +24,23 @@ def main(response):
     then = splits(then, 1)
     comments = get_comments.main(response, detailed_matches)
     then = splits(then, 2)
-    split_comm, split_penta = split_insights.main(uuid, detailed_matches)
+    split_comm, split_polygon = split_insights.main(uuid, detailed_matches)
     then = splits(then, 3)
-    ow_comm, ow_penta = ow_insights.main(uuid, detailed_matches)
+    ow_comm, ow_polygon = ow_insights.main(uuid, detailed_matches)
     then = splits(then, 4)
+    polygon = combine.main(ow_polygon, split_polygon)
 
     text = {"general": comments, "splits": split_comm, "ow": ow_comm}
 
-    return skin, text, split_penta, ow_penta
+    return skin, text, polygon
 
 def splits(then, process):
     processes = ["Collecting data",
-     "Finding skin",
-     "Generating insights",
-     "Constructing split pentagon",
-     "Constructing overworld pentagon",
-     "Final touchups"]
+    "Finding skin",
+    "Generating insights",
+    "Constructing split polygon",
+    "Constructing overworld polygon",
+    "Final touchups"]
     now = datetime.now()
     diff = round((now - then).total_seconds() * 1000)
     print(f"{processes[process]} took {diff}ms")
