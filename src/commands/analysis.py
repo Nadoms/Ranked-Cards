@@ -16,9 +16,9 @@ def main(response):
     ow_polygon = Image.new("RGB", (400, 400), "#313338")
 
     then = datetime.now()
-    detailed_matches = games.get_detailed_matches(name, uuid, 0, 10)
-    if detailed_matches == -1:
-        return -1
+    detailed_matches = games.get_detailed_matches(response, name, uuid, 0, 10)
+    if detailed_matches == -1 or detailed_matches == -2:
+        return detailed_matches
     then = splits(then, 0)
     skin = get_skin.main(uuid)
     then = splits(then, 1)

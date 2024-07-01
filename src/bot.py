@@ -1,8 +1,8 @@
 import difflib
 import nextcord
 import json
-from nextcord import File, Interaction, SlashOption, Embed, Colour
-from nextcord.ext import commands
+from nextcord import File, Interaction, ApplicationError, SlashOption, Embed, Colour
+from nextcord.ext import commands, slash_command
 from os import getenv, path
 from dotenv import load_dotenv
 from time import time
@@ -291,6 +291,7 @@ async def match(interaction: Interaction, match_id: str = SlashOption(
 
 
 @bot.slash_command(name="analysis", description="Analyses your last 50 completions to visualise how you stack up against the playerbase.")
+@commands.cooldown(1, 3600, commands.BucketType.user)
 async def analysis(interaction: Interaction, hidden: str = SlashOption(
     "hidden",
     required = False,
@@ -306,14 +307,14 @@ async def analysis(interaction: Interaction, hidden: str = SlashOption(
 
     input_name = get_name(interaction)
     if not input_name:
-        await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> to use this command.", ephemeral=hidden)
+        await interaction.response.send_message("Connect your minecraft account to your discord with </connect:1149442234513637448> to use this command.", ephemeral=hidden)
         update_records("analysis", interaction.user.id, "Unknown", hidden, False)
         return
 
     print(f"\nAnalysing {input_name}'s completions")
 
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
-    response = requests.get(f"https://mcsrranked.com/api/players/{input_name}", headers=headers).json()
+    response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=headers).json()
     if response["status"] == "error":
         print("Player not found.")
         await interaction.response.send_message(f"Player not found. (`{input_name}`) Connect to your new Minecraft username with </connect:1149442234513637448>.", ephemeral=hidden)
@@ -321,14 +322,31 @@ async def analysis(interaction: Interaction, hidden: str = SlashOption(
         return
     
     await interaction.response.defer(ephemeral=hidden)
+    anal = analysing.main(response)
     
     try:
-        head, split_penta, ow_penta = analysing.main(response)
+        anal = analysing.main(response)
     except Exception as e:
         print(e)
         await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
         update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
+    
+    completions = response["data"]["statistics"]["season"]["completions"]["ranked"]
+    games = response["data"]["statistics"]["season"]["playedMatches"]["ranked"]
+
+    if anal == -1:
+        print("Player does not have enough completions.")
+        await interaction.response.send_message(f"You need a minimum of 15 completions from this season to analyse. (You have {completions})", ephemeral=hidden)
+        update_records("analysis", interaction.user.id, input_name, hidden, False)
+        return
+    elif anal == -2:
+        print("Player's completion rate is too low.")
+        await interaction.response.send_message(f"You need at least a 15% completion rate in this season to use this command. (You have {int(completions/games*100)}%)", ephemeral=hidden)
+        update_records("analysis", interaction.user.id, input_name, hidden, False)
+        return
+    
+    head, comments, polygon = anal
     
     await interaction.followup.send("yo", ephemeral=hidden)
     update_records("analysis", interaction.user.id, input_name, hidden, True)
@@ -450,7 +468,7 @@ async def disconnect(interaction: Interaction):
                 print(users)
                 users_json = json.dumps(users, indent=4)
                 f.write(users_json)
-            await interaction.response.send_message(f"`{user['minecraft']}` has been disconnected from your discord.")
+            await interaction(f"`{user['minecraft']}` has been disconnected from your discord.")
             update_records("disconnect", interaction.user.id, user['minecraft'], False, True)
             return
         
@@ -514,6 +532,13 @@ async def help(interaction: Interaction,
     await interaction.send(embed=embed, ephemeral=hidden)
     update_records("help", interaction.user.id, "None", hidden, True)
     
+
+@bot.event
+async def on_command_error(interaction: Interaction, error):
+    if isinstance(error, commands.CommandOnCooldown):
+        msg = f"This command is on cooldown. You can try again in {error.retry_after}s"
+        await Interaction.response.send_message(msg)
+
 
 def get_user_info(response, input_name):
     file = path.join("src", "database", "users.json")

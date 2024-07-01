@@ -94,16 +94,24 @@ def get_avg_completion(response, seasonOrTotal):
     return avg_completion
 
 
-def get_detailed_matches(name, uuid, min_comps, target_games):
+def get_detailed_matches(player_response, name, uuid, min_comps, target_games):
     detailed_matches = []
     num_comps = 0
     num_games = 0
     i = 0
-    s = 5
+    s = get_season()
+
+    season_comps = player_response["statistics"]["season"]["completions"]["ranked"]
+    season_games = player_response["statistics"]["season"]["playedMatches"]["ranked"]
+    if season_comps < min_comps:
+        return -1 # Not enough completions this season
+    if season_comps / season_games < 0.15:
+        return -2 # Ratio of completions to played matches is too low
+    
     response = "PLACEHOLDER"
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
 
-    while s >= 4:
+    while s >= get_season() - 1:
         response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page={i}&season={s}&count=50&type=2&excludedecay", headers=headers).json()["data"]
 
         for match in response:
