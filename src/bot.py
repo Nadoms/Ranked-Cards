@@ -291,7 +291,7 @@ async def match(interaction: Interaction, match_id: str = SlashOption(
     update_records("match", interaction.user.id, match_id, hidden, True)
 
 
-@bot.slash_command(name="analysis", description="Analyses your last ~100 games to visualise how you perform throughout your runs.")
+@bot.slash_command(name="analysis", description="Analyses your last ~150 games to visualise how you perform throughout your runs.")
 @commands.cooldown(1, 3600, commands.BucketType.user)
 async def analysis(interaction: Interaction, hidden: str = SlashOption(
     "hidden",
@@ -312,7 +312,7 @@ async def analysis(interaction: Interaction, hidden: str = SlashOption(
         update_records("analysis", interaction.user.id, "Unknown", hidden, False)
         return
 
-    print(f"\nAnalysing {input_name}'s completions")
+    print(f"\nAnalysing {input_name}'s games")
 
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
     response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=headers).json()
@@ -603,6 +603,11 @@ async def help(interaction: Interaction,
     embed.add_field(
         name = "/match",
         value = "`Options: Match ID, hide response`\n`Defaults: Last ranked match played, public`\n***Draws a chart*** visualising two player's splits in a game.",
+        inline = False
+    )
+    embed.add_field(
+        name = "/analyse",
+        value = "`Options: Hide response`\n`Default: Public`\n***Analyses your games*** to give you feedback about your splits and overworlds.",
         inline = False
     )
     embed.add_field(
