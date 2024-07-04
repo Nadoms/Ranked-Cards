@@ -5,18 +5,8 @@ from os import path
 
 def main(uuid):
     try:
-        skin = get_skin(uuid)
+        skin = f"https://visage.surgeplay.com/head/250/{uuid}?y=5&p=15"
+        response = requests.get(skin)
     except:
-        skin = get_default_skin()
-    return skin
-
-def get_skin(uuid):
-    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
-    response = requests.get(f"https://visage.surgeplay.com/head/250/{uuid}?y=5&p=15", headers=headers)
-    skin = Image.open(BytesIO(response.content))
-    return skin
-
-def get_default_skin():
-    file = path.join("src", "pics", "other", "lsmall_default_head.webp")
-    skin = Image.open(file)
+        skin = "https://cdn.discordapp.com/attachments/818965226291593268/1258028009718550618/lsmall_default_head.webp"
     return skin

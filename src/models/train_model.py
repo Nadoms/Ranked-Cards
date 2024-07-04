@@ -101,7 +101,6 @@ def update_weights(data_oi, W):
 
 
 if __name__ == "__main__":
-    print(sys.argv)
     if len(sys.argv) >= 2:
         data_oi = sys.argv[1]
     else:

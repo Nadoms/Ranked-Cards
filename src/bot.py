@@ -2,10 +2,11 @@ import difflib
 import nextcord
 import json
 from nextcord import File, Interaction, ApplicationError, SlashOption, Embed, Colour
-from nextcord.ext import commands, slash_command
+from nextcord.ext import commands
 from os import getenv, path
 from dotenv import load_dotenv
 from time import time
+from datetime import datetime, timezone
 
 import requests
 from commands import card as carding, graph as graphing, match as matching, analysis as analysing
@@ -109,10 +110,10 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     with open("card.png", "rb") as f:
         img = File(f)
     if failed:
-        await interaction.followup.send(f"Player not found (`{old_input}`). {extra}", files=[img], ephemeral=hidden)
+        await interaction.followup.send(f"Player not found (`{old_input}`). {extra}", file=img, ephemeral=hidden)
         update_records("card", interaction.user.id, input_name, hidden, True)
     else:
-        await interaction.followup.send(files=[img], ephemeral=hidden)
+        await interaction.followup.send(file=img, ephemeral=hidden)
         update_records("card", interaction.user.id, input_name, hidden, True)
 
 
@@ -217,10 +218,10 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
     with open("graph.png", "rb") as f:
         img = File(f)
     if failed:
-        await interaction.followup.send(f"Player not found (`{old_input}`). {extra}", files=[img], ephemeral=hidden)
+        await interaction.followup.send(f"Player not found (`{old_input}`). {extra}", file=img, ephemeral=hidden)
         update_records("plot", interaction.user.id, input_name, hidden, True)
     else:
-        await interaction.followup.send(files=[img], ephemeral=hidden)
+        await interaction.followup.send(file=img, ephemeral=hidden)
         update_records("plot", interaction.user.id, input_name, hidden, True)
 
 
@@ -286,11 +287,11 @@ async def match(interaction: Interaction, match_id: str = SlashOption(
     img.save("chart.png")
     with open("chart.png", "rb") as f:
         img = File(f)
-    await interaction.followup.send(files=[img], ephemeral=hidden)
+    await interaction.followup.send(file=img, ephemeral=hidden)
     update_records("match", interaction.user.id, match_id, hidden, True)
 
 
-@bot.slash_command(name="analysis", description="Analyses your last 50 completions to visualise how you stack up against the playerbase.")
+@bot.slash_command(name="analysis", description="Analyses your last ~100 games to visualise how you perform throughout your runs.")
 @commands.cooldown(1, 3600, commands.BucketType.user)
 async def analysis(interaction: Interaction, hidden: str = SlashOption(
     "hidden",
@@ -321,17 +322,28 @@ async def analysis(interaction: Interaction, hidden: str = SlashOption(
         update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
     
+    cooldown = 60 * 60 # One hour cooldown
+    user_cooldown = get_cooldown(input_name)
+    delta = int(time()) - user_cooldown
+    if delta < cooldown:
+        next_available = f"<t:{user_cooldown + cooldown}:R>"
+        print("Command on cooldown.")
+        await interaction.response.send_message(f"This command is on cooldown. (You can use it {next_available})", ephemeral=hidden)
+        update_records("analysis", interaction.user.id, input_name, hidden, False)
+        return
+
     await interaction.response.defer(ephemeral=hidden)
-    anal = analysing.main(response)
     
+    anal = analysing.main(response)
     try:
-        anal = analysing.main(response)
+        pass
     except Exception as e:
         print(e)
         await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
         update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
     
+    set_cooldown(input_name)
     completions = response["data"]["statistics"]["season"]["completions"]["ranked"]
     games = response["data"]["statistics"]["season"]["playedMatches"]["ranked"]
 
@@ -345,10 +357,90 @@ async def analysis(interaction: Interaction, hidden: str = SlashOption(
         await interaction.response.send_message(f"You need at least a 15% completion rate in this season to use this command. (You have {int(completions/games*100)}%)", ephemeral=hidden)
         update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
+    elif anal == -3:
+        print("Player is unranked.")
+        await interaction.response.send_message(f"You need to have a rank to use this command." , ephemeral=hidden)
+        update_records("analysis", interaction.user.id, input_name, hidden, False)
+        return
     
-    head, comments, polygon = anal
+    head, comments, split_polygon, ow_polygon = anal
+
+    embed_general = nextcord.Embed(
+        title = comments["general"]["title"],
+        description = comments["general"]["description"],
+        colour = nextcord.Colour.yellow(),
+    )
+    embed_split = nextcord.Embed(
+        title = comments["splits"]["title"],
+        description = comments["splits"]["description"],
+        colour = nextcord.Colour.yellow(),
+    )
+    embed_ow = nextcord.Embed(
+        title = comments["ow"]["title"],
+        description = comments["ow"]["description"],
+        colour = nextcord.Colour.yellow(),
+        timestamp = datetime.now(timezone.utc)
+    )
     
-    await interaction.followup.send("yo", ephemeral=hidden)
+    embed_general.set_thumbnail(url=head)
+    embed_general.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
+
+    split_polygon.save("split.png")
+    split_file = File("split.png", filename="split.png")
+    embed_split.set_image(url="attachment://split.png")
+
+    ow_polygon.save("ow.png")
+    ow_file = File("ow.png", filename="ow.png")
+    embed_ow.set_image(url="attachment://ow.png")
+    embed_ow.set_footer(text="Bot made by @Nadoms :3", icon_url="https://cdn.discordapp.com/avatars/298936021557706754/cdc9f29fbebe820e78d1b1e5b60a15e4?size=256")
+
+    for general_key in comments["general"]:
+        if general_key == "title" or general_key == "description":
+            continue
+        elif general_key != "ffl":
+            value = f"➢ {comments['general'][general_key][1]}\n➢ {comments['general'][general_key][2]}"
+        else:
+            value = comments['general'][general_key][1]
+
+        if general_key == "sb":
+            embed_general.add_field(
+                name = "",
+                value = "",
+                inline = False
+            )
+
+        embed_general.add_field(
+            name = comments['general'][general_key][0],
+            value = value,
+            inline = True
+        )
+
+    for split_key in comments["splits"]:
+        if split_key == "title" or split_key == "description":
+            continue
+        elif split_key == "player_deaths" or split_key == "rank_deaths":
+            embed_split.add_field(
+                name = comments["splits"][split_key]["name"],
+                value = "\n".join(comments["splits"][split_key]["value"]),
+                inline = True
+            )
+        else:
+            embed_split.add_field(
+                name = comments["splits"][split_key]["name"],
+                value = comments["splits"][split_key]["value"],
+                inline = False
+            )
+
+    for ow_key in comments["ow"]:
+        if ow_key == "title" or ow_key == "description":
+            continue
+        embed_ow.add_field(
+            name = comments["ow"][ow_key]["name"],
+            value = comments["ow"][ow_key]["value"],
+            inline = False
+        )
+
+    await interaction.followup.send(files=[split_file, ow_file], embeds=[embed_general, embed_split, embed_ow], ephemeral=hidden)
     update_records("analysis", interaction.user.id, input_name, hidden, True)
 
 
@@ -531,13 +623,6 @@ async def help(interaction: Interaction,
     
     await interaction.send(embed=embed, ephemeral=hidden)
     update_records("help", interaction.user.id, "None", hidden, True)
-    
-
-@bot.event
-async def on_command_error(interaction: Interaction, error):
-    if isinstance(error, commands.CommandOnCooldown):
-        msg = f"This command is on cooldown. You can try again in {error.retry_after}s"
-        await Interaction.response.send_message(msg)
 
 
 def get_user_info(response, input_name):
@@ -572,6 +657,34 @@ def get_name(interaction_ctx):
     
     return ""
 
+
+def get_cooldown(input_name):
+    file = path.join("src", "database", "users.json")
+    with open (file, "r") as f:
+        users = json.load(f)
+
+    for user in users["users"]:
+        if input_name == user["minecraft"]:
+            return user["cooldown"]
+    
+    return ""
+
+
+def set_cooldown(input_name):
+    file = path.join("src", "database", "users.json")
+    with open (file, "r") as f:
+        users = json.load(f)
+
+    for user in users["users"]:
+        if input_name == user["minecraft"]:
+            user["cooldown"] = int(time())
+            break
+        
+    with open (file, "w") as f:
+        users_json = json.dumps(users, indent=4)
+        f.write(users_json)
+
+
 def get_close(input_name):
     extra = ""
     first = None
@@ -597,6 +710,7 @@ def get_close(input_name):
         extra += "."
 
     return [extra, first]
+
 
 def update_records(command, caller, callee, hidden, completed):
     if updates_disabled:

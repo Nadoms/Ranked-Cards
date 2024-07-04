@@ -124,8 +124,6 @@ def get_detailed_matches(player_response, name, uuid, min_comps, target_games):
                 num_comps += 1
 
             if num_games >= target_games and num_comps >= min_comps:
-                print(f"Targets met ({target_games} games and {min_comps} completions)")
-                print(f"Extracted {num_games} games including {num_comps} completions")
                 return detailed_matches
                 
         i += 1
@@ -136,9 +134,6 @@ def get_detailed_matches(player_response, name, uuid, min_comps, target_games):
 
     if num_comps == 0:
         return -1
-    
-    print(f"Targets not met ({target_games} games and {min_comps})")
-    print(f"Extracted {num_games} games including {num_comps} completions")
 
     return detailed_matches
 

@@ -1,9 +1,10 @@
+import json
 from os import path
 import numpy as np
 import math
 from PIL import Image, ImageDraw, ImageFont
 
-from gen_functions import word, numb
+from gen_functions import word, numb, rank
 
 sides = 6
 init_prop = 1.8
@@ -17,15 +18,17 @@ angles = [(i * (2 * math.pi)) / sides -
           2 * math.pi / sides for i in range(sides)]
 angles.insert(0, angles.pop())
 
-def main(uuid, detailed_matches):
+def main(uuid, detailed_matches, elo):
     average_splits, average_deaths = get_avg_splits(uuid, detailed_matches)
     ranked_splits = get_ranked_splits(average_splits)
     polygon = get_polygon(ranked_splits)
     polygon = add_text(polygon, average_splits, ranked_splits)
 
     comments = {}
+    comments["title"] = "Splits"
+    comments["description"] = "*Here are your strongest and weakest splits.*"
     comments["best"], comments["worst"] = get_best_worst(ranked_splits)
-    comments["death"] = get_death_comments(average_deaths)
+    comments["player_deaths"], comments["rank_deaths"] = get_death_comments(average_deaths, elo)
 
     return comments, polygon
 
@@ -90,9 +93,6 @@ def get_avg_splits(uuid, detailed_matches):
             average_splits[key] = round(time_splits[key] / number_splits[key])
             average_deaths[key] = round(average_deaths[key] / number_splits[key], 3)
 
-    print("split", average_splits)
-    print("death", average_deaths)
-
     return average_splits, average_deaths
 
 def get_ranked_splits(average_splits):
@@ -134,7 +134,6 @@ def get_ranked_splits(average_splits):
         else:
             ranked_splits[key] = round(1 - ranked_splits[key] / len(splits_final_boss[key]), 3)
 
-    print("ranke", ranked_splits)
     return ranked_splits
 
 def get_polygon(ranked_splits):
@@ -250,7 +249,7 @@ def add_text(polygon, average_splits, ranked_splits):
 
         s_colour = percentile_colour[0]
         for j in range(len(percentiles)):
-            if ranked_splits[split_mapping[i]] < percentiles[j]:
+            if ranked_splits[split_mapping[i]] <= percentiles[j]:
                 s_colour = percentile_colour[j]
                 break
         if average_splits[split_mapping[i]] == 1000000000000:
@@ -270,6 +269,16 @@ def add_text(polygon, average_splits, ranked_splits):
 
 
 def get_best_worst(ranked_splits):
+    split_mapping = {
+        "ow": "Overworld",
+        "nether": "Nether Terrain",
+        "bastion": "Bastion",
+        "fortress": "Fortress",
+        "blind": "Blind",
+        "stronghold": "Stronghold",
+        "end": "The End"
+    }
+    
     best_comments = {
         "ow": "You can handle the variety of overworld very well. Getting ahead early is key!",
         "nether": "You excel at navigating nether terrain and finding structures.",
@@ -303,11 +312,58 @@ def get_best_worst(ranked_splits):
             min_val = ranked_splits[key]
             min_key = key
 
-    print(best_comments[max_key])
-    print(worst_comments[min_key])
+    best = {
+        "name": f"Best Split: {split_mapping[max_key]}",
+        "value": best_comments[max_key]
+    }
+    worst = {
+        "name": f"Worst Split: {split_mapping[min_key]}",
+        "value": worst_comments[min_key]
+    }
 
-    return [best_comments[max_key], worst_comments[min_key]]
+    return [best, worst]
 
 
-def get_death_comments(average_deaths):
-    pass
+def get_death_comments(average_deaths, elo):
+    split_mapping = {
+        "ow": "Overworld",
+        "nether": "Nether Terrain",
+        "bastion": "Bastion",
+        "fortress": "Fortress",
+        "blind": "Blind",
+        "stronghold": "Stronghold",
+        "end": "The End"
+    }
+    differences = {
+        "ow": 0,
+        "nether": 0,
+        "bastion": 0,
+        "fortress": 0,
+        "blind": 0,
+        "stronghold": 0,
+        "end": 0
+    }
+    ranks = ["Coal", "Iron", "Gold", "Emerald", "Diamond", "Netherite"]
+
+    rank_no = rank.get_rank(elo)
+    file = path.join("src", "database", "mcsrstats", "deaths", "deaths.json")
+    with open (file, "r") as f:
+        overall_deaths = json.load(f)[str(rank_no)]
+
+    max_diff = 0
+    max_split = None
+    for split_key in differences:
+        differences[split_key] = average_deaths[split_key] / overall_deaths[split_key]
+        if differences[split_key] > max_diff:
+            max_diff = differences[split_key]
+            max_split = split_key
+
+    death_comment = {
+        "name": f"Your Death Rates",
+        "value": [f"`{numb.round_sf(average_deaths[split] * 100, 3)}%` - {split_mapping[split]}" for split in average_deaths]
+    }
+    rank_comment = {
+        "name": f"Death Rates in {ranks[rank_no]} Elo",
+        "value": [f"`{numb.round_sf(overall_deaths[split] * 100, 3)}%` - {split_mapping[split]}" for split in overall_deaths]
+    }
+    return death_comment, rank_comment

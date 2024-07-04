@@ -4,7 +4,7 @@ from os import path
 
 import numpy as np
 
-from gen_functions import games
+from gen_functions import games, rank, numb
 from gen_functions.word import percentify
 
 def main(response, detailed_matches):
@@ -13,17 +13,15 @@ def main(response, detailed_matches):
     sb = int(response["statistics"]["season"]["bestTime"]["ranked"])
     ffl = games.get_ff_loss(response, "season")
 
-    comments = {}
-    comments["title"] = f"Analysis of {response['nickname']}'s last {len(detailed_matches)} matches"
-    comments["description"] = "This is how you stack up against the playerbase."
-    comments["general"] = {}
-    comments["general"]["elo"] = [f"{elo} ELO", percentify(get_attr_ranked(elo, 'elo'))]
-    comments["general"]["avg"] = [f"{avg} Avg Finish", percentify(get_attr_ranked(avg, 'avg')), f"Equiv. to {get_elo_equivalent(avg, 'avg')} ELO"]
-    comments["general"]["sb"] = [f"{sb} Season Best", percentify(get_attr_ranked(sb, 'sb')), f"Equiv. to {get_elo_equivalent(sb, 'sb')} ELO"]
-    comments["general"]["ffl"] = [f"{ffl}% Forfeit/Loss", get_ffl_comments(ffl)]
+    general_comments = {}
+    general_comments["title"] = f"Analysis of {response['nickname']} in Season {games.get_season()}"
+    general_comments["description"] = f"This is how you stack up against the playerbase. {len(detailed_matches)} games were used in analysing your splits and overworlds."
+    general_comments["elo"] = [f"ELO: `{elo}`", percentify(get_attr_ranked(elo, 'elo')), get_elo_equivalent(elo, 'elo')]
+    general_comments["avg"] = [f"Avg Finish: `{numb.digital_time(avg)}`", percentify(get_attr_ranked(avg, 'avg')), f"Equivalent to {get_elo_equivalent(avg, 'avg')} ELO"]
+    general_comments["sb"] = [f"Season Best: `{numb.digital_time(sb)}`", percentify(get_attr_ranked(sb, 'sb')), f"Equivalent to {get_elo_equivalent(sb, 'sb')} ELO"]
+    general_comments["ffl"] = [f"Forfeit/Loss `{ffl}%`", get_ffl_comments(ffl)]
 
-    print(comments)
-    return comments
+    return general_comments
 
 
 def get_attr_ranked(value, attr_type):
@@ -48,6 +46,11 @@ def get_attr_ranked(value, attr_type):
     return ranked_attr
 
 def get_elo_equivalent(value, attr_type):
+    ranks = ["Coal", "Iron", "Gold", "Emerald", "Diamond", "Netherite", "Unranked"]
+    
+    if attr_type == "elo":
+        tier = [ranks[rank.get_rank(value)], rank.get_division(value)]
+        return f"{tier[0]} {tier[1]}"
 
     fp = path.join("src", "models", "models.json")
     with open(fp, "r") as f:
@@ -63,12 +66,12 @@ def get_elo_equivalent(value, attr_type):
 
 
 def get_ffl_comments(ffl):
-    ffl_comments = ["NUTTY mental",
-                    "Very persistent and consistent player",
-                    "Good mental while not afraid to go next",
-                    "Willing to take some Ls for sanity",
-                    "Should try playing more seeds out",
-                    "Despair"]
+    ffl_comments = ["NUTTY mental!?",
+                    "Very persistent and consistent player!",
+                    "Good mental while not afraid to go next.",
+                    "Willing to take some Ls for sanity.",
+                    "Should try playing more seeds out.",
+                    "Despair..."]
     
     segment_size = 100 / (len(ffl_comments)-1)
     index = math.ceil(ffl / segment_size)

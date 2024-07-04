@@ -11,6 +11,9 @@ def main(response):
     response = response["data"]
     uuid = response["uuid"]
     name = response["nickname"]
+    elo = response["eloRate"]
+    if elo == -1:
+        return -3
 
     split_polygon = Image.new("RGB", (400, 400), "#313338")
     ow_polygon = Image.new("RGB", (400, 400), "#313338")
@@ -22,17 +25,17 @@ def main(response):
     then = splits(then, 0)
     skin = get_skin.main(uuid)
     then = splits(then, 1)
-    comments = get_comments.main(response, detailed_matches)
+    general_comments = get_comments.main(response, detailed_matches)
     then = splits(then, 2)
-    split_comm, split_polygon = split_insights.main(uuid, detailed_matches)
+    split_comm, split_polygon = split_insights.main(uuid, detailed_matches, elo)
     then = splits(then, 3)
     ow_comm, ow_polygon = ow_insights.main(uuid, detailed_matches)
     then = splits(then, 4)
-    polygon = combine.main(ow_polygon, split_polygon)
+    # polygons = combine.main(split_polygon, ow_polygon)
 
-    text = {"general": comments, "splits": split_comm, "ow": ow_comm}
+    comments = {"general": general_comments, "splits": split_comm, "ow": ow_comm}
 
-    return skin, text, polygon
+    return skin, comments, split_polygon, ow_polygon
 
 def splits(then, process):
     processes = ["Collecting data",

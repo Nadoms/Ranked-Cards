@@ -24,6 +24,8 @@ def main(uuid, detailed_matches):
     polygon = add_text(polygon, average_ows, ranked_ows)
 
     comments = {}
+    comments["title"] = "Overworlds"
+    comments["description"] = "*These are your best and worst overworlds.*"
     comments["best"], comments["worst"] = get_best_worst(ranked_ows)
 
     return comments, polygon
@@ -96,7 +98,6 @@ def get_ranked_ows(average_ows):
         else:
             ranked_ows[ow_key] = round(1 - ranked_ows[ow_key] / len(ows_final_boss[ow_key]), 3)
 
-    print("ranke", ranked_ows)
     return ranked_ows
 
 def get_polygon(ranked_ows):
@@ -212,7 +213,7 @@ def add_text(polygon, average_ows, ranked_ows):
 
         s_colour = percentile_colour[0]
         for j in range(len(percentiles)):
-            if ranked_ows[ow_mapping[i]] < percentiles[j]:
+            if ranked_ows[ow_mapping[i]] <= percentiles[j]:
                 s_colour = percentile_colour[j]
                 break
         if average_ows[ow_mapping[i]] == 1000000000000:
@@ -232,6 +233,13 @@ def add_text(polygon, average_ows, ranked_ows):
 
 
 def get_best_worst(ranked_ows):
+    ow_mapping = {
+        "bt": "Buried Treasure",
+        "dt": "Desert Temple",
+        "rp": "Ruined Portal",
+        "ship": "Shipwreck",
+        "village": "Village"
+    }
     best_comments = {
         "bt": "You're most comfortable with mapless, island crafts and magma portals.",
         "dt": "You're fastest with routing the overworlds of desert temples.",
@@ -261,7 +269,13 @@ def get_best_worst(ranked_ows):
             min_val = ranked_ows[key]
             min_key = key
 
-    print(best_comments[max_key])
-    print(worst_comments[min_key])
+    best = {
+        "name": f"Best Seed Type: {ow_mapping[max_key]}",
+        "value": best_comments[max_key]
+    }
+    worst = {
+        "name": f"Worst Seed Type: {ow_mapping[min_key]}",
+        "value": worst_comments[min_key]
+    }
 
-    return [best_comments[max_key], worst_comments[min_key]]
+    return [best, worst]
