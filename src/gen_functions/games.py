@@ -103,7 +103,7 @@ def get_detailed_matches(player_response, name, uuid, min_comps, target_games):
 
     season_comps = player_response["statistics"]["season"]["completions"]["ranked"]
     season_games = player_response["statistics"]["season"]["playedMatches"]["ranked"]
-    if season_comps < min_comps:
+    if season_comps < min_comps / 2:
         return -1 # Not enough completions this season
     if season_comps / season_games < 0.15:
         return -2 # Ratio of completions to played matches is too low

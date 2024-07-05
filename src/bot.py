@@ -343,23 +343,22 @@ async def analysis(interaction: Interaction, hidden: str = SlashOption(
         update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
     
-    set_cooldown(input_name)
     completions = response["data"]["statistics"]["season"]["completions"]["ranked"]
     games = response["data"]["statistics"]["season"]["playedMatches"]["ranked"]
 
     if anal == -1:
         print("Player does not have enough completions.")
-        await interaction.response.send_message(f"You need a minimum of 15 completions from this season to analyse. (You have {completions})", ephemeral=hidden)
+        await interaction.followup.send(f"You need a minimum of 15 completions from this season to analyse. (You have {completions})", ephemeral=hidden)
         update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
     elif anal == -2:
         print("Player's completion rate is too low.")
-        await interaction.response.send_message(f"You need at least a 15% completion rate in this season to use this command. (You have {int(completions/games*100)}%)", ephemeral=hidden)
+        await interaction.followup.send(f"You need at least a 15% completion rate in this season to use this command. (You have {int(completions/games*100)}%)", ephemeral=hidden)
         update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
     elif anal == -3:
         print("Player is unranked.")
-        await interaction.response.send_message(f"You need to have a rank to use this command." , ephemeral=hidden)
+        await interaction.followup.send(f"You need to have a rank to use this command." , ephemeral=hidden)
         update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
     
@@ -383,7 +382,7 @@ async def analysis(interaction: Interaction, hidden: str = SlashOption(
     )
     
     embed_general.set_thumbnail(url=head)
-    embed_general.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
+    embed_general.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar)
 
     split_polygon.save("split.png")
     split_file = File("split.png", filename="split.png")
@@ -392,7 +391,7 @@ async def analysis(interaction: Interaction, hidden: str = SlashOption(
     ow_polygon.save("ow.png")
     ow_file = File("ow.png", filename="ow.png")
     embed_ow.set_image(url="attachment://ow.png")
-    embed_ow.set_footer(text="Bot made by @Nadoms :3", icon_url="https://cdn.discordapp.com/avatars/298936021557706754/cdc9f29fbebe820e78d1b1e5b60a15e4?size=256")
+    embed_ow.set_footer(text="Bot made by @Nadoms // Feedback appreciated :3", icon_url="https://cdn.discordapp.com/avatars/298936021557706754/cdc9f29fbebe820e78d1b1e5b60a15e4?size=256")
 
     for general_key in comments["general"]:
         if general_key == "title" or general_key == "description":
@@ -440,6 +439,7 @@ async def analysis(interaction: Interaction, hidden: str = SlashOption(
             inline = False
         )
 
+    set_cooldown(input_name)
     await interaction.followup.send(files=[split_file, ow_file], embeds=[embed_general, embed_split, embed_ow], ephemeral=hidden)
     update_records("analysis", interaction.user.id, input_name, hidden, True)
 
@@ -528,7 +528,8 @@ async def connect(interaction: Interaction, input_name: str):
         new_user = {
             "minecraft": input_name,
             "discord": uid,
-            "background": "grass.jpg"
+            "background": "grass.jpg",
+            "cooldown": 0
         }
         users["users"].append(new_user)
     else:
@@ -737,30 +738,35 @@ def update_records(command, caller, callee, hidden, completed):
         stats["stats"]["cards"]["success"] += completed
         stats["stats"]["cards"]["fail"] += 1-completed
     
-    if command == "plot":
+    elif command == "plot":
         stats["stats"]["totalGenerated"] += 1
         stats["stats"]["plots"]["success"] += completed
         stats["stats"]["plots"]["fail"] += 1-completed
     
-    if command == "match":
+    elif command == "match":
         stats["stats"]["totalGenerated"] += 1
         stats["stats"]["matches"]["success"] += completed
         stats["stats"]["matches"]["fail"] += 1-completed
     
-    if command == "connect":
+    elif command == "analysis":
+        stats["stats"]["totalGenerated"] += 1
+        stats["stats"]["analyses"]["success"] += completed
+        stats["stats"]["analyses"]["fail"] += 1-completed
+    
+    elif command == "connect":
         stats["stats"]["connectedUsers"] += 1
         stats["stats"]["connects"]["success"] += completed
         stats["stats"]["connects"]["fail"] += 1-completed
 
-    if command == "disconnect":
+    elif command == "disconnect":
         stats["stats"]["connectedUsers"] -= 1
         stats["stats"]["disconnects"]["success"] += completed
         stats["stats"]["disconnects"]["fail"] += 1-completed
 
-    if command == "help":
+    elif command == "help":
         stats["stats"]["helps"] += 1
 
-    if command == "background":
+    elif command == "background":
         stats["stats"]["backgrounds"] += 1
 
     if hidden:

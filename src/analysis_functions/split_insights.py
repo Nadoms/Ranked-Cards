@@ -308,7 +308,7 @@ def get_best_worst(ranked_splits):
             max_val = ranked_splits[key]
             max_key = key
 
-        elif ranked_splits[key] < min_val:
+        if ranked_splits[key] < min_val:
             min_val = ranked_splits[key]
             min_key = key
 

@@ -265,7 +265,7 @@ def get_best_worst(ranked_ows):
             max_val = ranked_ows[key]
             max_key = key
 
-        elif ranked_ows[key] < min_val:
+        if ranked_ows[key] < min_val:
             min_val = ranked_ows[key]
             min_key = key
 

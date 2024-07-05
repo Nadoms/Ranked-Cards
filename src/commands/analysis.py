@@ -19,7 +19,7 @@ def main(response):
     ow_polygon = Image.new("RGB", (400, 400), "#313338")
 
     then = datetime.now()
-    detailed_matches = games.get_detailed_matches(response, name, uuid, 30, 150)
+    detailed_matches = games.get_detailed_matches(response, name, uuid, 30, 100)
     if detailed_matches == -1 or detailed_matches == -2:
         return detailed_matches
     then = splits(then, 0)
