@@ -17,7 +17,7 @@ def main(data_oi):
                 break
 
             data[0].append(int(line[0]))
-            data[1].append(int(line[1]))
+            data[1].append(int(float(line[1])))
 
     # Casting and plotting the data.
     order = np.argsort(data[0])

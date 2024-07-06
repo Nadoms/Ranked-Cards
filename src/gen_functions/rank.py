@@ -1,3 +1,7 @@
+import json
+from os import path
+
+
 def get_rank(elo):
     if not elo:
         return -1
@@ -77,3 +81,18 @@ def get_division(elo):
             return "III"
     else:
         return ""
+    
+def get_elo_equivalent(value, attr_type):
+    ranks = ["Coal", "Iron", "Gold", "Emerald", "Diamond", "Netherite", "Unranked"]
+
+    fp = path.join("src", "models", "models.json")
+    with open(fp, "r") as f:
+        models = json.load(f)
+
+    value *= 10e-7
+    model = models[attr_type]
+
+    elo = model["a"] / (value + model["b"]) + model["c"]
+    elo = round(elo * 10e2)
+
+    return elo

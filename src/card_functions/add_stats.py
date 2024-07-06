@@ -65,23 +65,11 @@ def write(card, response):
         elif i == 3:
             if season_stats[1][i] == ":00":
                 season_stats[1][i] = "-"
-                rounded_avg_completion = -1
-            else:
-                rounded_avg_completion = int(season_stats[1][i].split(":")[0])
-            if rounded_avg_completion >= 28:
                 rounded_avg_completion = 0
-            elif rounded_avg_completion >= 25:
-                rounded_avg_completion = 1
-            elif rounded_avg_completion >= 18:
-                rounded_avg_completion = 2
-            elif rounded_avg_completion >= 14:
-                rounded_avg_completion = 3
-            elif rounded_avg_completion >= 11:
-                rounded_avg_completion = 4
-            elif rounded_avg_completion >= 6:
-                rounded_avg_completion = 5
             else:
-                rounded_avg_completion = 0
+                real_avg_completion = games.get_avg_completion(response, "season")
+                rounded_avg_completion = rank.get_rank(rank.get_elo_equivalent(real_avg_completion, "avg"))
+
             avg_colours = rank.get_colour(elos[rounded_avg_completion])
             statted_image.text((1827-word.calc_length(season_stats[1][i], 40), 140+i*60), season_stats[1][i], font=stat_font, fill=avg_colours[0], stroke_fill=avg_colours[1], stroke_width=1)
         else:
@@ -157,23 +145,11 @@ def write(card, response):
         elif i == 3:
             if not major_stats[1][i]:
                 major_stats[1][i] = "-"
-                rounded_pb = -1
-            else:
-                rounded_pb = int(major_stats[1][i].split(":")[0])
-            if rounded_pb >= 27:
                 rounded_pb = 0
-            elif rounded_pb >= 22:
-                rounded_pb = 1
-            elif rounded_pb >= 14:
-                rounded_pb = 2
-            elif rounded_pb >= 10:
-                rounded_pb = 3
-            elif rounded_pb >= 8:
-                rounded_pb = 4
-            elif rounded_pb >= 5:
-                rounded_pb = 5
             else:
-                rounded_pb = 0
+                real_pb = response["statistics"]["total"]["bestTime"]["ranked"]
+                rounded_pb = rank.get_rank(rank.get_elo_equivalent(real_pb, "pb"))
+            
             pb_colours = rank.get_colour(elos[rounded_pb])
             statted_image.text((650-word.calc_length(major_stats[1][i], 60), 820+i*80), major_stats[1][i], font=large_stat_font, fill=pb_colours[0], stroke_fill=pb_colours[1], stroke_width=1)
         else:
