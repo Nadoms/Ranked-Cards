@@ -291,9 +291,13 @@ async def match(interaction: Interaction, match_id: str = SlashOption(
     update_records("match", interaction.user.id, match_id, hidden, True)
 
 
-@bot.slash_command(name="analysis", description="Analyses your last ~150 games to visualise how you perform throughout your runs.")
-@commands.cooldown(1, 3600, commands.BucketType.user)
-async def analysis(interaction: Interaction, hidden: str = SlashOption(
+@bot.slash_command(name="analysis", description="Analyses your last ~150 games to visualise how a player performs throughout their runs.")
+async def analysis(interaction: Interaction, input_name: str = SlashOption(
+    "name",
+    required = False,
+    description="The player to analyse.",
+    default = ""
+    ), hidden: str = SlashOption(
     "hidden",
     required = False,
     description="Hides my response.",
@@ -306,29 +310,65 @@ async def analysis(interaction: Interaction, hidden: str = SlashOption(
     else:
         hidden = False
 
-    input_name = get_name(interaction)
+    connected = False
+
     if not input_name:
-        await interaction.response.send_message("Connect your minecraft account to your discord with </connect:1149442234513637448> to use this command.", ephemeral=hidden)
-        update_records("analysis", interaction.user.id, "Unknown", hidden, False)
-        return
+        input_name = get_name(interaction)
+        if not input_name:
+            await interaction.response.send_message("Connect your minecraft account to your discord with </connect:1149442234513637448> or specify a minecraft username.", ephemeral=hidden)
+            update_records("analysis", interaction.user.id, "Unknown", hidden, False)
+            return
+        connected = True
 
     print(f"\nAnalysing {input_name}'s games")
 
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
     response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=headers).json()
+
+    failed = False
     if response["status"] == "error":
-        print("Player not found.")
-        await interaction.response.send_message(f"Player not found. (`{input_name}`) Connect to your new Minecraft username with </connect:1149442234513637448>.", ephemeral=hidden)
-        update_records("analysis", interaction.user.id, input_name, hidden, False)
-        return
+        print(f"Player not found (`{input_name}`).")
+
+        if connected:
+            await interaction.response.send_message(f"Player not found (`{input_name}`). Connect to your new Minecraft username with </connect:1149442234513637448>.", ephemeral=hidden)
+            update_records("analysis", interaction.user.id, input_name, hidden, False)
+            return
+        
+        failed = True
+        extra, first = get_close(input_name)
+
+        if not first:
+            await interaction.response.send_message(f"Player not found (`{input_name}`).", ephemeral=hidden)
+            update_records("analysis", interaction.user.id, input_name, hidden, False)
+            return
+        else:
+            print(f"\nAutocorrected to {first}.")
+            response = requests.get(f"https://mcsrranked.com/api/users/{first}", headers=headers).json()
+
+            if response["status"] == "error":
+                print("Player changed username.")
+                extra = " This player may have changed username."
+                await interaction.response.send_message(f"Player not found (`{input_name}`). {extra}", ephemeral=hidden)
+                update_records("analysis", interaction.user.id, input_name, hidden, False)
+                return
+        
+    old_input = input_name
+    input_name = response["data"]["nickname"]
     
-    cooldown = 60 * 60 # One hour cooldown
-    user_cooldown = get_cooldown(input_name)
+    cooldown = 60 * 60 * 6 # 6 hour cooldown
+    user_cooldown, last_link = get_cooldown(input_name)
+
+    cd_extra = ""
+    if last_link:
+        last_guild = int(last_link.split("/")[-3])
+        if last_guild == interaction.guild.id:
+            cd_extra = f"\nTheir last analysis is {last_link}"
+
     delta = int(time()) - user_cooldown
     if delta < cooldown:
         next_available = f"<t:{user_cooldown + cooldown}:R>"
         print("Command on cooldown.")
-        await interaction.response.send_message(f"This command is on cooldown. (You can use it {next_available})", ephemeral=hidden)
+        await interaction.response.send_message(f"This command is on cooldown for `{input_name}`. (You can use it {next_available}){cd_extra}", ephemeral=hidden)
         update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
 
@@ -439,9 +479,15 @@ async def analysis(interaction: Interaction, hidden: str = SlashOption(
             inline = False
         )
 
-    set_cooldown(input_name)
-    await interaction.followup.send(files=[split_file, ow_file], embeds=[embed_general, embed_split, embed_ow], ephemeral=hidden)
-    update_records("analysis", interaction.user.id, input_name, hidden, True)
+    jump_url = f"https://discord.com/channels/{interaction.guild.id}/{interaction.channel.id}/{interaction.id}"
+    set_cooldown(jump_url, input_name)
+
+    if failed:
+        await interaction.followup.send(f"Player not found (`{old_input}`). {extra}", files=[split_file, ow_file], embeds=[embed_general, embed_split, embed_ow], ephemeral=hidden)
+        update_records("analysis", interaction.user.id, input_name, hidden, True)
+    else:
+        await interaction.followup.send(files=[split_file, ow_file], embeds=[embed_general, embed_split, embed_ow], ephemeral=hidden)
+        update_records("analysis", interaction.user.id, input_name, hidden, True)
 
 
 @bot.slash_command(name="customise", description="Allows you to personalise your card. Only applies to connected users.")
@@ -607,8 +653,8 @@ async def help(interaction: Interaction,
         inline = False
     )
     embed.add_field(
-        name = "/analyse",
-        value = "`Options: Hide response`\n`Default: Public`\n***Analyses your games*** to give you feedback about your splits and overworlds.",
+        name = "/analysis",
+        value = "`Options: Minecraft username, hide response`\n`Defaults: Connected user, public`\n***Analyses your games*** to give feedback about splits and overworlds.",
         inline = False
     )
     embed.add_field(
@@ -671,12 +717,12 @@ def get_cooldown(input_name):
 
     for user in users["users"]:
         if input_name == user["minecraft"]:
-            return user["cooldown"]
+            return user["cooldown"], user["last_link"]
     
-    return ""
+    return False, False
 
 
-def set_cooldown(input_name):
+def set_cooldown(jump_url, input_name):
     file = path.join("src", "database", "users.json")
     with open (file, "r") as f:
         users = json.load(f)
@@ -684,6 +730,7 @@ def set_cooldown(input_name):
     for user in users["users"]:
         if input_name == user["minecraft"]:
             user["cooldown"] = int(time())
+            user["last_link"] = jump_url
             break
         
     with open (file, "w") as f:

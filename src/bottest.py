@@ -20,13 +20,12 @@ def main(command, name, type, season, match_id):
     elif command == "match":
         img = matching.main(response2, match_id)
     elif command == "analysis":
-        img = analysing.main(response)[2]
-        # img1, img2 = analysing.main(response)[2:4]
-        # img1.save("test.png")
-        # img2.save("test2.png")
-        # img1.show()
-        # img2.show()
-        # return
+        img1, img2 = analysing.main(response)[2:4]
+        img1.save("test.png")
+        img2.save("test2.png")
+        img1.show()
+        img2.show()
+        return
     else:
         return
         
