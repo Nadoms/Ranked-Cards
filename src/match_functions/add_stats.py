@@ -2,6 +2,7 @@ from PIL import ImageDraw, ImageFont
 
 from gen_functions import word, rank
 
+
 def write(chart, uuids, response, vs_response):
     statted_image = ImageDraw.Draw(chart)
     stat_size = 20
@@ -19,29 +20,30 @@ def write(chart, uuids, response, vs_response):
         score_colour = ["#00ffff", "#122b30"]
         colours = [legacy_elo_colour, current_elo_colour]
 
-        for j in range(len(stats)):
+        for j, stat_words in enumerate(stats):
             overall_line = ""
-            for k in range(len(stats[j])):
-                if not stats[j][k]:
-                    stats[j][k] = "unranked"
+            for k, stat_word in enumerate(stat_words):
+                if not stat_word:
+                    stat_word = "unranked"
                 else:
-                    stats[j][k] = str(stats[j][k])
-                overall_line += stats[j][k]
-            
+                    stat_word = str(stat_word)
+                overall_line += stat_word
+
             x = int(x_values[i] - i * word.calc_length(overall_line, stat_size))
 
-            for k in range(len(stats[j])):
+            for k, stat_word in enumerate(stat_words):
                 y = y_values[j] - int(word.horiz_to_vert(stat_size) / 2) + i*180
 
                 if k == 1 and j <= 1:
                     f_colour, s_colour = colours[j]
                 else:
                     f_colour, s_colour = score_colour
-                statted_image.text((x, y), stats[j][k], font=stat_font, fill=f_colour, stroke_fill=s_colour, stroke_width=1)
+                statted_image.text((x, y), stat_word, font=stat_font, fill=f_colour, stroke_fill=s_colour, stroke_width=1)
 
-                x += int(word.calc_length(stats[j][k], stat_size))
-        
+                x += int(word.calc_length(stat_word, stat_size))
+
     return chart
+
 
 def get_stats(response, scores, uuids, i):
     current_elo = response["players"][i]["eloRate"]
@@ -51,6 +53,7 @@ def get_stats(response, scores, uuids, i):
             legacy_elo = score_change["eloRate"]
 
     return [["was ", legacy_elo, " elo"], ["now ", current_elo, " elo"], [scores[0][i]], [scores[1][i]]]
+
 
 def get_scores(uuids, vs_response):
     scores = []

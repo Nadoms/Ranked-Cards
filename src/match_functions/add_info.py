@@ -1,11 +1,11 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from math import floor
-from PIL import Image, ImageDraw, ImageFont
-import requests
-from io import BytesIO
 from os import path
 
+from PIL import Image, ImageDraw, ImageFont
+
 from gen_functions import numb, word
+
 
 def write(chart, response):
     middle = 600
@@ -36,12 +36,13 @@ def write(chart, response):
     right_x = x_values[2]
     infoed_image.text((right_x, text_y), right_text, font=info_font, fill="lightblue")
 
-    id = f"Match #{response['id']}"
-    id_x = x_values[1] - word.calc_length(id, id_size) / 2
+    match_id = f"Match #{response['id']}"
+    id_x = x_values[1] - word.calc_length(match_id, id_size) / 2
     id_y = round(y - word.horiz_to_vert(id_size) / 2) - 60
-    infoed_image.text((id_x, id_y), id, font=id_font, fill="yellow")
+    infoed_image.text((id_x, id_y), match_id, font=id_font, fill="yellow")
 
     return chart
+
 
 def get_seed(response):
     seed_type = response["seedType"].lower()
@@ -49,6 +50,7 @@ def get_seed(response):
     seed = Image.open(file)
     seed = seed.resize((80, 80), resample=Image.NEAREST)
     return seed
+
 
 def get_delta(response):
     date = response["date"]
@@ -60,10 +62,10 @@ def get_delta(response):
     else:
         return f"{floor(delta_date.total_seconds() / 60)} minute(s) ago"
 
+
 def get_result(response):
     if response["forfeited"]:
         return "forfeited"
-    elif response["result"]["uuid"]:
+    if response["result"]["uuid"]:
         return "completed"
-    else:
-        return "drawn"
+    return "drawn"

@@ -7,22 +7,21 @@ import matplotlib.dates as md
 import numpy as np
 import seaborn as sns
 import pandas as pd
-from scipy.interpolate import make_interp_spline
 
 from gen_functions import games, rank
 
 
-def write(uuid, response, type, season):
+def write(uuid, response, data_type, season):
     matches = games.get_matches(response["nickname"], season, True)
-    columns = ["Games ago", type, type + " (smoothed)", "Season"]
+    columns = ["Games ago", data_type, data_type + " (smoothed)", "Season"]
 
     if len(matches) <= 1:
         return -1
 
-    if type == "Elo":
+    if data_type == "Elo":
         elos = get_smoothed_data(get_elo(uuid, matches, season))
         data = pd.DataFrame(elos, columns=columns)
-    elif type == "Completion time":
+    elif data_type == "Completion time":
         comps = get_comps(uuid, matches, season)
         if len(comps) <= 1:
             return -1
@@ -30,15 +29,14 @@ def write(uuid, response, type, season):
         data = pd.DataFrame(comps, columns=columns)
         data["Completion time"] = pd.to_datetime(data["Completion time"], unit='ms')
         data["Completion time (smoothed)"] = pd.to_datetime(data["Completion time (smoothed)"], unit='ms')
-    
+
     games_ago = np.array(data['Games ago'])
-    metric = np.array(data[type])
-    smoothed_metric = np.array(data[type + " (smoothed)"])
-    
-#    xy_spline = make_interp_spline(games_ago, smoothed_metric)
- 
-#    x_ = np.linspace(games_ago.min(), games_ago.max(), 500)
-#    y_ = xy_spline(x_)
+    metric = np.array(data[data_type])
+
+    # smoothed_metric = np.array(data[data_type + " (smoothed)"])
+    # xy_spline = make_interp_spline(games_ago, smoothed_metric)
+    # x_ = np.linspace(games_ago.min(), games_ago.max(), 500)
+    # y_ = xy_spline(x_)
 
     # Get minecraft font.
     fp = "minecraft_font.ttf"
@@ -58,29 +56,29 @@ def write(uuid, response, type, season):
 
     fig, ax = plt.subplots(figsize=(8, 5.5))
     fig.subplots_adjust(top=0.8, left=0.1, right=0.95)
-    lineplot = sns.lineplot(data=data, x=data['Games ago'], y=data[type], ax=ax, color='white', alpha=0.7, label=type)
-    smoothed_lineplot = sns.lineplot(data=data, x=data['Games ago'], y=data[type + " (smoothed)"], ax=ax, color='#FFFF00', alpha=1)
+    # lineplot = sns.lineplot(data=data, x=data['Games ago'], y=data[data_type], ax=ax, color='white', alpha=0.7, label=data_type)
+    # smoothed_lineplot = sns.lineplot(data=data, x=data['Games ago'], y=data[data_type + " (smoothed)"], ax=ax, color='#FFFF00', alpha=1)
 
     # Axis adjustments.
     ax.invert_xaxis()
     ax.grid(axis='x')
-    if type == "Completion time":
+    if data_type == "Completion time":
         ax.yaxis.set_major_formatter(md.DateFormatter("%M:%S"))
 
     # Fill under line.
-    if type == "Elo":
+    if data_type == "Elo":
         elo_boundaries = [0, 600, 900, 1200, 1500, 2000, 3000]
-        for i in range(len(elo_boundaries)):
+        for i, elo_boundary in enumerate(elo_boundaries):
             if i == len(elo_boundaries) - 1:
                 break
-            elif i == len(elo_boundaries) - 2:
+            if i == len(elo_boundaries) - 2:
                 colour = "#000000"
             else:
-                colour = rank.get_colour(elo_boundaries[i])[0]
-            line1 = np.array([elo_boundaries[i]] * len(data))
+                colour = rank.get_colour(elo_boundary)[0]
+            line1 = np.array([elo_boundary] * len(data))
             line2 = np.clip(metric, 0, elo_boundaries[i+1])
             ax.fill_between(x=games_ago, y1=line2, y2=line1, where=(line2 > line1), color=colour, interpolate=True, alpha=0.3)
-    elif type == "Completion time":
+    elif data_type == "Completion time":
         ax.fill_between(x=games_ago, y1=metric, color="#00FFFF", interpolate=True, alpha=0.2)
 
     # Vertical season lines.
@@ -94,15 +92,15 @@ def write(uuid, response, type, season):
             prev_season = season
 
     # Horizontal best line.
-    if type == "Elo":
-        horiz = max(data[type])
+    if data_type == "Elo":
+        horiz = max(data[data_type])
         label = f"Best elo ({horiz})"
-        xpos = 1 - (data[type].idxmax() / (len(data)-1))
-    elif type == "Completion time":
-        horiz = min(data[type])
+        xpos = 1 - (data[data_type].idxmax() / (len(data)-1))
+    elif data_type == "Completion time":
+        horiz = min(data[data_type])
         fastest = str(horiz)[-12:-7]
         label = f"Fastest time ({fastest})"
-        xpos = 1 - (data[type].idxmin() / (len(data)-1))
+        xpos = 1 - (data[data_type].idxmin() / (len(data)-1))
     xmin = max(xpos-0.04, 0)
     xmax = min(xpos+0.04, 1)
     ax.axhline(horiz, color="#00FFFF", alpha=0.8, linestyle="--", label=label, xmin=xmin, xmax=xmax)
@@ -114,10 +112,10 @@ def write(uuid, response, type, season):
     ax.tick_params(axis='y', colors='white')
 
     ax.set_xlim(games_ago[len(data)-1], games_ago[0])
-    if type == "Elo":
-        ax.set_ylim(min(data[type])-30, max(data[type])+30)
-    if type == "Completion time":
-        ax.set_ylim(min(data[type])-timedelta(minutes=1), max(data[type])+timedelta(minutes=1))
+    if data_type == "Elo":
+        ax.set_ylim(min(data[data_type])-30, max(data[data_type])+30)
+    if data_type == "Completion time":
+        ax.set_ylim(min(data[data_type])-timedelta(minutes=1), max(data[data_type])+timedelta(minutes=1))
 
     file = path.join("src", "graph_functions", "graph.png")
 
@@ -138,7 +136,7 @@ def get_elo(uuid, matches, season):
             if score_change["change"] != None:
                 elo = score_change["eloRate"] + score_change["change"]
             season = game["season"]
-            
+
             if score_change["eloRate"]:
                 last_relo = elo
                 elo_array.append([remain, elo, season])
@@ -169,7 +167,6 @@ def get_smoothed_data(data_array, smoothing=-1):
     running_total = 0
     smoothed_array = []
     length = len(data_array)
-    max_count = smoothing*2+1
     count = smoothing+1
 
     for i in range(count):

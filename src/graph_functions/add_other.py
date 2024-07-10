@@ -1,6 +1,7 @@
-from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
 from os import path
+
+from PIL import Image, ImageDraw, ImageFont
 
 from gen_functions import word
 

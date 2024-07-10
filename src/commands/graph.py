@@ -5,12 +5,12 @@ from PIL import Image
 
 from graph_functions import add_graph, add_name, add_other, add_skin, add_stats
 
-def main(name, response, type, season):
+def main(name, response, data_type, season):
     response = response["data"]
     uuid = response["uuid"]
 
     then = datetime.now()
-    file = add_graph.write(uuid, response, type, season)
+    file = add_graph.write(uuid, response, data_type, season)
     if file == -1:
         return -1
     then = splits(then, 0)

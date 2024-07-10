@@ -1,8 +1,9 @@
-from datetime import timedelta
 from os import path
+
 from PIL import ImageDraw, Image, ImageFont
 
 from gen_functions import numb, word
+
 
 def write(chart, uuids, response):
     splitted_image = ImageDraw.Draw(chart)
@@ -26,18 +27,18 @@ def write(chart, uuids, response):
         x = x_values[i]
         prog_coords = advancements[i][0]
         progressions = advancements[i][1]
-        
-        for j in range(len(progressions)):
+
+        for j, progression in enumerate(progressions):
             y1 = prog_coords[j]
             if j >= len(progressions) - 1:
                 y2 = 1800
             else:
                 y2 = prog_coords[j+1]
-            
+
             if y2 - y1 < 6:
                 continue
-                
-            file = path.join("src", "pics", "textures", "cleantextures", f"{textures[progressions[j]]}.jpg")
+
+            file = path.join("src", "pics", "textures", "cleantextures", f"{textures[progression]}.jpg")
             texture = Image.open(file)
 
             mask = Image.new("L", chart.size, 0)
@@ -48,14 +49,13 @@ def write(chart, uuids, response):
             outlined_image = ImageDraw.Draw(chart)
             outlined_image.rectangle([x-42, y1+3, x+42, y2-3], outline="#ffffff", width=2)
 
-    
     for i in range(0, 2):
         event_coords = advancements[i][3]
         events = advancements[i][4]
         is_shifted = False
 
-        for j in range(len(events)):
-            icon = get_event_icon(events[j])
+        for j, event in enumerate(events):
+            icon = get_event_icon(event)
 
             x = x_values[i] + (2*i-1) * 105 - int(icon.size[0]/2)
             y = event_coords[j] - int(icon.size[1]/2)
@@ -75,7 +75,7 @@ def write(chart, uuids, response):
         times = advancements[i][5]
         is_shifted = False
 
-        for j in range(len(coords)):
+        for j, coord in enumerate(coords):
             time = numb.digital_time(times[j])
             time_size = 35
             time_font = ImageFont.truetype('minecraft_font.ttf', time_size)
@@ -84,23 +84,25 @@ def write(chart, uuids, response):
                 time = "START!"
 
             x = x_values[i] + (2*i-1) * 160 + (i-1) * word.calc_length(time, time_size)
-            y = coords[j] - word.horiz_to_vert(time_size) / 2
+            y = coord - word.horiz_to_vert(time_size) / 2
 
-            if 0 <= coords[j] - coords[j-1] <= 40 and not is_shifted:
+            if 0 <= coord - coords[j-1] <= 40 and not is_shifted:
                 x += (2*i-1) * 220
                 is_shifted = True
             else:
                 is_shifted = False
-            
+
             splitted_image.text((x, y), time, font=time_font, fill="#44ffff")
 
     return chart
+
 
 def get_event_icon(event):
     file = path.join("src", "pics", "items", f"{event}.webp")
     icon = Image.open(file)
     icon = icon.resize((80, 80))
     return icon
+
 
 def process_advancements(splits, final_time):
     y = 550
@@ -111,7 +113,7 @@ def process_advancements(splits, final_time):
     event_coords = [y]
     events = [0]
     event_times = [0]
-    
+
     for advancement in splits:
         prog_time = None
         event_time = None
@@ -205,15 +207,15 @@ def extract_splits(uuids, response, final_time):
             player_0.append({"timeline": event["type"], "time": event["time"]})
         elif event["uuid"] == uuids[1]:
             player_1.append({"timeline": event["type"], "time": event["time"]})
-    
-    if response["forfeited"] == True:
+
+    if response["forfeited"] is True:
         if response["result"]["uuid"] == uuids[0]:
             outcome_0 = "win"
             outcome_1 = "forfeit"
         elif response["result"]["uuid"] == uuids[1]:
             outcome_0 = "forfeit"
             outcome_1 = "win"
-        elif response["result"]["uuid"] == None:
+        elif response["result"]["uuid"] is None:
             outcome_0 = "draw"
             outcome_1 = "draw"
     else:
@@ -226,5 +228,5 @@ def extract_splits(uuids, response, final_time):
 
     player_0.append({"timeline": outcome_0, "time": final_time})
     player_1.append({"timeline": outcome_1, "time": final_time})
-    
+
     return [player_0, player_1]

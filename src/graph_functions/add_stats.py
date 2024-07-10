@@ -1,8 +1,6 @@
 from PIL import ImageDraw, ImageFont
-import requests
-from datetime import timedelta
 
-from gen_functions import games, word, rank
+from gen_functions import word, rank
 
 def write(graph, response):
     statted_image = ImageDraw.Draw(graph)
@@ -14,11 +12,11 @@ def write(graph, response):
     stats = get_stats(response)
     colour = rank.get_colour(stats[1])
 
-    if stats[1] == None:
+    if stats[1] is None:
         stats[1] = "-"
     else:
         stats[1] = str(stats[1])
-    if stats[3] != None:
+    if stats[3] is not None:
         rounded_rank = int(stats[3])
         if rounded_rank > 1000:
             rounded_rank = 0
@@ -42,7 +40,7 @@ def write(graph, response):
         stats[3] = "-"
         rounded_rank = 0
     stats[3] = "#" + str(stats[3])
-    
+
     x = 125
     statted_image.text((x, 60), stats[0], font=stat_font, fill=white)
     x += word.calc_length(stats[0], stat_size)
@@ -51,11 +49,11 @@ def write(graph, response):
     statted_image.text((x, 60), stats[2], font=stat_font, fill=white)
     x += word.calc_length(stats[2], stat_size)
     statted_image.text((x, 60), stats[3], font=stat_font, fill=rank_colour[rounded_rank])
-        
+
     return graph
 
 def get_stats(response):
     elo = response["eloRate"]
-    rank = response["eloRank"]
+    ranking = response["eloRank"]
 
-    return ["Current Elo: ", elo, " / Rank: ", rank]
+    return ["Current Elo: ", elo, " / Rank: ", ranking]

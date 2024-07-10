@@ -1,6 +1,7 @@
-from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
 from os import path
+
+from PIL import Image, ImageDraw, ImageFont
 
 from gen_functions import word
 
@@ -10,7 +11,7 @@ def write(chart):
     othered_image = ImageDraw.Draw(chart)
     other_size = 25
     other_font = ImageFont.truetype('minecraft_font.ttf', other_size)
-    
+
     middle = 600
     x_values = [middle-70, middle+70]
     y = 1900

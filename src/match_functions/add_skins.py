@@ -1,7 +1,9 @@
-from PIL import Image
 import requests
 from io import BytesIO
 from os import path
+
+from PIL import Image
+
 
 def write(chart, uuids):
     middle = 600
@@ -14,6 +16,7 @@ def write(chart, uuids):
         chart.paste(skin, (x, y_values[i]), skin)
     return chart
 
+
 def get_skin(uuid, i):
     mid = 35
     turn = 30
@@ -21,11 +24,12 @@ def get_skin(uuid, i):
     try:
         yaw = yaws[i]
         headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
-        response = requests.get(f"https://visage.surgeplay.com/head/250/{uuid}?y={yaw}&p=15", headers=headers)
+        response = requests.get(f"https://visage.surgeplay.com/head/250/{uuid}?y={yaw}&p=15", headers=headers, timeout=10)
         skin = Image.open(BytesIO(response.content))
     except:
         skin = get_default_skin(i)
     return skin
+
 
 def get_default_skin(i):
     right_left = ["r", "l"]

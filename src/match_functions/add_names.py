@@ -1,4 +1,5 @@
 from os import path
+
 from PIL import ImageDraw, ImageFont, Image
 
 from gen_functions import word
@@ -27,12 +28,12 @@ def write(chart, names, response):
             colour = "#ffaa00"
         else:
             colour = "lightblue"
-        
+
         named_image.text((text_x, text_y), names[i], font=tag_font, fill=colour)
 
         text_x += word.calc_length(names[i], tag_size)+tag_size/5
         named_image.text((text_x, text_y), rank, font=tag_font, fill=rank_colour)
-        
+
         if response["players"][i]["uuid"] == response["result"]["uuid"]:
             icon_name = "8.webp"
         else:

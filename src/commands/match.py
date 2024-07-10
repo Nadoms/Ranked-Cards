@@ -20,7 +20,7 @@ def main(response):
     chart = Image.new("RGB", (1200, 1920), "#313338")
 
     then = datetime.now()
-    chart = add_shapes.write(chart, names, response)
+    chart = add_shapes.write(chart)
     then = splits(then, 0)
     chart = add_names.write(chart, names, response)
     then = splits(then, 1)
