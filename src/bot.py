@@ -245,7 +245,7 @@ async def match(interaction: Interaction, match_id: str = SlashOption(
         hidden = False
 
     input_name = get_name(interaction)
-    uuid = None
+
     if not match_id:
         if not input_name:
             await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a match ID.", ephemeral=hidden)
@@ -253,7 +253,7 @@ async def match(interaction: Interaction, match_id: str = SlashOption(
             return
 
         print(f"\nFinding {input_name}'s last match")
-        uuid, match_id = games.get_last_match(input_name)
+        match_id = games.get_last_match(input_name)
         if not match_id:
             await interaction.response.send_message("Player has no matches from this season.", ephemeral=hidden)
             update_records("match", interaction.user.id, match_id, hidden, False)
@@ -268,7 +268,7 @@ async def match(interaction: Interaction, match_id: str = SlashOption(
         update_records("match", interaction.user.id, match_id, hidden, False)
         return
     
-    elif response["data"]["type"] >= 3:
+    if response["data"]["type"] >= 3:
         print("Match is invalid.")
         await interaction.response.send_message(f"Match must be a ranked or casual game. (`{match_id}`)", ephemeral=hidden)
         update_records("match", interaction.user.id, match_id, hidden, False)
@@ -277,7 +277,7 @@ async def match(interaction: Interaction, match_id: str = SlashOption(
     await interaction.response.defer(ephemeral=hidden)
     
     try:
-        img = matching.main(response, match_id)
+        img = matching.main(response)
     except Exception as e:
         print(e)
         await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)

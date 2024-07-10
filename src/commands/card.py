@@ -1,13 +1,12 @@
-from card_functions import add_boxes, add_history, add_name, add_stats, \
-                               add_podium, add_skin, add_badge, \
-                               add_socials, add_other
-
-import requests
-import random
-from PIL import Image, ImageFilter
 from os import path
 from datetime import datetime
 
+import requests
+from PIL import Image, ImageFilter
+
+from card_functions import add_boxes, add_history, add_name, add_stats, \
+                               add_podium, add_skin, add_badge, \
+                               add_socials, add_other
 from gen_functions import games
 
 def main(name, response, discord, pfp, background):
@@ -57,8 +56,9 @@ def splits(then, process):
     return now
 
 if __name__ == "__main__":
-    input_name = "nadoms"
-    response = requests.get(f"https://mcsrranked.com/api/users/{input_name}").json()
-    discord = "notnaddysalt"
-    pfp = "https://cdn.discordapp.com/avatars/343108228890099713/1b4bf25c894af2c68410b0574135d150"
-    main(input_name, response, discord, pfp)
+    INPUT_NAME = "nadoms"
+    RESPONSE = requests.get(f"https://mcsrranked.com/api/users/{INPUT_NAME}", timeout=10).json()
+    DISCORD = "notnaddysalt"
+    PFP = "https://cdn.discordapp.com/avatars/343108228890099713/1b4bf25c894af2c68410b0574135d150"
+    BACKGROUND = "bastion.jpg"
+    main(INPUT_NAME, RESPONSE, DISCORD, PFP, BACKGROUND)

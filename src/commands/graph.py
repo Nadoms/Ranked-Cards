@@ -1,9 +1,9 @@
-from graph_functions import add_graph, add_name, add_other, add_skin, add_stats
+from datetime import datetime
 
 import requests
 from PIL import Image
-from os import path
-from datetime import datetime
+
+from graph_functions import add_graph, add_name, add_other, add_skin, add_stats
 
 def main(name, response, type, season):
     response = response["data"]
@@ -42,7 +42,8 @@ def splits(then, process):
     return now
 
 if __name__ == "__main__":
-    input_name = "nadoms"
-    response = requests.get(f"https://mcsrranked.com/api/users/{input_name}").json()
-    type = "elo"
-    main(input_name, response, type).show()
+    INPUT_NAME = "nadoms"
+    RESPONSE = requests.get(f"https://mcsrranked.com/api/users/{INPUT_NAME}", timeout=10).json()
+    TYPE = "elo"
+    SEASON = 5
+    main(INPUT_NAME, RESPONSE, TYPE, SEASON).show()

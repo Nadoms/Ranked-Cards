@@ -1,6 +1,7 @@
 import time
-import requests
 from datetime import timedelta
+
+import requests
 
 
 def get_matches(name, season, decays):
@@ -26,10 +27,10 @@ def get_season_matches(name, s, decays):
         excludedecay = ""
 
     i = 0
-    while response != []:
+    while response:
         if response == "Too many requests":
             return None
-        response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page={i}&count=50&type=2&season={s}{excludedecay}", headers=headers).json()["data"]
+        response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page={i}&count=50&type=2&season={s}{excludedecay}", headers=headers, timeout=10).json()["data"]
         matches += response
         i += 1
     return matches
@@ -44,23 +45,22 @@ def get_recent_matches(name, decays):
     else:
         excludedecay = ""
 
-    response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page=0&count=50&type=2&season={get_season()}{excludedecay}", headers=headers).json()["data"]
+    response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page=0&count=50&type=2&season={get_season()}{excludedecay}", headers=headers, timeout=10).json()["data"]
     matches += response
     return matches
 
 
 def get_last_match(name):
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
-    player_response = requests.get(f"https://mcsrranked.com/api/users/{name}", headers=headers).json()
+    player_response = requests.get(f"https://mcsrranked.com/api/users/{name}", headers=headers, timeout=10).json()
     if player_response["status"] == "error":
         return None
-    uuid = player_response["data"]["uuid"]
-    
-    matches_response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?count=1&type=2&excludedecay", headers=headers).json()
+
+    matches_response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?count=1&type=2&excludedecay", headers=headers, timeout=10).json()
     if matches_response["data"] == []:
         return None
-    else:
-        return [uuid, matches_response["data"][0]["id"]]
+
+    return matches_response["data"][0]["id"]
 
 
 def get_playtime(response, seasonOrTotal):
@@ -77,18 +77,18 @@ def get_playtime_day(response):
     return minutes
 
 
-def get_ff_loss(response, seasonOrTotal):
-    forfeits = response["statistics"][seasonOrTotal]["forfeits"]["ranked"]
-    losses = max(response["statistics"][seasonOrTotal]["loses"]["ranked"], 1)
+def get_ff_loss(response, season_or_total):
+    forfeits = response["statistics"][season_or_total]["forfeits"]["ranked"]
+    losses = max(response["statistics"][season_or_total]["loses"]["ranked"], 1)
     forfeit_loss = forfeits / losses
 
     forfeit_loss = round(forfeits / losses * 100, 1)
     return forfeit_loss
 
 
-def get_avg_completion(response, seasonOrTotal):
-    completion_time = response["statistics"][seasonOrTotal]["completionTime"]["ranked"]
-    completions = max(response["statistics"][seasonOrTotal]["completions"]["ranked"], 1)
+def get_avg_completion(response, season_or_total):
+    completion_time = response["statistics"][season_or_total]["completionTime"]["ranked"]
+    completions = max(response["statistics"][season_or_total]["completions"]["ranked"], 1)
 
     avg_completion = round(completion_time / completions)
     return avg_completion
@@ -112,15 +112,15 @@ def get_detailed_matches(player_response, name, uuid, min_comps, target_games):
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
 
     while s >= get_season() - 1:
-        response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page={i}&season={s}&count=50&type=2&excludedecay", headers=headers).json()["data"]
+        response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page={i}&season={s}&count=50&type=2&excludedecay", headers=headers, timeout=10).json()["data"]
 
         for match in response:
             match_id = match["id"]
-            match_response = requests.get(f"https://mcsrranked.com/api/matches/{match_id}", headers=headers).json()["data"]
+            match_response = requests.get(f"https://mcsrranked.com/api/matches/{match_id}", headers=headers, timeout=10).json()["data"]
             detailed_matches.append(match_response)
             num_games += 1
 
-            if match_response["forfeited"] == False and match_response["result"]["uuid"] == uuid:
+            if match_response["forfeited"] is False and match_response["result"]["uuid"] == uuid:
                 num_comps += 1
 
             if num_games >= target_games and num_comps >= min_comps:
@@ -139,9 +139,9 @@ def get_detailed_matches(player_response, name, uuid, min_comps, target_games):
 
 
 def get_season():
-    return 5
     """
         response = requests.get("https://mcsrranked.com/api/matches/?count=1").json()["data"]
         season = response[0]["match_season"]
         return season
     """
+    return 5

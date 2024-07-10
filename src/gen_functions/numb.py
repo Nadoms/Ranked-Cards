@@ -1,10 +1,11 @@
 from datetime import timedelta
 from math import log10, floor
 
+
 def round_sf(num, sf):
     if num == 0:
         return num
-    
+
     round_amt = -int(floor(log10(abs(num)))) - 1 + sf
     num = round(num, round_amt)
     if round_amt <= 0:

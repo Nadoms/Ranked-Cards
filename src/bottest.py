@@ -18,7 +18,7 @@ def main(command, name, type, season, match_id):
     elif command == "plot":
         img = graphing.main(name, response, type, season)
     elif command == "match":
-        img = matching.main(response2, match_id)
+        img = matching.main(response2)
     elif command == "analysis":
         img1, img2 = analysing.main(response)[2:4]
         img1.save("test.png")

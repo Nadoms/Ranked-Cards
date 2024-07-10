@@ -1,10 +1,9 @@
-from analysis_functions import get_skin, get_comments, split_insights, ow_insights, combine
+from datetime import datetime
 
 import requests
 from PIL import Image
-from os import path
-from datetime import datetime
 
+from analysis_functions import get_skin, get_comments, split_insights, ow_insights
 from gen_functions import games
 
 def main(response):
@@ -20,7 +19,7 @@ def main(response):
 
     then = datetime.now()
     detailed_matches = games.get_detailed_matches(response, name, uuid, 30, 100)
-    if detailed_matches == -1 or detailed_matches == -2:
+    if detailed_matches in (-1, -2):
         return detailed_matches
     then = splits(then, 0)
     skin = get_skin.main(uuid)
@@ -50,6 +49,6 @@ def splits(then, process):
     return now
 
 if __name__ == "__main__":
-    input_name = "Nadoms"
-    response = requests.get(f"https://mcsrranked.com/api/users/{input_name}").json()
-    main(response).show()
+    INPUT_NAME = "Nadoms"
+    glob_response = requests.get(f"https://mcsrranked.com/api/users/{INPUT_NAME}", timeout=10).json()
+    main(glob_response).show()

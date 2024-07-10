@@ -39,14 +39,13 @@ def horiz_to_vert(size):
 def percentify(proportion):
     if proportion >= 0.5:
         return f"Top {numb.round_sf((1-proportion) * 100, 2)}%"
-    elif proportion < 0.5:
-        return f"Bottom {numb.round_sf(proportion * 100, 2)}%"
+    return f"Bottom {numb.round_sf(proportion * 100, 2)}%"
 
 def get_raw_time(time):
     raw_time = 0
     time = list(reversed(time.split(":")))
 
-    for i in range(len(time)):
-        raw_time += int(time[i]) * (60 ** i)
-    
+    for i, value in enumerate(time):
+        raw_time += int(value) * (60 ** i)
+
     return raw_time * 1000
