@@ -1,12 +1,12 @@
-from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
 from os import path
 
+from PIL import Image, ImageDraw, ImageFont
+
 from gen_functions import word
 
-# rank with a circle indicating how close to the next main rank, with lines for each division
 
-def write(card, name):
+def write(card):
     othered_image = ImageDraw.Draw(card)
     other_font = ImageFont.truetype('minecraft_font.ttf', 20)
 
@@ -17,9 +17,11 @@ def write(card, name):
 
     return card
 
+
 def get_date():
     date = datetime.now().strftime("Generated at %H:%M on %d/%m/%y")
     return date
+
 
 def get_logo():
     file = path.join("src", "pics", "other", "ranked_logo.webp")

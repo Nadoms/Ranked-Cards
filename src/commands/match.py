@@ -37,6 +37,7 @@ def main(response):
 
     return chart
 
+
 def splits(then, process):
     processes = ["Drawing boxes",
      "Writing usernames",

@@ -1,21 +1,23 @@
 from os import path
-import numpy as np
 import math
+
+import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 from gen_functions import numb, word
 
-sides = 5
-init_prop = 1.8
-img_size_x = 960
-img_size_y = 760
-middle = img_size_y / 2
-offset_x = (img_size_x - img_size_y) / 2
-offset_y = 60
-angles = [(i * (2 * math.pi)) / sides -
+SIDES = 5
+INIT_PROP = 1.8
+IMG_SIZE_X = 960
+IMG_SIZE_Y = 760
+MIDDLE = IMG_SIZE_Y / 2
+OFFSET_X = (IMG_SIZE_X - IMG_SIZE_Y) / 2
+OFFSET_Y = 60
+ANGLES = [(i * (2 * math.pi)) / SIDES -
           math.pi / 2 +
-          2 * math.pi / sides for i in range(sides)]
-angles.insert(0, angles.pop())
+          2 * math.pi / SIDES for i in range(SIDES)]
+ANGLES.insert(0, ANGLES.pop())
+
 
 def main(uuid, detailed_matches):
     average_ows = get_avg_ows(uuid, detailed_matches)
@@ -29,6 +31,7 @@ def main(uuid, detailed_matches):
     comments["best"], comments["worst"] = get_best_worst(ranked_ows)
 
     return comments, polygon
+
 
 def get_avg_ows(uuid, detailed_matches):
     number_ows = {
@@ -62,7 +65,7 @@ def get_avg_ows(uuid, detailed_matches):
                 time_ows[ow_mapping[seed_type]] += event["time"]
                 number_ows[ow_mapping[seed_type]] += 1
                 break
-    
+
     for ow_key in average_ows:
         if number_ows[ow_key] == 0:
             average_ows[ow_key] = 1000000000000
@@ -70,6 +73,7 @@ def get_avg_ows(uuid, detailed_matches):
             average_ows[ow_key] = round(time_ows[ow_key] / number_ows[ow_key])
 
     return average_ows
+
 
 def get_ranked_ows(average_ows):
     ranked_ows = {
@@ -81,8 +85,8 @@ def get_ranked_ows(average_ows):
 
     file = path.join("src", "database", "mcsrstats", "ow_splits.csv")
     ows_index = ["bt", "dt", "rp", "ship", "village"]
-    with open(file, "r") as f:
-
+    
+    with open(file, "r", encoding="UTF-8") as f:
         while True:
             ows = f.readline().strip().split(",")
             if not ows[0]:
@@ -100,41 +104,42 @@ def get_ranked_ows(average_ows):
 
     return ranked_ows
 
+
 def get_polygon(ranked_ows):
-    proportions = [init_prop, init_prop * 4/3, init_prop * 2, init_prop * 4, 10000]
+    proportions = [INIT_PROP, INIT_PROP * 4/3, INIT_PROP * 2, INIT_PROP * 4, 10000]
     ow_mapping = ["bt", "dt", "rp", "ship", "village"]
 
-    polygon_frame = Image.new('RGBA', (img_size_x, img_size_y), (0, 0, 0, 0))
+    polygon_frame = Image.new('RGBA', (IMG_SIZE_X, IMG_SIZE_Y), (0, 0, 0, 0))
     frame_draw = ImageDraw.Draw(polygon_frame)
 
     # Filling the polygon
-    polygon_size = middle / init_prop
+    polygon_size = MIDDLE / INIT_PROP
     xy = [
-        ((math.cos(th) + init_prop) * polygon_size + offset_x, 
-        (math.sin(th) + init_prop) * polygon_size + offset_y) 
-        for th in angles
+        ((math.cos(th) + INIT_PROP) * polygon_size + OFFSET_X, 
+        (math.sin(th) + INIT_PROP) * polygon_size + OFFSET_Y) 
+        for th in ANGLES
     ]
     frame_draw.polygon(xy, fill="#413348")
 
     # Drawing the outward lines of the polygon
-    for th in angles:
-        polygon_size = middle / init_prop
-        # th = (i * (2 * math.pi) - 0.5 * math.pi) / sides
-        xy = [(middle + offset_x, middle + offset_y),
-            ((math.cos(th) + init_prop) * polygon_size + offset_x, 
-            (math.sin(th) + init_prop) * polygon_size + offset_y)
+    for th in ANGLES:
+        polygon_size = MIDDLE / INIT_PROP
+        # th = (i * (2 * math.pi) - 0.5 * math.pi) / SIDES
+        xy = [(MIDDLE + OFFSET_X, MIDDLE + OFFSET_Y),
+            ((math.cos(th) + INIT_PROP) * polygon_size + OFFSET_X, 
+            (math.sin(th) + INIT_PROP) * polygon_size + OFFSET_Y)
         ]
         frame_draw.line(xy, fill="#515368", width=3)
 
     # Drawing the edge of the polygons
     for proportion in proportions:
-        polygon_size = middle / proportion
+        polygon_size = MIDDLE / proportion
         xy = [ 
-            ((math.cos(th) + proportion) * polygon_size + offset_x, 
-            (math.sin(th) + proportion) * polygon_size + offset_y) 
-            for th in angles 
+            ((math.cos(th) + proportion) * polygon_size + OFFSET_X, 
+            (math.sin(th) + proportion) * polygon_size + OFFSET_Y) 
+            for th in ANGLES 
         ]
-        if proportion == init_prop:
+        if proportion == INIT_PROP:
             frame_draw.polygon(xy, outline="#ffffff", width=6)
         else:
             frame_draw.polygon(xy, outline="#515368", width=3)
@@ -144,17 +149,17 @@ def get_polygon(ranked_ows):
 
     # Drawing the player's polygon
     xy = []
-    for i in range(len(angles)):
+    for i in range(len(ANGLES)):
         val = ranked_ows[ow_mapping[i]]
         if val == 0:
             proportion = 100000
         else:
-            proportion = init_prop / val
-        polygon_size = middle / proportion
+            proportion = INIT_PROP / val
+        polygon_size = MIDDLE / proportion
         
         xy.append(
-            ((math.cos(angles[i]) + proportion) * polygon_size + offset_x,
-            (math.sin(angles[i]) + proportion) * polygon_size + offset_y)
+            ((math.cos(ANGLES[i]) + proportion) * polygon_size + OFFSET_X,
+            (math.sin(ANGLES[i]) + proportion) * polygon_size + OFFSET_Y)
         )
     stats_draw.polygon(xy, fill="#716388", outline="#a1d3f8", width=4)
 
@@ -164,7 +169,7 @@ def get_polygon(ranked_ows):
 
 
 def add_text(polygon, average_ows, ranked_ows):
-    text_prop = init_prop * 0.95
+    text_prop = INIT_PROP * 0.95
     xy = []
     percentiles = [0.3, 0.5, 0.7, 0.9, 0.95, 1.0]
     percentile_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#3f82ff", "#ffd700"]
@@ -180,36 +185,36 @@ def add_text(polygon, average_ows, ranked_ows):
     stat_font = ImageFont.truetype('minecraft_font.ttf', stat_size)
 
     big_title = "Overworld Performance"
-    big_x = (img_size_x - word.calc_length(big_title, big_size)) / 2
-    big_y = offset_y - 20
+    big_x = (IMG_SIZE_X - word.calc_length(big_title, big_size)) / 2
+    big_y = OFFSET_Y - 20
     text_draw.text((big_x, big_y), big_title, font=big_font, fill="#ffffff", stroke_fill="#000000", stroke_width=3)
 
-    for i in range(len(angles)):
-        polygon_size = middle / text_prop
+    for angle in ANGLES:
+        polygon_size = MIDDLE / text_prop
         xy.append(
-            [(math.cos(angles[i]) + text_prop) * polygon_size + offset_x,
-            (math.sin(angles[i]) + text_prop) * polygon_size + offset_y]
+            [(math.cos(angle) + text_prop) * polygon_size + OFFSET_X,
+            (math.sin(angle) + text_prop) * polygon_size + OFFSET_Y]
         )
 
-    for i in range(sides):
+    for i in range(SIDES):
         if i == 0:
             xy[i][1] -= word.horiz_to_vert(title_size) + word.horiz_to_vert(stat_size)
 
-        elif i < math.floor(sides / 2):
+        elif i < math.floor(SIDES / 2):
             xy[i][0] += word.calc_length("Strongholdddl", title_size) / 2
             xy[i][1] -= word.horiz_to_vert(title_size) / 2 + word.horiz_to_vert(stat_size) / 2
 
-        elif i == math.ceil(sides / 2) and sides % 2 == 1:
+        elif i == math.ceil(SIDES / 2) and SIDES % 2 == 1:
             xy[i][0] -= word.calc_length("Strongholdddl", title_size) / 8
 
-        elif i == math.floor(sides / 2) and sides % 2 == 1:
+        elif i == math.floor(SIDES / 2) and SIDES % 2 == 1:
             xy[i][0] += word.calc_length("Strongholdddl", title_size) / 8
 
-        elif math.ceil(sides / 2) < i:
+        elif math.ceil(SIDES / 2) < i:
             xy[i][0] -= word.calc_length("Strongholdddl", title_size) / 2
             xy[i][1] -= word.horiz_to_vert(title_size) / 2 + word.horiz_to_vert(stat_size) / 2
 
-    for i in range(sides):
+    for i in range(SIDES):
 
         s_colour = percentile_colour[0]
         for j in range(len(percentiles)):
@@ -259,7 +264,7 @@ def get_best_worst(ranked_ows):
     max_val = 0
     min_key = ""
     min_val = 1000000000000000000
-    
+
     for key in ranked_ows:
         if ranked_ows[key] > max_val:
             max_val = ranked_ows[key]

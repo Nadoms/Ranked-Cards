@@ -1,7 +1,7 @@
 from PIL import ImageDraw, ImageFont
-import requests
 
 from gen_functions import word
+
 
 def write(card, matches, uuid, response):
     history_font = ImageFont.truetype('minecraft_font.ttf', 26)
@@ -15,15 +15,15 @@ def write(card, matches, uuid, response):
         x = 360-word.calc_length(msg, 26)/2
         historyed_image.text((x, 723), msg, font=history_font, fill="white")
         return card
-    
+
     historyed_image.rectangle([30, 665, 690, 715], fill="#ffffff", outline="#000000", width=8)
 
     blocks = get_blocks(recent_matches)
     wl = get_wl(recent_matches, uuid)
     for i in range(len(recent_matches)):
         historyed_image.polygon(blocks[i], fill=w_d_l_colour[wl[i]], outline="#122b30", width=3)
-        
-    description = get_desc(wl, recent_matches, uuid, response)
+
+    description = get_desc(recent_matches, uuid, response)
     full_desc = "".join(description)
     x = 360-word.calc_length(full_desc, 26)/2
 
@@ -35,11 +35,12 @@ def write(card, matches, uuid, response):
     ws_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52fa", "#ffd700"]
     desc_colour = ["#ffffff", ws_colour[min(int(description[1]), 5)], "#ffffff", elo_colour]
 
-    for i in range(len(description)):
-        historyed_image.text((x, 723), description[i], font=history_font, fill=desc_colour[i])
-        x += word.calc_length(description[i], 26)
-    
+    for i, words in enumerate(description):
+        historyed_image.text((x, 723), words, font=history_font, fill=desc_colour[i])
+        x += word.calc_length(words, 26)
+
     return card
+
 
 def last_few(matches, desired):
     recent_matches = []
@@ -49,6 +50,7 @@ def last_few(matches, desired):
         if len(recent_matches) >= desired:
             break
     return recent_matches
+
 
 def get_blocks(recent_matches):
     blocks = []
@@ -68,19 +70,21 @@ def get_blocks(recent_matches):
         x1 += width
     return blocks
 
+
 def get_wl(recent_matches, uuid):
     wl = []
     for match in recent_matches:
         if match["result"]["uuid"] == uuid:
             wl.append(0)
-        elif match["result"]["uuid"] == None:
+        elif match["result"]["uuid"] is None:
             wl.append(2)
         else:
             wl.append(1)
     wl.reverse()
     return wl
 
-def get_desc(wl, recent_matches, uuid, response):
+
+def get_desc(recent_matches, uuid, response):
     elo_change = get_elo_change(recent_matches, uuid)
     if elo_change >= 0:
         elo_change = "+" + str(elo_change)
@@ -91,6 +95,7 @@ def get_desc(wl, recent_matches, uuid, response):
 
     description = ["Winstreak: ",  str(winstreak), " / ELO change: ", elo_change] #"W/L/D: ", str(wl.count(0)), "/", str(wl.count(1)), "/", str(wl.count(2)),
     return description
+
 
 def get_elo_change(recent_matches, uuid):
     elo_change = 0

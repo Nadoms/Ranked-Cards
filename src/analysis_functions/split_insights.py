@@ -1,22 +1,24 @@
 import json
 from os import path
-import numpy as np
 import math
+
+import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 from gen_functions import word, numb, rank
 
-sides = 6
-init_prop = 1.8
-img_size_x = 960
-img_size_y = 760
-middle = img_size_y / 2
-offset_x = (img_size_x - img_size_y) / 2
-offset_y = 40
-angles = [(i * (2 * math.pi)) / sides -
+SIDES = 6
+INIT_PROP = 1.8
+IMG_SIZE_X = 960
+IMG_SIZE_Y = 760
+MIDDLE = IMG_SIZE_Y / 2
+OFFSET_X = (IMG_SIZE_X - IMG_SIZE_Y) / 2
+OFFSET_Y = 40
+ANGLES = [(i * (2 * math.pi)) / SIDES -
           math.pi / 2 +
-          2 * math.pi / sides for i in range(sides)]
-angles.insert(0, angles.pop())
+          2 * math.pi / SIDES for i in range(SIDES)]
+ANGLES.insert(0, ANGLES.pop())
+
 
 def main(uuid, detailed_matches, elo):
     average_splits, average_deaths = get_avg_splits(uuid, detailed_matches)
@@ -31,6 +33,7 @@ def main(uuid, detailed_matches, elo):
     comments["player_deaths"], comments["rank_deaths"] = get_death_comments(average_deaths, elo)
 
     return comments, polygon
+
 
 def get_avg_splits(uuid, detailed_matches):
     number_splits = {
@@ -69,7 +72,7 @@ def get_avg_splits(uuid, detailed_matches):
                 prev_time = event["time"]
                 prev_event = "ow"
 
-            elif event["type"] in event_mapping.keys():
+            elif event["type"] in event_mapping:
                 split_length = event["time"] - prev_time
                 time_splits[prev_event] += split_length
                 number_splits[prev_event] += 1
@@ -79,12 +82,12 @@ def get_avg_splits(uuid, detailed_matches):
 
             elif event["type"] == "projectelo.timeline.death":
                 average_deaths[prev_event] += 1
-        
-        if match["result"]["uuid"] == uuid and match["forfeited"] == False:
+
+        if match["result"]["uuid"] == uuid and match["forfeited"] is False:
             split_length = match["result"]["time"] - prev_time
             time_splits[prev_event] += split_length
             number_splits[prev_event] += 1
-    
+
     for key in average_splits:
         if number_splits[key] == 0:
             average_splits[key] = 1000000000
@@ -94,6 +97,7 @@ def get_avg_splits(uuid, detailed_matches):
             average_deaths[key] = round(average_deaths[key] / number_splits[key], 3)
 
     return average_splits, average_deaths
+
 
 def get_ranked_splits(average_splits):
     ranked_splits = {
@@ -117,8 +121,8 @@ def get_ranked_splits(average_splits):
 
     file = path.join("src", "database", "mcsrstats", "player_splits.csv")
     split_mapping = ["ow", "nether", "bastion", "fortress", "blind", "stronghold", "end"]
-    with open(file, "r") as f:
 
+    with open(file, "r", encoding="UTF-8") as f:
         while True:
             splits = f.readline().strip().split(",")
             if not splits[0]:
@@ -136,41 +140,42 @@ def get_ranked_splits(average_splits):
 
     return ranked_splits
 
+
 def get_polygon(ranked_splits):
-    proportions = [init_prop, init_prop * 4/3, init_prop * 2, init_prop * 4, 10000]
+    proportions = [INIT_PROP, INIT_PROP * 4/3, INIT_PROP * 2, INIT_PROP * 4, 10000]
     split_mapping = ["ow", "bastion", "fortress", "blind", "stronghold", "end"]
 
-    polygon_frame = Image.new('RGBA', (img_size_x, img_size_y), (0, 0, 0, 0))
+    polygon_frame = Image.new('RGBA', (IMG_SIZE_X, IMG_SIZE_Y), (0, 0, 0, 0))
     frame_draw = ImageDraw.Draw(polygon_frame)
 
     # Filling the polygon
-    polygon_size = middle / init_prop
+    polygon_size = MIDDLE / INIT_PROP
     xy = [
-        ((math.cos(th) + init_prop) * polygon_size + offset_x, 
-        (math.sin(th) + init_prop) * polygon_size + offset_y) 
-        for th in angles
+        ((math.cos(th) + INIT_PROP) * polygon_size + OFFSET_X, 
+        (math.sin(th) + INIT_PROP) * polygon_size + OFFSET_Y) 
+        for th in ANGLES
     ]
     frame_draw.polygon(xy, fill="#413348")
 
     # Drawing the outward lines of the polygon
-    for th in angles:
-        polygon_size = middle / init_prop
-        # th = (i * (2 * math.pi) - 0.5 * math.pi) / sides
-        xy = [(middle + offset_x, middle + offset_y),
-            ((math.cos(th) + init_prop) * polygon_size + offset_x, 
-            (math.sin(th) + init_prop) * polygon_size + offset_y)
+    for th in ANGLES:
+        polygon_size = MIDDLE / INIT_PROP
+        # th = (i * (2 * math.pi) - 0.5 * math.pi) / SIDES
+        xy = [(MIDDLE + OFFSET_X, MIDDLE + OFFSET_Y),
+            ((math.cos(th) + INIT_PROP) * polygon_size + OFFSET_X, 
+            (math.sin(th) + INIT_PROP) * polygon_size + OFFSET_Y)
         ]
         frame_draw.line(xy, fill="#515368", width=3)
 
     # Drawing the edge of the polygons
     for proportion in proportions:
-        polygon_size = middle / proportion
+        polygon_size = MIDDLE / proportion
         xy = [ 
-            ((math.cos(th) + proportion) * polygon_size + offset_x, 
-            (math.sin(th) + proportion) * polygon_size + offset_y) 
-            for th in angles 
+            ((math.cos(th) + proportion) * polygon_size + OFFSET_X, 
+            (math.sin(th) + proportion) * polygon_size + OFFSET_Y) 
+            for th in ANGLES 
         ]
-        if proportion == init_prop:
+        if proportion == INIT_PROP:
             frame_draw.polygon(xy, outline="#ffffff", width=6)
         else:
             frame_draw.polygon(xy, outline="#515368", width=3)
@@ -180,17 +185,17 @@ def get_polygon(ranked_splits):
 
     # Drawing the player's polygon
     xy = []
-    for i in range(len(angles)):
+    for i, angle in enumerate(ANGLES):
         val = ranked_splits[split_mapping[i]]
         if val == 0:
             proportion = 100000
         else:
-            proportion = init_prop / val
-        polygon_size = middle / proportion
+            proportion = INIT_PROP / val
+        polygon_size = MIDDLE / proportion
         
         xy.append(
-            ((math.cos(angles[i]) + proportion) * polygon_size + offset_x,
-            (math.sin(angles[i]) + proportion) * polygon_size + offset_y)
+            ((math.cos(angle) + proportion) * polygon_size + OFFSET_X,
+            (math.sin(angle) + proportion) * polygon_size + OFFSET_Y)
         )
     stats_draw.polygon(xy, fill="#716388", outline="#a1d3f8", width=4)
 
@@ -200,7 +205,7 @@ def get_polygon(ranked_splits):
 
 
 def add_text(polygon, average_splits, ranked_splits):
-    text_prop = init_prop * 0.95
+    text_prop = INIT_PROP * 0.95
     xy = []
     percentiles = [0.3, 0.5, 0.7, 0.9, 0.95, 1.0]
     percentile_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#3f82ff", "#ffd700"]
@@ -216,36 +221,36 @@ def add_text(polygon, average_splits, ranked_splits):
     stat_font = ImageFont.truetype('minecraft_font.ttf', stat_size)
 
     big_title = "Split Performance"
-    big_x = (img_size_x - word.calc_length(big_title, big_size)) / 2
-    big_y = offset_y
+    big_x = (IMG_SIZE_X - word.calc_length(big_title, big_size)) / 2
+    big_y = OFFSET_Y
     text_draw.text((big_x, big_y), big_title, font=big_font, fill="#ffffff", stroke_fill="#000000", stroke_width=3)
 
-    for i in range(len(angles)):
-        polygon_size = middle / text_prop
+    for angle in ANGLES:
+        polygon_size = MIDDLE / text_prop
         xy.append(
-            [(math.cos(angles[i]) + text_prop) * polygon_size + offset_x,
-            (math.sin(angles[i]) + text_prop) * polygon_size + offset_y]
+            [(math.cos(angle) + text_prop) * polygon_size + OFFSET_X,
+            (math.sin(angle) + text_prop) * polygon_size + OFFSET_Y]
         )
 
-    for i in range(sides):
+    for i in range(SIDES):
         if i == 0:
             xy[i][1] -= word.horiz_to_vert(title_size) + word.horiz_to_vert(stat_size)
 
-        elif i < math.floor(sides / 2):
+        elif i < math.floor(SIDES / 2):
             xy[i][0] += word.calc_length("Strongholdddld", title_size) / 2
             xy[i][1] -= word.horiz_to_vert(title_size) / 2 + word.horiz_to_vert(stat_size) / 2
 
-        elif i == math.ceil(sides / 2) and sides % 2 == 1:
+        elif i == math.ceil(SIDES / 2) and SIDES % 2 == 1:
             xy[i][0] -= word.calc_length("Strongholddldd", title_size) / 8
 
-        elif i == math.floor(sides / 2) and sides % 2 == 1:
+        elif i == math.floor(SIDES / 2) and SIDES % 2 == 1:
             xy[i][0] += word.calc_length("Strongholddldd", title_size) / 8
 
-        elif math.ceil(sides / 2) < i:
+        elif math.ceil(SIDES / 2) < i:
             xy[i][0] -= word.calc_length("Strongholddldd", title_size) / 2
             xy[i][1] -= word.horiz_to_vert(title_size) / 2 + word.horiz_to_vert(stat_size) / 2
 
-    for i in range(sides):
+    for i in range(SIDES):
 
         s_colour = percentile_colour[0]
         for j in range(len(percentiles)):
@@ -278,7 +283,7 @@ def get_best_worst(ranked_splits):
         "stronghold": "Stronghold",
         "end": "The End"
     }
-    
+
     best_comments = {
         "ow": "You can handle the variety of overworld very well. Getting ahead early is key!",
         "nether": "You excel at navigating nether terrain and finding structures.",
@@ -302,7 +307,7 @@ def get_best_worst(ranked_splits):
     max_val = 0
     min_key = ""
     min_val = 1000000000000000000
-    
+
     for key in ranked_splits:
         if ranked_splits[key] > max_val:
             max_val = ranked_splits[key]
@@ -347,7 +352,7 @@ def get_death_comments(average_deaths, elo):
 
     rank_no = rank.get_rank(elo)
     file = path.join("src", "database", "mcsrstats", "deaths", "deaths.json")
-    with open (file, "r") as f:
+    with open (file, "r", encoding="UTF-8") as f:
         overall_deaths = json.load(f)[str(rank_no)]
 
     max_diff = 0
@@ -359,7 +364,7 @@ def get_death_comments(average_deaths, elo):
             max_split = split_key
 
     death_comment = {
-        "name": f"Your Death Rates",
+        "name": "Your Death Rates",
         "value": [f"`{numb.round_sf(average_deaths[split] * 100, 3)}%` - {split_mapping[split]}" for split in average_deaths]
     }
     rank_comment = {

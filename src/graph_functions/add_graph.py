@@ -56,8 +56,8 @@ def write(uuid, response, data_type, season):
 
     fig, ax = plt.subplots(figsize=(8, 5.5))
     fig.subplots_adjust(top=0.8, left=0.1, right=0.95)
-    # lineplot = sns.lineplot(data=data, x=data['Games ago'], y=data[data_type], ax=ax, color='white', alpha=0.7, label=data_type)
-    # smoothed_lineplot = sns.lineplot(data=data, x=data['Games ago'], y=data[data_type + " (smoothed)"], ax=ax, color='#FFFF00', alpha=1)
+    sns.lineplot(data=data, x=data['Games ago'], y=data[data_type], ax=ax, color='white', alpha=0.7, label=data_type)
+    sns.lineplot(data=data, x=data['Games ago'], y=data[data_type + " (smoothed)"], ax=ax, color='#FFFF00', alpha=1)
 
     # Axis adjustments.
     ax.invert_xaxis()

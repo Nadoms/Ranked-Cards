@@ -22,12 +22,12 @@ def write(chart, uuids, response, vs_response):
 
         for j, stat_words in enumerate(stats):
             overall_line = ""
-            for k, stat_word in enumerate(stat_words):
-                if not stat_word:
-                    stat_word = "unranked"
+            for k in range(len(stats[j])):
+                if not stats[j][k]:
+                    stats[j][k] = "unranked"
                 else:
-                    stat_word = str(stat_word)
-                overall_line += stat_word
+                    stats[j][k] = str(stats[j][k])
+                overall_line += stats[j][k]
 
             x = int(x_values[i] - i * word.calc_length(overall_line, stat_size))
 

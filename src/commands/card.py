@@ -25,7 +25,7 @@ def main(name, response, discord, pfp, background):
     then = splits(then, 2)
     add_stats.write(card, response)
     then = splits(then, 3)
-    add_podium.write(card, name, response)
+    add_podium.write(card, response)
     then = splits(then, 4)
     add_skin.write(card, uuid)
     then = splits(then, 5)
@@ -33,9 +33,9 @@ def main(name, response, discord, pfp, background):
     then = splits(then, 6)
     add_history.write(card, matches, uuid, response)
     then = splits(then, 7)
-    add_socials.write(card, name, discord, pfp, response)
+    add_socials.write(card, discord, pfp, response)
     then = splits(then, 8)
-    add_other.write(card, name)
+    add_other.write(card)
     then = splits(then, 9)
     return card
 

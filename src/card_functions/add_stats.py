@@ -1,10 +1,9 @@
 import math
+
 from PIL import ImageDraw, ImageFont
-import requests
-from datetime import timedelta
-import time
 
 from gen_functions import games, word, rank, numb
+
 
 def write(card, response):
     statted_image = ImageDraw.Draw(card)
@@ -149,13 +148,14 @@ def write(card, response):
             else:
                 real_pb = response["statistics"]["total"]["bestTime"]["ranked"]
                 rounded_pb = rank.get_rank(rank.get_elo_equivalent(real_pb, "pb"))
-            
+
             pb_colours = rank.get_colour(elos[rounded_pb])
             statted_image.text((650-word.calc_length(major_stats[1][i], 60), 820+i*80), major_stats[1][i], font=large_stat_font, fill=pb_colours[0], stroke_fill=pb_colours[1], stroke_width=1)
         else:
             statted_image.text((650-word.calc_length(major_stats[1][i], 60), 820+i*80), major_stats[1][i], font=large_stat_font, fill=white)
 
     return card
+
 
 def get_season_stats(response):
     wins = str(response["statistics"]["season"]["wins"]["ranked"])
@@ -192,7 +192,7 @@ def get_lifetime_stats(response):
 
 def get_major_stats(response):
     elo = str(response["eloRate"])
-    rank = str(response["eloRank"])
+    ranking = str(response["eloRank"])
     win_loss = str(round(response["statistics"]["season"]["wins"]["ranked"] / max(response["statistics"]["season"]["loses"]["ranked"], 1), 2))
     pb = response["statistics"]["total"]["bestTime"]["ranked"]
     if pb:
@@ -203,6 +203,6 @@ def get_major_stats(response):
              "Win/loss:",
              "PB:"],
             [elo,
-             rank,
+             ranking,
              win_loss,
              pb]]

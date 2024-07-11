@@ -1,5 +1,4 @@
 from PIL import ImageDraw, Image
-import requests
 
 from card_functions.add_badge import get_badge
 from gen_functions import word
@@ -28,7 +27,7 @@ def write(card, name, response):
     for box in get_boxes(name, response):
         outlined_image.rectangle(box, outline="#ffffff", width=10)
         outlined_image.rectangle(box, outline="#000000", width=8)
-    
+
     outlined_image.ellipse([round(x-dim*0.75),
                            round(y-dim*0.75),
                            round(x+dim*0.75),

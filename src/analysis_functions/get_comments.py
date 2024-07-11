@@ -7,6 +7,7 @@ import numpy as np
 from gen_functions import games, rank, numb
 from gen_functions.word import percentify
 
+
 def main(response, detailed_matches):
     elo = int(response["eloRate"])
     avg = games.get_avg_completion(response, "season")
@@ -33,27 +34,28 @@ def get_attr_ranked(value, attr_type):
 
     fp = path.join("src", "database", "mcsrstats", f"{attr_mapping[attr_type]}.txt")
     attrs = []
-    with open(fp, "r") as f:
+    with open(fp, "r", encoding="UTF-8") as f:
         while True:
             attr = f.readline().strip().split()
             if not attr:
                 break
             attrs.append(int(attr[0]))
-            
+
     ranked_attr = round(np.searchsorted(attrs, value) / len(attrs), 3)
     if attr_type != "elo":
         ranked_attr = 1 - ranked_attr
     return ranked_attr
 
+
 def get_elo_equivalent(value, attr_type):
     ranks = ["Coal", "Iron", "Gold", "Emerald", "Diamond", "Netherite", "Unranked"]
-    
+
     if attr_type == "elo":
         tier = [ranks[rank.get_rank(value)], rank.get_division(value)]
         return f"{tier[0]} {tier[1]}"
 
     fp = path.join("src", "models", "models.json")
-    with open(fp, "r") as f:
+    with open(fp, "r", encoding="UTF-8") as f:
         models = json.load(f)
 
     value *= 10e-7
@@ -72,7 +74,7 @@ def get_ffl_comments(ffl):
                     "Willing to take some Ls for sanity.",
                     "Should try playing more seeds out.",
                     "Despair..."]
-    
+
     segment_size = 100 / (len(ffl_comments)-1)
     index = math.ceil(ffl / segment_size)
     if ffl == 100:
