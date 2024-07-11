@@ -575,7 +575,8 @@ async def connect(interaction: Interaction, input_name: str):
             "minecraft": input_name,
             "discord": uid,
             "background": "grass.jpg",
-            "cooldown": 0
+            "cooldown": 0,
+            "last_link": ""
         }
         users["users"].append(new_user)
     else:
