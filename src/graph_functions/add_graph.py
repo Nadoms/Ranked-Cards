@@ -150,12 +150,12 @@ def get_comps(uuid, matches, season):
     comp_array = []
     remain = 0
 
-    for game in matches:
-        if game["decayed"] or game["result"]["uuid"] != uuid or game["forfeited"] != False:
+    for match in matches:
+        if match["decayed"] or match["result"]["uuid"] != uuid or match["forfeited"] != False:
             continue
 
-        comp = game["result"]["time"]
-        season = game["season"]
+        comp = match["result"]["time"]
+        season = match["season"]
         comp_array.append([remain, comp, season])
 
         remain += 1

@@ -17,7 +17,7 @@ def main(name, response, discord, pfp, background):
     card = Image.open(file).convert("RGBA").filter(ImageFilter.GaussianBlur(0))
 
     then = datetime.now()
-    matches = games.get_recent_matches(name, False)
+    matches = games.get_user_matches(name=name, page=0, count=50)
     then = splits(then, 0)
     card = add_boxes.write(card, name, response)
     then = splits(then, 1)

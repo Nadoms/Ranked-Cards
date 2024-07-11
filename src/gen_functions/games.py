@@ -1,5 +1,7 @@
 import time
 from datetime import timedelta
+import asyncio
+from pprint import pp
 
 import requests
 
@@ -8,46 +10,50 @@ def get_matches(name, season, decays):
     if season == "Lifetime":
         matches = []
         for s in reversed(range(1, get_season()+1)):
-            matches += get_season_matches(name, s, decays)
+            matches += asyncio.run(get_season_matches(name, s, decays))
     else:
         if not season:
             season = get_season()
-        matches = get_season_matches(name, season, decays)
+        matches = asyncio.run(get_season_matches(name, season, decays))
     return matches
 
 
-def get_season_matches(name, s, decays):
-    matches = []
-    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
-    response = ["PLACEHOLDER"]
-
-    if not decays:
-        excludedecay = "&excludedecay"
-    else:
-        excludedecay = ""
-
+async def get_season_matches(name, season, decays):
+    master_matches = []
     i = 0
-    while response:
-        if response == "Too many requests":
-            return None
-        response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page={i}&count=50&type=2&season={s}{excludedecay}", headers=headers, timeout=10).json()["data"]
-        matches += response
-        i += 1
-    return matches
+    step_size = 5
+
+    while True:
+        matches = await asyncio.gather(*[get_user_matches(name=name, season=season, decays=decays, page=page) for page in range(i, i+step_size)])
+        master_matches += filter(lambda a: a != [], matches)
+        if [] in matches:
+            break
+        i += step_size
+    return master_matches
 
 
-def get_recent_matches(name, decays):
-    matches = []
+async def get_user_matches(name:str, page:int=0, count:int=50, m_type:int=2, season:int=-1, decays:bool=False):
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
 
     if not decays:
         excludedecay = "&excludedecay"
     else:
         excludedecay = ""
+    if season == -1:
+        season = get_season()
 
-    response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page=0&count=50&type=2&season={get_season()}{excludedecay}", headers=headers, timeout=10).json()["data"]
-    matches += response
-    return matches
+    url = f"https://mcsrranked.com/api/users/{name}/matches?page={page}&count={count}&type={m_type}&season={season}{excludedecay}"
+
+    try:
+        response = requests.get(url, headers=headers, timeout=10).json()
+    except TimeoutError:
+        return None
+
+    if response == "Too many requests":
+        return None
+    if response["status"] == "success":
+        return response["data"]
+    return None
 
 
 def get_last_match(name):
@@ -63,8 +69,8 @@ def get_last_match(name):
     return matches_response["data"][0]["id"]
 
 
-def get_playtime(response, seasonOrTotal):
-    playtime = response["statistics"][seasonOrTotal]["playtime"]["ranked"]
+def get_playtime(response, season_or_total):
+    playtime = response["statistics"][season_or_total]["playtime"]["ranked"]
 
     hours = round(timedelta(milliseconds=playtime).total_seconds() / 3600, 1)
     return hours
