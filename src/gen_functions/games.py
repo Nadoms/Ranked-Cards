@@ -1,10 +1,12 @@
 import time
-from datetime import timedelta
+from datetime import timedelta, datetime
 import asyncio
 from pprint import pp
+from itertools import chain
 
+import numpy as np
 import requests
-
+import aiohttp
 
 def get_matches(name, season, decays):
     if season == "Lifetime":
@@ -24,11 +26,15 @@ async def get_season_matches(name, season, decays):
     step_size = 5
 
     while True:
+        then = datetime.now()
         matches = await asyncio.gather(*[get_user_matches(name=name, season=season, decays=decays, page=page) for page in range(i, i+step_size)])
-        master_matches += filter(lambda a: a != [], matches)
+        split(then, f"{i} to {i+step_size}")
+        master_matches += list(chain.from_iterable(matches))
         if [] in matches:
             break
         i += step_size
+
+    print(f"Season {season} // {len(master_matches)} games // {len(master_matches) / 50 / step_size} batches")
     return master_matches
 
 
@@ -44,16 +50,18 @@ async def get_user_matches(name:str, page:int=0, count:int=50, m_type:int=2, sea
 
     url = f"https://mcsrranked.com/api/users/{name}/matches?page={page}&count={count}&type={m_type}&season={season}{excludedecay}"
 
-    try:
-        response = requests.get(url, headers=headers, timeout=10).json()
-    except TimeoutError:
-        return None
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(url, headers=headers, timeout=10) as response:
+                response_data = await response.json()
+        except asyncio.TimeoutError:
+            return None
 
-    if response == "Too many requests":
+        if response_data == "Too many requests":
+            return None
+        if response_data["status"] == "success":
+            return response_data["data"]
         return None
-    if response["status"] == "success":
-        return response["data"]
-    return None
 
 
 def get_last_match(name):
@@ -100,7 +108,7 @@ def get_avg_completion(response, season_or_total):
     return avg_completion
 
 
-def get_detailed_matches(player_response, name, uuid, min_comps, target_games):
+async def get_detailed_matches(player_response, name, uuid, min_comps, target_games):
     detailed_matches = []
     num_comps = 0
     num_games = 0
@@ -120,28 +128,40 @@ def get_detailed_matches(player_response, name, uuid, min_comps, target_games):
     while s >= get_season() - 1:
         response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page={i}&season={s}&count=50&type=2&excludedecay", headers=headers, timeout=10).json()["data"]
 
-        for match in response:
-            match_id = match["id"]
-            match_response = requests.get(f"https://mcsrranked.com/api/matches/{match_id}", headers=headers, timeout=10).json()["data"]
-            detailed_matches.append(match_response)
-            num_games += 1
-
-            if match_response["forfeited"] is False and match_response["result"]["uuid"] == uuid:
-                num_comps += 1
-
-            if num_games >= target_games and num_comps >= min_comps:
-                return detailed_matches
-                
-        i += 1
-
-        if response == []:
+        then = datetime.now()
+        matches = await asyncio.gather(*[get_match_details(match["id"]) for match in response])
+        detailed_matches += list(chain.from_iterable(matches))
+        num_games = len(detailed_matches)
+        split(then, f"{num_games} games")
+        if [] in matches:
             i = 0
             s -= 1
+
+
+        if num_games >= target_games:
+            return detailed_matches
 
     if num_comps == 0:
         return -1
 
     return detailed_matches
+
+
+async def get_match_details(match_id):
+    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
+    url = f"https://mcsrranked.com/api/matches/{match_id}"
+
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(url, headers=headers, timeout=10) as response:
+                response_data = await response.json()
+        except asyncio.TimeoutError:
+            return None
+        if response_data == "Too many requests":
+            return None
+        if response_data["status"] == "success":
+            return response_data["data"]
+        return None
 
 
 def get_season():
@@ -151,3 +171,10 @@ def get_season():
         return season
     """
     return 5
+
+
+def split(then, name="That"):
+    now = datetime.now()
+    diff = round((now - then).total_seconds() * 1000)
+    print(f"{name} took {diff}ms")
+    return now

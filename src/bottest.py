@@ -30,7 +30,7 @@ def main(command, name, type, season, match_id):
         return
         
     img.save("test.png")
-    img.show()
+    # img.show()
 
 if __name__ == "__main__":
     command = "card"

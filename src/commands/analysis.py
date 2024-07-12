@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import requests
+import asyncio
 from PIL import Image
 
 from analysis_functions import get_skin, get_comments, split_insights, ow_insights
@@ -18,7 +19,7 @@ def main(response):
     ow_polygon = Image.new("RGB", (400, 400), "#313338")
 
     then = datetime.now()
-    detailed_matches = games.get_detailed_matches(response, name, uuid, 30, 100)
+    detailed_matches = asyncio.run(games.get_detailed_matches(response, name, uuid, 30, 100))
     if detailed_matches in (-1, -2):
         return detailed_matches
     then = splits(then, 0)

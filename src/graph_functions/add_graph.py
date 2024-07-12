@@ -11,8 +11,7 @@ import pandas as pd
 from gen_functions import games, rank
 
 
-def write(uuid, response, data_type, season):
-    matches = games.get_matches(response["nickname"], season, True)
+def write(uuid, matches, data_type, season):
     columns = ["Games ago", data_type, data_type + " (smoothed)", "Season"]
 
     if len(matches) <= 1:
