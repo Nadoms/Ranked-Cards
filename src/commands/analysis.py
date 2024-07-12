@@ -19,7 +19,7 @@ def main(response):
     ow_polygon = Image.new("RGB", (400, 400), "#313338")
 
     then = datetime.now()
-    detailed_matches = asyncio.run(games.get_detailed_matches(response, name, uuid, 30, 100))
+    detailed_matches = asyncio.run(games.get_detailed_matches(response, name, uuid, 30, 130))
     if detailed_matches in (-1, -2):
         return detailed_matches
     then = splits(then, 0)

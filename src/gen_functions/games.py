@@ -128,15 +128,18 @@ async def get_detailed_matches(player_response, name, uuid, min_comps, target_ga
     while s >= get_season() - 1:
         response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page={i}&season={s}&count=50&type=2&excludedecay", headers=headers, timeout=10).json()["data"]
 
+        games_left = target_games-num_games
+        if games_left <= 49 and len(response) > games_left:
+            response = response[0:games_left]
+
         then = datetime.now()
         matches = await asyncio.gather(*[get_match_details(match["id"]) for match in response])
-        detailed_matches += list(chain.from_iterable(matches))
+        detailed_matches += matches
         num_games = len(detailed_matches)
         split(then, f"{num_games} games")
         if [] in matches:
             i = 0
             s -= 1
-
 
         if num_games >= target_games:
             return detailed_matches
