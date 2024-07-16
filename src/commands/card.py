@@ -8,52 +8,37 @@ from card_functions import add_boxes, add_history, add_name, add_stats, \
                                add_podium, add_skin, add_badge, \
                                add_socials, add_other
 from gen_functions import games
+from gen_functions.word import process_split
 
-def main(name, response, discord, pfp, background):
+
+def main(name, response, discord, pfp, background, history):
     response = response["data"]
     uuid = response["uuid"]
+    winstreak = response["statistics"]["season"]["currentWinStreak"]["ranked"]
 
     file = path.join("src", "pics", "bgs", "used", background)
     card = Image.open(file).convert("RGBA").filter(ImageFilter.GaussianBlur(0))
 
     then = datetime.now()
-    matches = games.get_user_matches(name=name, page=0, count=50)
-    then = splits(then, 0)
     card = add_boxes.write(card, name, response)
-    then = splits(then, 1)
+    then = process_split(then, "Drawing boxes")
     add_name.write(card, name, response)
-    then = splits(then, 2)
+    then = process_split(then, "Writing username")
     add_stats.write(card, response)
-    then = splits(then, 3)
+    then = process_split(then, "Calculating stats")
     add_podium.write(card, response)
-    then = splits(then, 4)
+    then = process_split(then, "Pasting podium")
     add_skin.write(card, uuid)
-    then = splits(then, 5)
+    then = process_split(then, "Finding skin")
     add_badge.write(card, response)
-    then = splits(then, 6)
-    add_history.write(card, matches, uuid, response)
-    then = splits(then, 7)
+    then = process_split(then, "Creating badge")
+    add_history.write(card, history, uuid, winstreak)
+    then = process_split(then, "Checking history")
     add_socials.write(card, discord, pfp, response)
-    then = splits(then, 8)
+    then = process_split(then, "Getting socials")
     add_other.write(card)
-    then = splits(then, 9)
+    then = process_split(then, "Final touchups")
     return card
-
-def splits(then, process):
-    processes = ["Gathering data",
-     "Drawing boxes",
-     "Writing username",
-     "Calculating stats",
-     "Pasting podium",
-     "Finding skin",
-     "Creating badge",
-     "Checking history",
-     "Getting socials",
-     "Final touchups"]
-    now = datetime.now()
-    diff = round((now - then).total_seconds() * 1000)
-    print(f"{processes[process]} took {diff}ms")
-    return now
 
 if __name__ == "__main__":
     INPUT_NAME = "nadoms"

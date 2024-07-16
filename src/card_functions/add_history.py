@@ -3,7 +3,7 @@ from PIL import ImageDraw, ImageFont
 from gen_functions import word
 
 
-def write(card, matches, uuid, response):
+def write(card, matches, uuid, winstreak):
     history_font = ImageFont.truetype('minecraft_font.ttf', 26)
     historyed_image = ImageDraw.Draw(card)
 
@@ -23,7 +23,7 @@ def write(card, matches, uuid, response):
     for i in range(len(recent_matches)):
         historyed_image.polygon(blocks[i], fill=w_d_l_colour[wl[i]], outline="#122b30", width=3)
 
-    description = get_desc(recent_matches, uuid, response)
+    description = get_desc(recent_matches, uuid, winstreak)
     full_desc = "".join(description)
     x = 360-word.calc_length(full_desc, 26)/2
 
@@ -84,14 +84,12 @@ def get_wl(recent_matches, uuid):
     return wl
 
 
-def get_desc(recent_matches, uuid, response):
+def get_desc(recent_matches, uuid, winstreak):
     elo_change = get_elo_change(recent_matches, uuid)
     if elo_change >= 0:
         elo_change = "+" + str(elo_change)
     else:
         elo_change = str(elo_change)
-
-    winstreak = response["statistics"]["season"]["currentWinStreak"]["ranked"]
 
     description = ["Winstreak: ",  str(winstreak), " / ELO change: ", elo_change] #"W/L/D: ", str(wl.count(0)), "/", str(wl.count(1)), "/", str(wl.count(2)),
     return description

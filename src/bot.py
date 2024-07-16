@@ -7,6 +7,7 @@ from os import getenv, path
 from dotenv import load_dotenv
 from time import time
 from datetime import datetime, timezone
+import traceback
 
 import requests
 from commands import card as carding, graph as graphing, match as matching, analysis as analysing
@@ -96,12 +97,16 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     discord = str(user)
     if discord[-2:] == "#0":
         discord = discord[:-2]
+
+    history = await games.get_user_matches(name=input_name, page=0, count=50)
+
     await interaction.response.defer(ephemeral=hidden)
     
     try:
-        img = carding.main(input_name, response, discord, pfp, background)
+        img = carding.main(input_name, response, discord, pfp, background, history)
     except Exception as e:
-        print(e)
+        print("Error caught!")
+        traceback.print_exc()
         await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
         update_records("card", interaction.user.id, input_name, hidden, False)
         return
@@ -192,11 +197,14 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
     old_input = input_name
     input_name = response["data"]["nickname"]
     await interaction.response.defer(ephemeral=hidden)
+
+    matches = await games.get_matches(response["nickname"], season, True)
     
     try:
-        img = graphing.main(input_name, response, type, season)
+        img = graphing.main(input_name, response, type, season, matches)
     except Exception as e:
-        print(e)
+        print("Error caught!")
+        traceback.print_exc()
         await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
         update_records("plot", interaction.user.id, input_name, hidden, False)
         return
@@ -279,7 +287,8 @@ async def match(interaction: Interaction, match_id: str = SlashOption(
     try:
         img = matching.main(response)
     except Exception as e:
-        print(e)
+        print("Error caught!")
+        traceback.print_exc()
         await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
         update_records("match", interaction.user.id, match_id, hidden, False)
         return
@@ -373,35 +382,41 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
         return
 
     await interaction.response.defer(ephemeral=hidden)
-    
-    anal = analysing.main(response)
-    try:
-        pass
-    except Exception as e:
-        print(e)
-        await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
-        update_records("analysis", interaction.user.id, input_name, hidden, False)
-        return
-    
-    completions = response["data"]["statistics"]["season"]["completions"]["ranked"]
-    games = response["data"]["statistics"]["season"]["playedMatches"]["ranked"]
 
-    if anal == -1:
+    response = response["data"]
+
+    detailed_matches = await games.get_detailed_matches(response, 30, 130)
+
+    completions = response["statistics"]["season"]["completions"]["ranked"]
+    games_played = response["statistics"]["season"]["playedMatches"]["ranked"]
+
+    if detailed_matches == -1:
         print("Player does not have enough completions.")
         await interaction.followup.send(f"You need a minimum of 15 completions from this season to analyse. (You have {completions})", ephemeral=hidden)
         update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
-    elif anal == -2:
+    
+    if detailed_matches == -2:
         print("Player's completion rate is too low.")
-        await interaction.followup.send(f"You need at least a 15% completion rate in this season to use this command. (You have {int(completions/games*100)}%)", ephemeral=hidden)
+        await interaction.followup.send(f"You need at least a 15% completion rate in this season to use this command. (You have {int(completions/games_played*100)}%)", ephemeral=hidden)
         update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
-    elif anal == -3:
+
+    try:
+        anal = analysing.main(response, detailed_matches)
+    except Exception as e:
+        print("Error caught!")
+        traceback.print_exc()
+        await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
+        update_records("analysis", interaction.user.id, input_name, hidden, False)
+        return
+    
+    if anal == -3:
         print("Player is unranked.")
         await interaction.followup.send(f"You need to have a rank to use this command." , ephemeral=hidden)
         update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
-    
+
     head, comments, split_polygon, ow_polygon = anal
 
     embed_general = nextcord.Embed(

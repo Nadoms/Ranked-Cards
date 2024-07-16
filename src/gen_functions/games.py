@@ -8,33 +8,33 @@ import numpy as np
 import requests
 import aiohttp
 
-def get_matches(name, season, decays):
-    if season == "Lifetime":
-        matches = []
-        for s in reversed(range(1, get_season()+1)):
-            matches += asyncio.run(get_season_matches(name, s, decays))
-    else:
-        if not season:
-            season = get_season()
-        matches = asyncio.run(get_season_matches(name, season, decays))
-    return matches
+from gen_functions.word import process_split
 
 
-async def get_season_matches(name, season, decays):
+async def get_matches(name, season, decays):
+    then = datetime.now()
     master_matches = []
     i = 0
     step_size = 5
 
-    while True:
-        then = datetime.now()
-        matches = await asyncio.gather(*[get_user_matches(name=name, season=season, decays=decays, page=page) for page in range(i, i+step_size)])
-        split(then, f"{i} to {i+step_size}")
-        master_matches += list(chain.from_iterable(matches))
-        if [] in matches:
-            break
-        i += step_size
+    if season == "Lifetime":
+        seasons = range(get_season()+1, 1, -1)
+    else:
+        seasons = [season]
+
+    for s in seasons:
+        while True:
+            then = datetime.now()
+            matches = await asyncio.gather(*[get_user_matches(name=name, season=s, decays=decays, page=page) for page in range(i, i+step_size)])
+            split(then, f"{i} to {i+step_size}")
+            master_matches += list(chain.from_iterable(matches))
+            if [] in matches:
+                break
+            i += step_size
 
     print(f"Season {season} // {len(master_matches)} games // {len(master_matches) / 50 / step_size} batches")
+
+    process_split(then, "Gathering data")
     return master_matches
 
 
@@ -57,7 +57,7 @@ async def get_user_matches(name:str, page:int=0, count:int=50, m_type:int=2, sea
         except asyncio.TimeoutError:
             return None
 
-        if response_data == "Too many requests":
+        if isinstance(response, str):
             return None
         if response_data["status"] == "success":
             return response_data["data"]
@@ -108,13 +108,15 @@ def get_avg_completion(response, season_or_total):
     return avg_completion
 
 
-async def get_detailed_matches(player_response, name, uuid, min_comps, target_games):
+async def get_detailed_matches(player_response, min_comps, target_games):
+    then = datetime.now()
     detailed_matches = []
-    num_comps = 0
+    # num_comps = 0
     num_games = 0
     i = 0
     s = get_season()
 
+    name = player_response["nickname"]
     season_comps = player_response["statistics"]["season"]["completions"]["ranked"]
     season_games = player_response["statistics"]["season"]["playedMatches"]["ranked"]
     if season_comps < min_comps / 2:
@@ -142,11 +144,12 @@ async def get_detailed_matches(player_response, name, uuid, min_comps, target_ga
             s -= 1
 
         if num_games >= target_games:
-            return detailed_matches
+            break
 
-    if num_comps == 0:
-        return -1
+    # if num_comps == 0:
+    #     return -1
 
+    process_split(then, "Gathering data")
     return detailed_matches
 
 
@@ -165,6 +168,21 @@ async def get_match_details(match_id):
         if response_data["status"] == "success":
             return response_data["data"]
         return None
+
+
+def get_match_details_sync(match_id):
+    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
+    url = f"https://mcsrranked.com/api/matches/{match_id}"
+
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+    except:
+        return None
+    if isinstance(response, str):
+        return None
+    if response["status"] == "success":
+        return response["data"]
+    return None
 
 
 def get_season():
