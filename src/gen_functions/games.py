@@ -14,25 +14,21 @@ from gen_functions.word import process_split
 async def get_matches(name, season, decays):
     then = datetime.now()
     master_matches = []
-    i = 0
     step_size = 5
 
     if season == "Lifetime":
-        seasons = range(get_season()+1, 1, -1)
+        seasons = range(get_season(), 0, -1)
     else:
         seasons = [season]
 
     for s in seasons:
+        i = 0
         while True:
-            then = datetime.now()
             matches = await asyncio.gather(*[get_user_matches(name=name, season=s, decays=decays, page=page) for page in range(i, i+step_size)])
-            split(then, f"{i} to {i+step_size}")
             master_matches += list(chain.from_iterable(matches))
             if [] in matches:
                 break
             i += step_size
-
-    print(f"Season {season} // {len(master_matches)} games // {len(master_matches) / 50 / step_size} batches")
 
     process_split(then, "Gathering data")
     return master_matches
@@ -137,11 +133,9 @@ async def get_detailed_matches(player_response, min_comps, target_games):
         if games_left <= 49 and len(response) > games_left:
             response = response[0:games_left]
 
-        then = datetime.now()
         matches = await asyncio.gather(*[get_match_details(match["id"]) for match in response])
         detailed_matches += matches
         num_games = len(detailed_matches)
-        split(then, f"{num_games} games")
         if [] in matches:
             i = 0
             s -= 1
