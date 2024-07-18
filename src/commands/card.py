@@ -12,7 +12,6 @@ from gen_functions.word import process_split
 
 
 def main(name, response, discord, pfp, background, history):
-    response = response["data"]
     uuid = response["uuid"]
     winstreak = response["statistics"]["season"]["currentWinStreak"]["ranked"]
 

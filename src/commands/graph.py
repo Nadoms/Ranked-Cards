@@ -8,7 +8,6 @@ from gen_functions import games
 from gen_functions.word import process_split
 
 def main(name, response, data_type, season, matches):
-    response = response["data"]
     uuid = response["uuid"]
 
     then = datetime.now()

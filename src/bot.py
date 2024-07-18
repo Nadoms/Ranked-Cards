@@ -58,6 +58,11 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
     response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=headers).json()
+    if isinstance(response, str):
+        await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
+        print(f"\nRanked API is mad at me...")
+        update_records("card", interaction.user.id, input_name, hidden, False)
+        return
     
     print(f"\nGenerating card for {input_name}")
     failed = False
@@ -87,8 +92,11 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
                 update_records("card", interaction.user.id, input_name, hidden, False)
                 return
         
+    await interaction.response.defer(ephemeral=hidden)
+    response = response["data"]
+
     old_input = input_name
-    input_name = response["data"]["nickname"]
+    input_name = response["nickname"]
     uid, background = get_user_info(response, input_name)
     user = await bot.fetch_user(uid)
     pfp = user.avatar
@@ -99,8 +107,6 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
         discord = discord[:-2]
 
     history = await games.get_user_matches(name=input_name, page=0, count=50)
-
-    await interaction.response.defer(ephemeral=hidden)
     
     try:
         img = carding.main(input_name, response, discord, pfp, background, history)
@@ -165,6 +171,11 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
     
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
     response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=headers).json()
+    if isinstance(response, str):
+        await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
+        print(f"\nRanked API is mad at me...")
+        update_records("plot", interaction.user.id, input_name, hidden, False)
+        return
         
     print(f"\nDrawing {type} graph for {input_name}")
     failed = False
@@ -194,9 +205,11 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
                 update_records("plot", interaction.user.id, input_name, hidden, False)
                 return
     
-    old_input = input_name
-    input_name = response["data"]["nickname"]
     await interaction.response.defer(ephemeral=hidden)
+    response = response["data"]
+
+    old_input = input_name
+    input_name = response["nickname"]
 
     matches = await games.get_matches(response["nickname"], season, True)
     
@@ -264,19 +277,34 @@ async def match(interaction: Interaction, match_id: str = SlashOption(
         match_id = games.get_last_match(input_name)
         if not match_id:
             await interaction.response.send_message("Player has no matches from this season.", ephemeral=hidden)
-            update_records("match", interaction.user.id, match_id, hidden, False)
+            update_records("match", interaction.user.id, "Unknown", hidden, False)
             return
+        
+        if match_id == -1:
+            await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
+            print(f"\nRanked API is mad at me...")
+            update_records("match", interaction.user.id, "Unknown", hidden, False)
+            return
+
 
     print(f"\nCharting match {match_id}")
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
     response = requests.get(f"https://mcsrranked.com/api/matches/{match_id}", headers=headers).json()
+    if isinstance(response, str):
+        await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
+        print(f"\nRanked API is mad at me...")
+        update_records("match", interaction.user.id, match_id, hidden, False)
+        return
+
     if response["status"] == "error":
         print("Match not found.")
         await interaction.response.send_message(f"Match not found. (`{match_id}`)", ephemeral=hidden)
         update_records("match", interaction.user.id, match_id, hidden, False)
         return
     
-    if response["data"]["type"] >= 3:
+    response = response["data"]
+    
+    if response["type"] >= 3:
         print("Match is invalid.")
         await interaction.response.send_message(f"Match must be a ranked or casual game. (`{match_id}`)", ephemeral=hidden)
         update_records("match", interaction.user.id, match_id, hidden, False)
@@ -333,6 +361,11 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
 
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
     response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=headers).json()
+    if isinstance(response, str):
+        await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
+        print(f"\nRanked API is mad at me...")
+        update_records("plot", interaction.user.id, input_name, hidden, False)
+        return
 
     failed = False
     if response["status"] == "error":
@@ -361,8 +394,11 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
                 update_records("analysis", interaction.user.id, input_name, hidden, False)
                 return
         
+    await interaction.response.defer(ephemeral=hidden)
+    response = response["data"]
+    
     old_input = input_name
-    input_name = response["data"]["nickname"]
+    input_name = response["nickname"]
     
     cooldown = 60 * 60 * 6 # 6 hour cooldown
     user_cooldown, last_link = get_cooldown(input_name)
@@ -380,10 +416,6 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
         await interaction.response.send_message(f"This command is on cooldown for `{input_name}`. (You can use it {next_available}){cd_extra}", ephemeral=hidden)
         update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
-
-    await interaction.response.defer(ephemeral=hidden)
-
-    response = response["data"]
 
     detailed_matches = await games.get_detailed_matches(response, 30, 130)
 

@@ -8,7 +8,6 @@ from gen_functions.word import process_split
 
 
 def main(response):
-    response = response["data"]
     names = [response["players"][0]["nickname"], response["players"][1]["nickname"]]
     uuids = [response["players"][0]["uuid"], response["players"][1]["uuid"]]
 
