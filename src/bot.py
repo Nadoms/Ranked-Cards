@@ -7,6 +7,7 @@ from os import getenv, path
 from dotenv import load_dotenv
 from time import time
 from datetime import datetime, timezone
+import traceback
 
 import requests
 from commands import card as carding, graph as graphing, match as matching, analysis as analysing
@@ -57,6 +58,11 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
     response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=headers).json()
+    if isinstance(response, str):
+        await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
+        print(f"\nRanked API is mad at me...")
+        update_records("card", interaction.user.id, input_name, hidden, False)
+        return
     
     print(f"\nGenerating card for {input_name}")
     failed = False
@@ -86,8 +92,11 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
                 update_records("card", interaction.user.id, input_name, hidden, False)
                 return
         
+    await interaction.response.defer(ephemeral=hidden)
+    response = response["data"]
+
     old_input = input_name
-    input_name = response["data"]["nickname"]
+    input_name = response["nickname"]
     uid, background = get_user_info(response, input_name)
     user = await bot.fetch_user(uid)
     pfp = user.avatar
@@ -96,12 +105,14 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     discord = str(user)
     if discord[-2:] == "#0":
         discord = discord[:-2]
-    await interaction.response.defer(ephemeral=hidden)
+
+    history = await games.get_user_matches(name=input_name, page=0, count=50)
     
     try:
-        img = carding.main(input_name, response, discord, pfp, background)
+        img = carding.main(input_name, response, discord, pfp, background, history)
     except Exception as e:
-        print(e)
+        print("Error caught!")
+        traceback.print_exc()
         await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
         update_records("card", interaction.user.id, input_name, hidden, False)
         return
@@ -160,6 +171,11 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
     
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
     response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=headers).json()
+    if isinstance(response, str):
+        await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
+        print(f"\nRanked API is mad at me...")
+        update_records("plot", interaction.user.id, input_name, hidden, False)
+        return
         
     print(f"\nDrawing {type} graph for {input_name}")
     failed = False
@@ -189,14 +205,19 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
                 update_records("plot", interaction.user.id, input_name, hidden, False)
                 return
     
-    old_input = input_name
-    input_name = response["data"]["nickname"]
     await interaction.response.defer(ephemeral=hidden)
+    response = response["data"]
+
+    old_input = input_name
+    input_name = response["nickname"]
+
+    matches = await games.get_matches(response["nickname"], season, True)
     
     try:
-        img = graphing.main(input_name, response, type, season)
+        img = graphing.main(input_name, response, type, season, matches)
     except Exception as e:
-        print(e)
+        print("Error caught!")
+        traceback.print_exc()
         await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
         update_records("plot", interaction.user.id, input_name, hidden, False)
         return
@@ -256,19 +277,34 @@ async def match(interaction: Interaction, match_id: str = SlashOption(
         match_id = games.get_last_match(input_name)
         if not match_id:
             await interaction.response.send_message("Player has no matches from this season.", ephemeral=hidden)
-            update_records("match", interaction.user.id, match_id, hidden, False)
+            update_records("match", interaction.user.id, "Unknown", hidden, False)
             return
+        
+        if match_id == -1:
+            await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
+            print(f"\nRanked API is mad at me...")
+            update_records("match", interaction.user.id, "Unknown", hidden, False)
+            return
+
 
     print(f"\nCharting match {match_id}")
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
     response = requests.get(f"https://mcsrranked.com/api/matches/{match_id}", headers=headers).json()
+    if isinstance(response, str):
+        await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
+        print(f"\nRanked API is mad at me...")
+        update_records("match", interaction.user.id, match_id, hidden, False)
+        return
+
     if response["status"] == "error":
         print("Match not found.")
         await interaction.response.send_message(f"Match not found. (`{match_id}`)", ephemeral=hidden)
         update_records("match", interaction.user.id, match_id, hidden, False)
         return
     
-    if response["data"]["type"] >= 3:
+    response = response["data"]
+    
+    if response["type"] >= 3:
         print("Match is invalid.")
         await interaction.response.send_message(f"Match must be a ranked or casual game. (`{match_id}`)", ephemeral=hidden)
         update_records("match", interaction.user.id, match_id, hidden, False)
@@ -279,7 +315,8 @@ async def match(interaction: Interaction, match_id: str = SlashOption(
     try:
         img = matching.main(response)
     except Exception as e:
-        print(e)
+        print("Error caught!")
+        traceback.print_exc()
         await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
         update_records("match", interaction.user.id, match_id, hidden, False)
         return
@@ -324,6 +361,11 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
 
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
     response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=headers).json()
+    if isinstance(response, str):
+        await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
+        print(f"\nRanked API is mad at me...")
+        update_records("plot", interaction.user.id, input_name, hidden, False)
+        return
 
     failed = False
     if response["status"] == "error":
@@ -352,8 +394,11 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
                 update_records("analysis", interaction.user.id, input_name, hidden, False)
                 return
         
+    await interaction.response.defer(ephemeral=hidden)
+    response = response["data"]
+    
     old_input = input_name
-    input_name = response["data"]["nickname"]
+    input_name = response["nickname"]
     
     cooldown = 60 * 60 * 6 # 6 hour cooldown
     user_cooldown, last_link = get_cooldown(input_name)
@@ -372,36 +417,38 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
         update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
 
-    await interaction.response.defer(ephemeral=hidden)
-    
-    anal = analysing.main(response)
-    try:
-        pass
-    except Exception as e:
-        print(e)
-        await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
-        update_records("analysis", interaction.user.id, input_name, hidden, False)
-        return
-    
-    completions = response["data"]["statistics"]["season"]["completions"]["ranked"]
-    games = response["data"]["statistics"]["season"]["playedMatches"]["ranked"]
+    detailed_matches = await games.get_detailed_matches(response, 30, 130)
 
-    if anal == -1:
+    completions = response["statistics"]["season"]["completions"]["ranked"]
+    games_played = response["statistics"]["season"]["playedMatches"]["ranked"]
+
+    if detailed_matches == -1:
         print("Player does not have enough completions.")
         await interaction.followup.send(f"You need a minimum of 15 completions from this season to analyse. (You have {completions})", ephemeral=hidden)
         update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
-    elif anal == -2:
+    
+    if detailed_matches == -2:
         print("Player's completion rate is too low.")
-        await interaction.followup.send(f"You need at least a 15% completion rate in this season to use this command. (You have {int(completions/games*100)}%)", ephemeral=hidden)
+        await interaction.followup.send(f"You need at least a 15% completion rate in this season to use this command. (You have {int(completions/games_played*100)}%)", ephemeral=hidden)
         update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
-    elif anal == -3:
+
+    try:
+        anal = analysing.main(response, detailed_matches)
+    except Exception as e:
+        print("Error caught!")
+        traceback.print_exc()
+        await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
+        update_records("analysis", interaction.user.id, input_name, hidden, False)
+        return
+    
+    if anal == -3:
         print("Player is unranked.")
         await interaction.followup.send(f"You need to have a rank to use this command." , ephemeral=hidden)
         update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
-    
+
     head, comments, split_polygon, ow_polygon = anal
 
     embed_general = nextcord.Embed(
@@ -608,7 +655,7 @@ async def disconnect(interaction: Interaction):
                 print(users)
                 users_json = json.dumps(users, indent=4)
                 f.write(users_json)
-            await interaction(f"`{user['minecraft']}` has been disconnected from your discord.")
+            await interaction.response.send_message(f"`{user['minecraft']}` has been disconnected from your discord.")
             update_records("disconnect", interaction.user.id, user['minecraft'], False, True)
             return
         
@@ -687,8 +734,8 @@ def get_user_info(response, input_name):
         if input_name.lower() == user["minecraft"].lower():
             return user["discord"], user["background"]
         
-    if "discord" in response["data"]["connections"]:
-        uid = response["data"]["connections"]["discord"]["id"]
+    if "discord" in response["connections"]:
+        uid = response["connections"]["discord"]["id"]
         return uid, "grass.jpg"
         
     return "343108228890099713", "grass.jpg"
