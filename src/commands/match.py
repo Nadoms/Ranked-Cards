@@ -4,10 +4,10 @@ import requests
 from PIL import Image
 
 from match_functions import add_info, add_names, add_shapes, add_stats, add_skins, add_splits, add_other
+from gen_functions.word import process_split
 
 
 def main(response):
-    response = response["data"]
     names = [response["players"][0]["nickname"], response["players"][1]["nickname"]]
     uuids = [response["players"][0]["uuid"], response["players"][1]["uuid"]]
 
@@ -21,32 +21,18 @@ def main(response):
 
     then = datetime.now()
     chart = add_shapes.write(chart)
-    then = splits(then, 0)
+    then = process_split(then, "Drawing boxes")
     chart = add_names.write(chart, names, response)
-    then = splits(then, 1)
+    then = process_split(then, "Writing usernames")
     chart = add_stats.write(chart, uuids, response, vs_response)
-    then = splits(then, 2)
+    then = process_split(then, "Calculating stats")
     chart = add_skins.write(chart, uuids)
-    then = splits(then, 3)
+    then = process_split(then, "Finding skins")
     chart = add_splits.write(chart, uuids, response)
-    then = splits(then, 4)
+    then = process_split(then, "Comparing splits")
     chart = add_info.write(chart, response)
-    then = splits(then, 5)
+    then = process_split(then, "Adding seed info")
     chart = add_other.write(chart)
-    then = splits(then, 6)
+    then = process_split(then, "Final touchups")
 
     return chart
-
-
-def splits(then, process):
-    processes = ["Drawing boxes",
-     "Writing usernames",
-     "Calculating stats",
-     "Finding skins",
-     "Comparing splits",
-     "Adding seed info",
-     "Final touchups"]
-    now = datetime.now()
-    diff = round((now - then).total_seconds() * 1000)
-    print(f"{processes[process]} took {diff}ms")
-    return now

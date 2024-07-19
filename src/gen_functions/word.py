@@ -1,3 +1,4 @@
+from datetime import datetime
 import gen_functions.numb as numb
 
 def calc_length(word, size):
@@ -49,3 +50,9 @@ def get_raw_time(time):
         raw_time += int(value) * (60 ** i)
 
     return raw_time * 1000
+
+def process_split(then, process):
+    now = datetime.now()
+    diff = round((now - then).total_seconds() * 1000)
+    print(f"{process} took {diff}ms")
+    return now

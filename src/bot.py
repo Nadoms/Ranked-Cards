@@ -364,7 +364,7 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
     if isinstance(response, str):
         await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
         print(f"\nRanked API is mad at me...")
-        update_records("plot", interaction.user.id, input_name, hidden, False)
+        update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
 
     failed = False
@@ -413,7 +413,7 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
     if delta < cooldown:
         next_available = f"<t:{user_cooldown + cooldown}:R>"
         print("Command on cooldown.")
-        await interaction.response.send_message(f"This command is on cooldown for `{input_name}`. (You can use it {next_available}){cd_extra}", ephemeral=hidden)
+        await interaction.followup.send(f"This command is on cooldown for `{input_name}`. (You can use it {next_available}){cd_extra}", ephemeral=hidden)
         update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
 

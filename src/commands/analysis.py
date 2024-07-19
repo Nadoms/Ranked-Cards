@@ -6,11 +6,11 @@ from PIL import Image
 
 from analysis_functions import get_skin, get_comments, split_insights, ow_insights
 from gen_functions import games
+from gen_functions.word import process_split
 
-def main(response):
-    response = response["data"]
+
+def main(response, detailed_matches):
     uuid = response["uuid"]
-    name = response["nickname"]
     elo = response["eloRate"]
     if elo == -1:
         return -3
@@ -19,35 +19,20 @@ def main(response):
     ow_polygon = Image.new("RGB", (400, 400), "#313338")
 
     then = datetime.now()
-    detailed_matches = asyncio.run(games.get_detailed_matches(response, name, uuid, 30, 130))
-    if detailed_matches in (-1, -2):
-        return detailed_matches
-    then = splits(then, 0)
     skin = get_skin.main(uuid)
-    then = splits(then, 1)
+    then = process_split(then, "Finding skin")
     general_comments = get_comments.main(response, detailed_matches)
-    then = splits(then, 2)
+    then = process_split(then, "Generating insights")
     split_comm, split_polygon = split_insights.main(uuid, detailed_matches, elo)
-    then = splits(then, 3)
+    then = process_split(then, "Recognising split performance")
     ow_comm, ow_polygon = ow_insights.main(uuid, detailed_matches)
-    then = splits(then, 4)
+    then = process_split(then, "Recognising OW performance")
     # polygons = combine.main(split_polygon, ow_polygon)
 
     comments = {"general": general_comments, "splits": split_comm, "ow": ow_comm}
 
     return skin, comments, split_polygon, ow_polygon
 
-def splits(then, process):
-    processes = ["Collecting data",
-    "Finding skin",
-    "Generating insights",
-    "Constructing split polygon",
-    "Constructing overworld polygon",
-    "Final touchups"]
-    now = datetime.now()
-    diff = round((now - then).total_seconds() * 1000)
-    print(f"{processes[process]} took {diff}ms")
-    return now
 
 if __name__ == "__main__":
     INPUT_NAME = "Nadoms"
