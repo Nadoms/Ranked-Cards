@@ -304,7 +304,7 @@ async def match(interaction: Interaction, match_id: str = SlashOption(
     
     response = response["data"]
     
-    if response["type"] >= 3 or response["result"]["decayed"] == True:
+    if response["type"] >= 3 or response["decayed"] == True:
         print("Match is invalid.")
         await interaction.response.send_message(f"Match must be a ranked or casual game. (`{match_id}`)", ephemeral=hidden)
         update_records("match", interaction.user.id, match_id, hidden, False)
