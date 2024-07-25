@@ -655,7 +655,7 @@ async def disconnect(interaction: Interaction):
                 print(users)
                 users_json = json.dumps(users, indent=4)
                 f.write(users_json)
-            await interaction(f"`{user['minecraft']}` has been disconnected from your discord.")
+            await interaction.response.send_message(f"`{user['minecraft']}` has been disconnected from your discord.")
             update_records("disconnect", interaction.user.id, user['minecraft'], False, True)
             return
         
@@ -734,8 +734,8 @@ def get_user_info(response, input_name):
         if input_name.lower() == user["minecraft"].lower():
             return user["discord"], user["background"]
         
-    if "discord" in response["data"]["connections"]:
-        uid = response["data"]["connections"]["discord"]["id"]
+    if "discord" in response["connections"]:
+        uid = response["connections"]["discord"]["id"]
         return uid, "grass.jpg"
         
     return "343108228890099713", "grass.jpg"
