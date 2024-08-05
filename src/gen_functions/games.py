@@ -63,7 +63,7 @@ async def get_user_matches(name:str, page:int=0, count:int=50, m_type:int=2, sea
 def get_last_match(name):
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
     player_response = requests.get(f"https://mcsrranked.com/api/users/{name}", headers=headers, timeout=10).json()
-    if isinstance(player_response, str):
+    if player_response["data"] == "Too many requests":
         return -1
 
     if player_response["status"] == "error":

@@ -58,17 +58,17 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
     
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
     response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=headers).json()
-    if isinstance(response, str):
-        await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
-        print(f"\nRanked API is mad at me...")
-        update_records("card", interaction.user.id, input_name, hidden, False)
-        return
     
     print(f"\nGenerating card for {input_name}")
     failed = False
     if response["status"] == "error":
-        print(f"Player not found (`{input_name}`).")
+        if response["data"] == "Too many requests":
+            await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
+            print(f"\nRanked API is mad at me...")
+            update_records("card", interaction.user.id, input_name, hidden, False)
+            return
 
+        print(f"Player not found (`{input_name}`).")
         if connected:
             await interaction.response.send_message(f"Player not found (`{input_name}`). Connect to your new Minecraft username with </connect:1149442234513637448>.", ephemeral=hidden)
             update_records("card", interaction.user.id, input_name, hidden, False)
@@ -171,17 +171,17 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
     
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
     response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=headers).json()
-    if isinstance(response, str):
-        await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
-        print(f"\nRanked API is mad at me...")
-        update_records("plot", interaction.user.id, input_name, hidden, False)
-        return
         
     print(f"\nDrawing {type} graph for {input_name}")
     failed = False
     if response["status"] == "error":
-        print(f"Player not found  (`{input_name}`).")
-        
+        if response["data"] == "Too many requests":
+            await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
+            print(f"\nRanked API is mad at me...")
+            update_records("card", interaction.user.id, input_name, hidden, False)
+            return
+
+        print(f"Player not found (`{input_name}`).")
         if connected:
             await interaction.response.send_message(f"Player not found (`{input_name}`). Connect to your new Minecraft username with </connect:1149442234513637448>.", ephemeral=hidden)
             update_records("plot", interaction.user.id, input_name, hidden, False)
@@ -290,13 +290,14 @@ async def match(interaction: Interaction, match_id: str = SlashOption(
     print(f"\nCharting match {match_id}")
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
     response = requests.get(f"https://mcsrranked.com/api/matches/{match_id}", headers=headers).json()
-    if isinstance(response, str):
-        await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
-        print(f"\nRanked API is mad at me...")
-        update_records("match", interaction.user.id, match_id, hidden, False)
-        return
 
     if response["status"] == "error":
+        if response["data"] == "Too many requests":
+            await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
+            print(f"\nRanked API is mad at me...")
+            update_records("card", interaction.user.id, input_name, hidden, False)
+            return
+
         print("Match not found.")
         await interaction.response.send_message(f"Match not found. (`{match_id}`)", ephemeral=hidden)
         update_records("match", interaction.user.id, match_id, hidden, False)
@@ -361,16 +362,16 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
 
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
     response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=headers).json()
-    if isinstance(response, str):
-        await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
-        print(f"\nRanked API is mad at me...")
-        update_records("analysis", interaction.user.id, input_name, hidden, False)
-        return
 
     failed = False
     if response["status"] == "error":
-        print(f"Player not found (`{input_name}`).")
+        if response["data"] == "Too many requests":
+            await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
+            print(f"\nRanked API is mad at me...")
+            update_records("card", interaction.user.id, input_name, hidden, False)
+            return
 
+        print(f"Player not found (`{input_name}`).")
         if connected:
             await interaction.response.send_message(f"Player not found (`{input_name}`). Connect to your new Minecraft username with </connect:1149442234513637448>.", ephemeral=hidden)
             update_records("analysis", interaction.user.id, input_name, hidden, False)
