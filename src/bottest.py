@@ -1,3 +1,4 @@
+import asyncio
 from os import getenv, path
 
 import requests
@@ -6,8 +7,9 @@ from commands import card as carding
 from commands import graph as graphing
 from commands import match as matching
 from commands import analysis as analysing
+from gen_functions import games
 
-def main(command, name, type, season, match_id):
+async def main(command, name, type, season, match_id):
     response = requests.get(f"https://mcsrranked.com/api/users/{name}").json()
     response2 = requests.get(f"https://mcsrranked.com/api/matches/{match_id}").json()
     discord = "notnaddysalt"
@@ -20,7 +22,9 @@ def main(command, name, type, season, match_id):
     elif command == "match":
         img = matching.main(response2)
     elif command == "analysis":
-        img1, img2 = analysing.main(response)[2:4]
+        response = requests.get(f"https://mcsrranked.com/api/users/{name}").json()["data"]
+        detailed_matches = await games.get_detailed_matches(response, 0, 130)
+        img1, img2 = analysing.main(response, detailed_matches)[2:4]
         img1.save("test.png")
         img2.save("test2.png")
         img1.show()
@@ -46,4 +50,4 @@ if __name__ == "__main__":
         season = sys.argv[3]
     if len(sys.argv) >= 5:
         type = sys.argv[4]
-    main(command, name, type, season, match_id)
+    asyncio.run(main(command, name, type, season, match_id))
