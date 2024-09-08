@@ -31,7 +31,8 @@ def main(uuid, detailed_matches, elo, season, num_comps):
     comments["description"] = f"{len(detailed_matches)} games (with {num_comps} completions) were used in analysing your splits. {get_sample_size(num_comps)}"
     comments["count"] = get_count(number_splits)
     comments["best"], comments["worst"] = get_best_worst(ranked_splits)
-    comments["player_deaths"], comments["rank_deaths"] = get_death_comments(average_deaths, elo)
+    if season != 1:
+        comments["player_deaths"], comments["rank_deaths"] = get_death_comments(average_deaths, elo)
 
     return comments, polygon
 
@@ -379,6 +380,8 @@ def get_death_comments(average_deaths, elo):
     ranks = ["Coal", "Iron", "Gold", "Emerald", "Diamond", "Netherite"]
 
     rank_no = rank.get_rank(elo)
+    if rank_no == -1:
+        rank_no = 2
     file = path.join("src", "database", "mcsrstats", "deaths", "deaths.json")
     with open (file, "r", encoding="UTF-8") as f:
         overall_deaths = json.load(f)[str(rank_no)]

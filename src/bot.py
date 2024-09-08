@@ -475,6 +475,8 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
     for general_key in comments["general"]:
         if general_key == "title" or general_key == "description":
             continue
+        elif len(comments['general'][general_key]) == 1:
+            value = ""
         elif general_key != "ffl":
             value = f"➢ {comments['general'][general_key][1]}\n➢ {comments['general'][general_key][2]}"
         else:
