@@ -19,15 +19,16 @@ ANGLES = [(i * (2 * math.pi)) / SIDES -
 ANGLES.insert(0, ANGLES.pop())
 
 
-def main(uuid, detailed_matches):
-    average_ows = get_avg_ows(uuid, detailed_matches)
+def main(uuid, detailed_matches, season):
+    number_ows, average_ows = get_avg_ows(uuid, detailed_matches)
     ranked_ows = get_ranked_ows(average_ows)
     polygon = get_polygon(ranked_ows)
     polygon = add_text(polygon, average_ows, ranked_ows)
 
     comments = {}
-    comments["title"] = "Overworlds"
-    comments["description"] = "*These are your best and worst overworlds.*"
+    comments["title"] = f"Overworld Performance in Season {season}"
+    comments["description"] = f"{len(detailed_matches)} games were used in analysing your overworlds. {get_sample_size(len(detailed_matches))}"
+    comments["count"] = get_count(number_ows)
     comments["best"], comments["worst"] = get_best_worst(ranked_ows)
 
     return comments, polygon
@@ -72,7 +73,7 @@ def get_avg_ows(uuid, detailed_matches):
         else:
             average_ows[ow_key] = round(time_ows[ow_key] / number_ows[ow_key])
 
-    return average_ows
+    return number_ows, average_ows
 
 
 def get_ranked_ows(average_ows):
@@ -235,6 +236,33 @@ def add_text(polygon, average_ows, ranked_ows):
         text_draw.text(xy[i], stat, font=stat_font, fill=s_colour, stroke_fill="#000000", stroke_width=2)
 
     return polygon
+
+
+def get_sample_size(num_games):
+    if num_games < 30:
+        return "This is a very low sample size. Take the RP and DT averages with a grain of salt."
+    if num_games < 80:
+        return "This is an OK sample size."
+    else:
+        return "This is a large sample size and the data will reflect your overworld skills properly."
+
+
+def get_count(number_ows):
+    names = " BT  / DT  / RP  / SHP / VIL "
+    count = ""
+    for ow in number_ows:
+        num = number_ows[ow]
+        count += f" {num}"
+        count += " " * (4 - len(str(num)))
+        if ow != "village":
+            count += "/"
+    value = f"`|{names}|`\n`|{count}|`"
+
+    count_comment = {
+        "name": "Overworld Counts",
+        "value": value
+    }
+    return count_comment
 
 
 def get_best_worst(ranked_ows):

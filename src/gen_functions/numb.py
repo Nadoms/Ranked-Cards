@@ -14,6 +14,8 @@ def round_sf(num, sf):
     return num
 
 def digital_time(raw_time):
+    if not isinstance(raw_time, int):
+        return raw_time
     time = str(timedelta(milliseconds=raw_time))[2:7]
     if time[0] == "0":
         time = time[1:]

@@ -8,18 +8,28 @@ from gen_functions import games, rank, numb
 from gen_functions.word import percentify
 
 
-def main(response, detailed_matches):
-    elo = int(response["eloRate"])
-    avg = games.get_avg_completion(response, "season")
-    sb = int(response["statistics"]["season"]["bestTime"]["ranked"])
-    ffl = games.get_ff_loss(response, "season")
-
+def main(response):
     general_comments = {}
-    general_comments["title"] = f"Analysis of {response['nickname']} in Season {games.get_season()}"
-    general_comments["description"] = f"This is how you stack up against the playerbase. {len(detailed_matches)} games were used in analysing your splits and overworlds."
-    general_comments["elo"] = [f"ELO: `{elo}`", percentify(get_attr_ranked(elo, 'elo')), get_elo_equivalent(elo, 'elo')]
-    general_comments["avg"] = [f"Avg Finish: `{numb.digital_time(avg)}`", percentify(get_attr_ranked(avg, 'avg')), f"Equivalent to {get_elo_equivalent(avg, 'avg')} ELO"]
-    general_comments["sb"] = [f"Season Best: `{numb.digital_time(sb)}`", percentify(get_attr_ranked(sb, 'sb')), f"Equivalent to {get_elo_equivalent(sb, 'sb')} ELO"]
+    general_comments["title"] = f"Analysis of {response['nickname']}"
+    general_comments["description"] = (
+        "This is how you stack up against the playerbase. "
+        f"This section uses data from the current season, S{games.get_season()}."
+    )
+    
+    if not response["eloRate"]:
+        general_comments["elo"] = [f"ELO: `-`"]
+    else:
+        elo = int(response["eloRate"])
+        general_comments["elo"] = [f"ELO: `{elo}`", percentify(get_attr_ranked(elo, 'elo')), get_elo_equivalent(elo, 'elo')]
+    avg = games.get_avg_completion(response, "season")
+    if avg == 0:
+        general_comments["avg"] = [f"Avg Finish: `-`"]
+        general_comments["sb"] = [f"Avg Finish: `-`"]
+    else:
+        sb = int(response["statistics"]["season"]["bestTime"]["ranked"])
+        general_comments["avg"] = [f"Avg Finish: `{numb.digital_time(avg)}`", percentify(get_attr_ranked(avg, 'avg')), f"Equivalent to {get_elo_equivalent(avg, 'avg')} ELO"]
+        general_comments["sb"] = [f"Season Best: `{numb.digital_time(sb)}`", percentify(get_attr_ranked(sb, 'sb')), f"Equivalent to {get_elo_equivalent(sb, 'sb')} ELO"]
+    ffl = games.get_ff_loss(response, "season")
     general_comments["ffl"] = [f"Forfeit/Loss `{ffl}%`", get_ffl_comments(ffl)]
 
     return general_comments

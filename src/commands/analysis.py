@@ -9,11 +9,9 @@ from gen_functions import games
 from gen_functions.word import process_split
 
 
-def main(response, detailed_matches):
+def main(response, num_comps, detailed_matches, season):
     uuid = response["uuid"]
     elo = response["eloRate"]
-    if elo == -1:
-        return -3
 
     split_polygon = Image.new("RGB", (400, 400), "#313338")
     ow_polygon = Image.new("RGB", (400, 400), "#313338")
@@ -21,11 +19,11 @@ def main(response, detailed_matches):
     then = datetime.now()
     skin = get_skin.main(uuid)
     then = process_split(then, "Finding skin")
-    general_comments = get_comments.main(response, detailed_matches)
+    general_comments = get_comments.main(response)
     then = process_split(then, "Generating insights")
-    split_comm, split_polygon = split_insights.main(uuid, detailed_matches, elo)
+    split_comm, split_polygon = split_insights.main(uuid, detailed_matches, elo, season, num_comps)
     then = process_split(then, "Recognising split performance")
-    ow_comm, ow_polygon = ow_insights.main(uuid, detailed_matches)
+    ow_comm, ow_polygon = ow_insights.main(uuid, detailed_matches, season)
     then = process_split(then, "Recognising OW performance")
     # polygons = combine.main(split_polygon, ow_polygon)
 

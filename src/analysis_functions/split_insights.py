@@ -20,15 +20,16 @@ ANGLES = [(i * (2 * math.pi)) / SIDES -
 ANGLES.insert(0, ANGLES.pop())
 
 
-def main(uuid, detailed_matches, elo):
-    average_splits, average_deaths = get_avg_splits(uuid, detailed_matches)
+def main(uuid, detailed_matches, elo, season, num_comps):
+    number_splits, average_splits, average_deaths = get_avg_splits(uuid, detailed_matches)
     ranked_splits = get_ranked_splits(average_splits)
     polygon = get_polygon(ranked_splits)
     polygon = add_text(polygon, average_splits, ranked_splits)
 
     comments = {}
-    comments["title"] = "Splits"
-    comments["description"] = "*Here are your strongest and weakest splits.*"
+    comments["title"] = f"Split Performance in Season {season}"
+    comments["description"] = f"{len(detailed_matches)} games (with {num_comps} completions) were used in analysing your splits. {get_sample_size(num_comps)}"
+    comments["count"] = get_count(number_splits)
     comments["best"], comments["worst"] = get_best_worst(ranked_splits)
     comments["player_deaths"], comments["rank_deaths"] = get_death_comments(average_deaths, elo)
 
@@ -96,7 +97,7 @@ def get_avg_splits(uuid, detailed_matches):
             average_splits[key] = round(time_splits[key] / number_splits[key])
             average_deaths[key] = round(average_deaths[key] / number_splits[key], 3)
 
-    return average_splits, average_deaths
+    return number_splits, average_splits, average_deaths
 
 
 def get_ranked_splits(average_splits):
@@ -271,6 +272,33 @@ def add_text(polygon, average_splits, ranked_splits):
         text_draw.text(xy[i], stat, font=stat_font, fill=s_colour, stroke_fill="#000000", stroke_width=2)
 
     return polygon
+
+
+def get_sample_size(num_comps):
+    if num_comps < 8:
+        return "This is a very low sample size. Your lategame averages won't be reliable."
+    if num_comps < 20:
+        return "This is an OK sample size."
+    else:
+        return "This is a large sample size and the data will reflect your skill across each split properly."
+
+
+def get_count(number_splits):
+    names = " OW  / NTR / BAS / FRT / BLN / SH  / END "
+    count = ""
+    for split in number_splits:
+        num = number_splits[split]
+        count += f" {num}"
+        count += " " * (4 - len(str(num)))
+        if split != "end":
+            count += "/"
+    value = f"`|{names}|`\n`|{count}|`"
+
+    count_comment = {
+        "name": "Split Counts",
+        "value": value
+    }
+    return count_comment
 
 
 def get_best_worst(ranked_splits):

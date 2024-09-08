@@ -107,47 +107,44 @@ def get_avg_completion(response, season_or_total):
     return avg_completion
 
 
-async def get_detailed_matches(player_response, min_comps, target_games):
+async def get_detailed_matches(player_response, season, min_comps, target_games):
     then = datetime.now()
     detailed_matches = []
-    # num_comps = 0
+    num_comps = 0
     num_games = 0
     i = 0
-    s = get_season()
 
     name = player_response["nickname"]
-    season_comps = player_response["statistics"]["season"]["completions"]["ranked"]
-    season_games = player_response["statistics"]["season"]["playedMatches"]["ranked"]
-    if season_comps < min_comps / 2:
-        return -1 # Not enough completions this season
-    if season_comps / season_games < 0.15:
-        return -2 # Ratio of completions to played matches is too low
-    
+    uuid = player_response["uuid"]
     response = "PLACEHOLDER"
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
 
-    while s >= get_season() - 1:
-        response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page={i}&season={s}&count=50&type=2&excludedecay", headers=headers, timeout=10).json()["data"]
+    while True:
+        response = requests.get(f"https://mcsrranked.com/api/users/{name}/matches?page={i}&season={season}&count=50&type=2&excludedecay", headers=headers, timeout=10).json()["data"]
 
-        games_left = target_games-num_games
+        games_left = target_games - num_games
         if games_left <= 49 and len(response) > games_left:
             response = response[0:games_left]
 
         matches = await asyncio.gather(*[get_match_details(match["id"]) for match in response])
         detailed_matches += matches
+        i += 1
         num_games = len(detailed_matches)
-        if [] in matches:
-            i = 0
-            s -= 1
+        if matches == []:
+            break
 
         if num_games >= target_games:
             break
 
-    # if num_comps == 0:
-    #     return -1
+    for match in detailed_matches:
+        if not match["forfeited"] and match["result"]["uuid"] == uuid:
+            num_comps += 1
+
+    if num_comps < min_comps and not name == "Nadoms":
+        return num_comps, -1 # Not enough completions this season
 
     process_split(then, "Gathering data")
-    return detailed_matches
+    return num_comps, detailed_matches
 
 
 async def get_match_details(match_id):
@@ -188,7 +185,7 @@ def get_season():
         season = response[0]["match_season"]
         return season
     """
-    return 5
+    return 6
 
 
 def split(then, name="That"):

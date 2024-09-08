@@ -144,8 +144,8 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
     "season",
     required = False,
     description="The season to gather data for.",
-    default="5",
-    choices=["1", "2", "3", "4", "5", "Lifetime"]
+    default="6",
+    choices=["1", "2", "3", "4", "5", "6", "Lifetime"]
     ), hidden: str = SlashOption(
     "hidden",
     required = False,
@@ -329,12 +329,18 @@ async def match(interaction: Interaction, match_id: str = SlashOption(
     update_records("match", interaction.user.id, match_id, hidden, True)
 
 
-@bot.slash_command(name="analysis", description="Analyses your last ~150 games to visualise how a player performs throughout their runs.")
+@bot.slash_command(name="analysis", description="Analyses 100+ games from any season to visualise how a player performs throughout their runs.")
 async def analysis(interaction: Interaction, input_name: str = SlashOption(
     "name",
     required = False,
     description="The player to analyse.",
     default = ""
+    ), season: str = SlashOption(
+    "season",
+    required = False,
+    description="The season to gather data from.",
+    default="6",
+    choices=["1", "2", "3", "4", "5", "6"]
     ), hidden: str = SlashOption(
     "hidden",
     required = False,
@@ -411,42 +417,27 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
             cd_extra = f"\nTheir last analysis is {last_link}"
 
     delta = int(time()) - user_cooldown
-    if delta < cooldown:
+    if delta < cooldown and not input_name == "Nadoms":
         next_available = f"<t:{user_cooldown + cooldown}:R>"
         print("Command on cooldown.")
         await interaction.followup.send(f"This command is on cooldown for `{input_name}`. (You can use it {next_available}){cd_extra}", ephemeral=hidden)
         update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
 
-    detailed_matches = await games.get_detailed_matches(response, 30, 130)
-
-    completions = response["statistics"]["season"]["completions"]["ranked"]
-    games_played = response["statistics"]["season"]["playedMatches"]["ranked"]
+    num_comps, detailed_matches = await games.get_detailed_matches(response, season, 5, 150)
 
     if detailed_matches == -1:
         print("Player does not have enough completions.")
-        await interaction.followup.send(f"You need a minimum of 15 completions from this season to analyse. (You have {completions})", ephemeral=hidden)
-        update_records("analysis", interaction.user.id, input_name, hidden, False)
-        return
-    
-    if detailed_matches == -2:
-        print("Player's completion rate is too low.")
-        await interaction.followup.send(f"You need at least a 15% completion rate in this season to use this command. (You have {int(completions/games_played*100)}%)", ephemeral=hidden)
+        await interaction.followup.send(f"{input_name} needs a minimum of 5 completions from season {season} to analyse. (Has {num_comps})", ephemeral=hidden)
         update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
 
     try:
-        anal = analysing.main(response, detailed_matches)
+        anal = analysing.main(response, num_comps, detailed_matches, season)
     except Exception as e:
         print("Error caught!")
         traceback.print_exc()
         await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
-        update_records("analysis", interaction.user.id, input_name, hidden, False)
-        return
-    
-    if anal == -3:
-        print("Player is unranked.")
-        await interaction.followup.send(f"You need to have a rank to use this command." , ephemeral=hidden)
         update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
 
