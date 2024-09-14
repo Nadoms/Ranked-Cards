@@ -407,7 +407,7 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
     old_input = input_name
     input_name = response["nickname"]
     
-    cooldown = 60 * 60 * 6 # 6 hour cooldown
+    cooldown = 60 * 60 * 1 # 1 hour cooldown
     user_cooldown, last_link = get_cooldown(input_name)
 
     cd_extra = ""
