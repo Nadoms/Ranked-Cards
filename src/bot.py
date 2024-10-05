@@ -10,12 +10,13 @@ from datetime import datetime, timezone
 import traceback
 
 import requests
-from commands import card as carding, graph as graphing, match as matching, analysis as analysing
+from commands import card as carding, graph as graphing, match as matching, analysis as analysing, race as racing
 from gen_functions import games
 
 intents = intents=nextcord.Intents.all()
 intents.members = True
 bot = commands.Bot(command_prefix="=", intents=intents, default_guild_ids=[735859906434957392, 1113914901325434880, 1056779246728658984])
+HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
 
 @bot.event
 async def on_ready():
@@ -56,8 +57,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
             return
         connected = True
     
-    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
-    response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=headers).json()
+    response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=HEADERS).json()
     
     print(f"\nGenerating card for {input_name}")
     failed = False
@@ -83,7 +83,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
             return
         else:
             print(f"\nAutocorrected to {first}.")
-            response = requests.get(f"https://mcsrranked.com/api/users/{first}", headers=headers).json()
+            response = requests.get(f"https://mcsrranked.com/api/users/{first}", headers=HEADERS).json()
 
             if response["status"] == "error":
                 print("Player changed username.")
@@ -169,8 +169,7 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
             return
         connected = True
     
-    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
-    response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=headers).json()
+    response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=HEADERS).json()
         
     print(f"\nDrawing {type} graph for {input_name}")
     failed = False
@@ -178,7 +177,7 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
         if response["data"] == "Too many requests":
             await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
             print(f"\nRanked API is mad at me...")
-            update_records("card", interaction.user.id, input_name, hidden, False)
+            update_records("plot", interaction.user.id, input_name, hidden, False)
             return
 
         print(f"Player not found (`{input_name}`).")
@@ -196,7 +195,7 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
             return
         else:
             print(f"\nAutocorrected to {first}.")
-            response = requests.get(f"https://mcsrranked.com/api/users/{first}", headers=headers).json()
+            response = requests.get(f"https://mcsrranked.com/api/users/{first}", headers=HEADERS).json()
 
             if response["status"] == "error":
                 print("Player changed username.")
@@ -288,14 +287,13 @@ async def match(interaction: Interaction, match_id: str = SlashOption(
 
 
     print(f"\nCharting match {match_id}")
-    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
-    response = requests.get(f"https://mcsrranked.com/api/matches/{match_id}", headers=headers).json()
+    response = requests.get(f"https://mcsrranked.com/api/matches/{match_id}", headers=HEADERS).json()
 
     if response["status"] == "error":
         if response["data"] == "Too many requests":
             await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
             print(f"\nRanked API is mad at me...")
-            update_records("card", interaction.user.id, input_name, hidden, False)
+            update_records("match", interaction.user.id, input_name, hidden, False)
             return
 
         print("Match not found.")
@@ -366,15 +364,14 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
 
     print(f"\nAnalysing {input_name}'s games")
 
-    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
-    response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=headers).json()
+    response = requests.get(f"https://mcsrranked.com/api/users/{input_name}", headers=HEADERS).json()
 
     failed = False
     if response["status"] == "error":
         if response["data"] == "Too many requests":
             await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
             print(f"\nRanked API is mad at me...")
-            update_records("card", interaction.user.id, input_name, hidden, False)
+            update_records("analysis", interaction.user.id, input_name, hidden, False)
             return
 
         print(f"Player not found (`{input_name}`).")
@@ -392,7 +389,7 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
             return
         else:
             print(f"\nAutocorrected to {first}.")
-            response = requests.get(f"https://mcsrranked.com/api/users/{first}", headers=headers).json()
+            response = requests.get(f"https://mcsrranked.com/api/users/{first}", headers=HEADERS).json()
 
             if response["status"] == "error":
                 print("Player changed username.")
@@ -470,7 +467,7 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
     ow_polygon.save("ow.png")
     ow_file = File("ow.png", filename="ow.png")
     embed_ow.set_image(url="attachment://ow.png")
-    embed_ow.set_footer(text="Bot made by @Nadoms // Feedback appreciated :3", icon_url="https://cdn.discordapp.com/avatars/298936021557706754/cdc9f29fbebe820e78d1b1e5b60a15e4?size=256")
+    embed_ow.set_footer(text="Bot made by @Nadoms // Feedback appreciated :3", icon_url="https://cdn.discordapp.com/avatars/298936021557706754/a_60fb14a1dbfb0d33f3b02cc33579dacf?size=256")
 
     for general_key in comments["general"]:
         if general_key == "title" or general_key == "description":
@@ -529,6 +526,52 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
     else:
         await interaction.followup.send(files=[split_file, ow_file], embeds=[embed_general, embed_split, embed_ow], ephemeral=hidden)
         update_records("analysis", interaction.user.id, input_name, hidden, True)
+
+
+@bot.slash_command(name="race", description="Produces a chart on your most recent race, or the race specified.")
+async def race(interaction: Interaction, race_no: str = SlashOption(
+    "race_no",
+    required = False,
+    description="The xth weekly race to get. Should be an integer.",
+    default=""
+    )):
+
+    input_name = get_name(interaction)
+    if race_no and race_no[0] == "#":
+        race_no = race_no[1:]
+
+    print(f"\nFinding details about weekly race #{race_no}")
+    response = requests.get(f"https://mcsrranked.com/api/weekly-race/{race_no}", headers=HEADERS).json()
+
+    if response["status"] == "error":
+        if response["data"] == "Too many requests":
+            await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...")
+            print(f"\nRanked API is mad at me...")
+            update_records("race", interaction.user.id, race_no, False, False)
+            return
+
+        latest_response = requests.get(f"https://mcsrranked.com/api/weekly-race", headers=HEADERS).json()
+        latest_race = latest_response["data"]["id"]
+        print("Race not found.")
+        await interaction.response.send_message(f"Weekly race not found. (`{race_no}`)\nThe latest race was weekly race #{latest_race}")
+        update_records("race", interaction.user.id, race_no, False, False)
+        return
+    
+    response = response["data"]
+    
+    await interaction.response.defer()
+    
+    try:
+        race_embed = racing.main(response, input_name)
+    except Exception as e:
+        print("Error caught!")
+        traceback.print_exc()
+        await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls")
+        update_records("race", interaction.user.id, race_no, False, False)
+        return
+
+    await interaction.followup.send(embed=race_embed)
+    update_records("race", interaction.user.id, race_no, False, True)
 
 
 @bot.slash_command(name="customise", description="Allows you to personalise your card. Only applies to connected users.")
