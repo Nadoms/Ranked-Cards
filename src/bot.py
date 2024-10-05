@@ -528,7 +528,7 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
         update_records("analysis", interaction.user.id, input_name, hidden, True)
 
 
-@bot.slash_command(name="race", description="Produces a chart on your most recent race, or the race specified.")
+@bot.slash_command(name="race", description="Returns a leaderboard for the current weekly race, or the race specified.")
 async def race(interaction: Interaction, race_no: str = SlashOption(
     "race_no",
     required = False,
@@ -740,6 +740,11 @@ async def help(interaction: Interaction,
     embed.add_field(
         name = "/analysis",
         value = "`Options: Minecraft username, hide response`\n`Defaults: Connected user, public`\n***Analyses your games*** to give feedback about splits and overworlds.",
+        inline = False
+    )
+    embed.add_field(
+        name = "/race",
+        value = "`Options: Weekly race number`\n`Defaults: Current race`\n***Returns the leaderboard*** for the weekly race specified.",
         inline = False
     )
     embed.add_field(
