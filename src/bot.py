@@ -553,7 +553,7 @@ async def race(interaction: Interaction, race_no: str = SlashOption(
         latest_response = requests.get(f"https://mcsrranked.com/api/weekly-race", headers=HEADERS).json()
         latest_race = latest_response["data"]["id"]
         print("Race not found.")
-        await interaction.response.send_message(f"Weekly race not found. (`{race_no}`)\nThe latest race was weekly race #{latest_race}")
+        await interaction.response.send_message(f"Weekly race not found. (`#{race_no}`). The latest race was weekly race `#{latest_race}`.")
         update_records("race", interaction.user.id, race_no, False, False)
         return
     
