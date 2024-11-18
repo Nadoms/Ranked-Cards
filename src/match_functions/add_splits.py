@@ -38,7 +38,7 @@ def write(chart, uuids, response):
             if y2 - y1 < 6:
                 continue
 
-            file = path.join("src", "pics", "textures", "cleantextures", f"{textures[progression]}.jpg")
+            file = path.join("src", "pics", "textures", f"{textures[progression]}.jpg")
             texture = Image.open(file)
 
             mask = Image.new("L", chart.size, 0)
