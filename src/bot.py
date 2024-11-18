@@ -438,7 +438,7 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
         update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
 
-    head, comments, split_polygon, ow_polygon = anal
+    head, comments, split_polygon, ow_polygon, bast_polygon = anal
 
     embed_general = nextcord.Embed(
         title = comments["general"]["title"],
@@ -889,6 +889,11 @@ def update_records(command, caller, callee, hidden, completed):
         stats["stats"]["totalGenerated"] += 1
         stats["stats"]["analyses"]["success"] += completed
         stats["stats"]["analyses"]["fail"] += 1-completed
+    
+    elif command == "race":
+        stats["stats"]["totalGenerated"] += 1
+        stats["stats"]["races"]["success"] += completed
+        stats["stats"]["races"]["fail"] += 1-completed
     
     elif command == "connect":
         stats["stats"]["connectedUsers"] += 1

@@ -16,6 +16,10 @@
             "success": 0,
             "fail": 0
         },
+        "races": {
+            "success": 0,
+            "fail": 0
+        },
         "connects": {
             "success": 0,
             "fail": 0
