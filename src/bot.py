@@ -1,4 +1,5 @@
 import difflib
+import os
 import nextcord
 import json
 from nextcord import File, Interaction, ApplicationError, SlashOption, Embed, Colour
@@ -15,7 +16,7 @@ from gen_functions import games
 
 intents = intents=nextcord.Intents.all()
 intents.members = True
-bot = commands.Bot(command_prefix="=", intents=intents, default_guild_ids=[735859906434957392, 1113914901325434880, 1056779246728658984])
+bot = commands.Bot(command_prefix="=", intents=intents)
 HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.'}
 
 @bot.event
@@ -48,12 +49,12 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
         hidden = False
 
     connected = False
-        
+
     if not input_name:
         input_name = get_name(interaction)
         if not input_name:
             await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a minecraft username.", ephemeral=hidden)
-            update_records("card", interaction.user.id, "Unknown", hidden, False)
+            update_records(interaction, "card", "Unknown", hidden, False)
             return
         connected = True
     
@@ -65,13 +66,13 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
         if response["data"] == "Too many requests":
             await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
             print(f"\nRanked API is mad at me...")
-            update_records("card", interaction.user.id, input_name, hidden, False)
+            update_records(interaction, "card", input_name, hidden, False)
             return
 
         print(f"Player not found (`{input_name}`).")
         if connected:
             await interaction.response.send_message(f"Player not found (`{input_name}`). Connect to your new Minecraft username with </connect:1149442234513637448>.", ephemeral=hidden)
-            update_records("card", interaction.user.id, input_name, hidden, False)
+            update_records(interaction, "card", input_name, hidden, False)
             return
         
         failed = True
@@ -79,7 +80,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
 
         if not first:
             await interaction.response.send_message(f"Player not found (`{input_name}`).", ephemeral=hidden)
-            update_records("card", interaction.user.id, input_name, hidden, False)
+            update_records(interaction, "card", input_name, hidden, False)
             return
         else:
             print(f"\nAutocorrected to {first}.")
@@ -89,7 +90,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
                 print("Player changed username.")
                 extra = " This player may have changed username."
                 await interaction.response.send_message(f"Player not found (`{input_name}`). {extra}", ephemeral=hidden)
-                update_records("card", interaction.user.id, input_name, hidden, False)
+                update_records(interaction, "card", input_name, hidden, False)
                 return
         
     await interaction.response.defer(ephemeral=hidden)
@@ -114,7 +115,7 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
         print("Error caught!")
         traceback.print_exc()
         await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
-        update_records("card", interaction.user.id, input_name, hidden, False)
+        update_records(interaction, "card", input_name, hidden, False)
         return
 
     img.save("card.png")
@@ -122,10 +123,11 @@ async def card(interaction: Interaction, input_name: str = SlashOption(
         img = File(f)
     if failed:
         await interaction.followup.send(f"Player not found (`{old_input}`). {extra}", file=img, ephemeral=hidden)
-        update_records("card", interaction.user.id, input_name, hidden, True)
+        update_records(interaction, "card", input_name, hidden, True)
     else:
         await interaction.followup.send(file=img, ephemeral=hidden)
-        update_records("card", interaction.user.id, input_name, hidden, True)
+        update_records(interaction, "card", input_name, hidden, True)
+    os.remove("card.png")
 
 
 @bot.slash_command(name="plot", description="Illustrates a graph for the player + metric that you choose.")
@@ -165,7 +167,7 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
         input_name = get_name(interaction)
         if not input_name:
             await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a minecraft username.", ephemeral=hidden)
-            update_records("plot", interaction.user.id, "Unknown", hidden, False)
+            update_records(interaction, "plot", "Unknown", hidden, False)
             return
         connected = True
     
@@ -177,13 +179,13 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
         if response["data"] == "Too many requests":
             await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
             print(f"\nRanked API is mad at me...")
-            update_records("plot", interaction.user.id, input_name, hidden, False)
+            update_records(interaction, "plot", input_name, hidden, False)
             return
 
         print(f"Player not found (`{input_name}`).")
         if connected:
             await interaction.response.send_message(f"Player not found (`{input_name}`). Connect to your new Minecraft username with </connect:1149442234513637448>.", ephemeral=hidden)
-            update_records("plot", interaction.user.id, input_name, hidden, False)
+            update_records(interaction, "plot", input_name, hidden, False)
             return
         
         failed = True
@@ -191,7 +193,7 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
 
         if not first:
             await interaction.response.send_message(f"Player not found  (`{input_name}`).", ephemeral=hidden)
-            update_records("plot", interaction.user.id, input_name, hidden, False)
+            update_records(interaction, "plot", input_name, hidden, False)
             return
         else:
             print(f"\nAutocorrected to {first}.")
@@ -201,7 +203,7 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
                 print("Player changed username.")
                 extra = " This player may have changed username."
                 await interaction.response.send_message(f"Player not found (`{input_name}`). {extra}", ephemeral=hidden)
-                update_records("plot", interaction.user.id, input_name, hidden, False)
+                update_records(interaction, "plot", input_name, hidden, False)
                 return
     
     await interaction.response.defer(ephemeral=hidden)
@@ -218,7 +220,7 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
         print("Error caught!")
         traceback.print_exc()
         await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
-        update_records("plot", interaction.user.id, input_name, hidden, False)
+        update_records(interaction, "plot", input_name, hidden, False)
         return
     
     if img == -1:
@@ -231,7 +233,7 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
         else:
             msg2 = ""
         await interaction.followup.send(f"`{input_name}` has not enough {msg1}{msg2}.", ephemeral=hidden)
-        update_records("plot", interaction.user.id, input_name, hidden, False)
+        update_records(interaction, "plot", input_name, hidden, False)
         return
 
     img.save("graph.png")
@@ -239,10 +241,11 @@ async def plot(interaction: Interaction, input_name: str = SlashOption(
         img = File(f)
     if failed:
         await interaction.followup.send(f"Player not found (`{old_input}`). {extra}", file=img, ephemeral=hidden)
-        update_records("plot", interaction.user.id, input_name, hidden, True)
+        update_records(interaction, "plot", input_name, hidden, True)
     else:
         await interaction.followup.send(file=img, ephemeral=hidden)
-        update_records("plot", interaction.user.id, input_name, hidden, True)
+        update_records(interaction, "plot", input_name, hidden, True)
+    os.remove("graph.png")
 
 
 @bot.slash_command(name="match", description="Produces a chart on your most recent match, or the match specified.")
@@ -269,20 +272,20 @@ async def match(interaction: Interaction, match_id: str = SlashOption(
     if not match_id:
         if not input_name:
             await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a match ID.", ephemeral=hidden)
-            update_records("match", interaction.user.id, "Unknown", hidden, False)
+            update_records(interaction, "match", "Unknown", hidden, False)
             return
 
         print(f"\nFinding {input_name}'s last match")
         match_id = games.get_last_match(input_name)
         if not match_id:
             await interaction.response.send_message("Player has no matches from this season.", ephemeral=hidden)
-            update_records("match", interaction.user.id, "Unknown", hidden, False)
+            update_records(interaction, "match", "Unknown", hidden, False)
             return
         
         if match_id == -1:
             await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
             print(f"\nRanked API is mad at me...")
-            update_records("match", interaction.user.id, "Unknown", hidden, False)
+            update_records(interaction, "match", "Unknown", hidden, False)
             return
 
 
@@ -293,12 +296,12 @@ async def match(interaction: Interaction, match_id: str = SlashOption(
         if response["data"] == "Too many requests":
             await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
             print(f"\nRanked API is mad at me...")
-            update_records("match", interaction.user.id, input_name, hidden, False)
+            update_records(interaction, "match", input_name, hidden, False)
             return
 
         print("Match not found.")
         await interaction.response.send_message(f"Match not found. (`{match_id}`)", ephemeral=hidden)
-        update_records("match", interaction.user.id, match_id, hidden, False)
+        update_records(interaction, "match", match_id, hidden, False)
         return
     
     response = response["data"]
@@ -306,7 +309,7 @@ async def match(interaction: Interaction, match_id: str = SlashOption(
     if response["type"] >= 3 or response["decayed"] == True:
         print("Match is invalid.")
         await interaction.response.send_message(f"Match must be a ranked or casual game. (`{match_id}`)", ephemeral=hidden)
-        update_records("match", interaction.user.id, match_id, hidden, False)
+        update_records(interaction, "match", match_id, hidden, False)
         return
     
     await interaction.response.defer(ephemeral=hidden)
@@ -317,14 +320,15 @@ async def match(interaction: Interaction, match_id: str = SlashOption(
         print("Error caught!")
         traceback.print_exc()
         await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
-        update_records("match", interaction.user.id, match_id, hidden, False)
+        update_records(interaction, "match", match_id, hidden, False)
         return
 
     img.save("chart.png")
     with open("chart.png", "rb") as f:
         img = File(f)
     await interaction.followup.send(file=img, ephemeral=hidden)
-    update_records("match", interaction.user.id, match_id, hidden, True)
+    update_records(interaction, "match", match_id, hidden, True)
+    os.remove("chart.png")
 
 
 @bot.slash_command(name="analysis", description="Analyses 100+ games from any season to visualise how a player performs throughout their runs.")
@@ -358,7 +362,7 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
         input_name = get_name(interaction)
         if not input_name:
             await interaction.response.send_message("Connect your minecraft account to your discord with </connect:1149442234513637448> or specify a minecraft username.", ephemeral=hidden)
-            update_records("analysis", interaction.user.id, "Unknown", hidden, False)
+            update_records(interaction, "analysis", "Unknown", hidden, False)
             return
         connected = True
 
@@ -371,13 +375,13 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
         if response["data"] == "Too many requests":
             await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...", ephemeral=hidden)
             print(f"\nRanked API is mad at me...")
-            update_records("analysis", interaction.user.id, input_name, hidden, False)
+            update_records(interaction, "analysis", input_name, hidden, False)
             return
 
         print(f"Player not found (`{input_name}`).")
         if connected:
             await interaction.response.send_message(f"Player not found (`{input_name}`). Connect to your new Minecraft username with </connect:1149442234513637448>.", ephemeral=hidden)
-            update_records("analysis", interaction.user.id, input_name, hidden, False)
+            update_records(interaction, "analysis", input_name, hidden, False)
             return
         
         failed = True
@@ -385,7 +389,7 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
 
         if not first:
             await interaction.response.send_message(f"Player not found (`{input_name}`).", ephemeral=hidden)
-            update_records("analysis", interaction.user.id, input_name, hidden, False)
+            update_records(interaction, "analysis", input_name, hidden, False)
             return
         else:
             print(f"\nAutocorrected to {first}.")
@@ -395,7 +399,7 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
                 print("Player changed username.")
                 extra = " This player may have changed username."
                 await interaction.response.send_message(f"Player not found (`{input_name}`). {extra}", ephemeral=hidden)
-                update_records("analysis", interaction.user.id, input_name, hidden, False)
+                update_records(interaction, "analysis", input_name, hidden, False)
                 return
         
     await interaction.response.defer(ephemeral=hidden)
@@ -418,7 +422,7 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
         next_available = f"<t:{user_cooldown + cooldown}:R>"
         print("Command on cooldown.")
         await interaction.followup.send(f"This command is on cooldown for `{input_name}`. (You can use it {next_available}){cd_extra}", ephemeral=hidden)
-        update_records("analysis", interaction.user.id, input_name, hidden, False)
+        update_records(interaction, "analysis", input_name, hidden, False)
         return
 
     num_comps, detailed_matches = await games.get_detailed_matches(response, season, 5, 150)
@@ -426,7 +430,7 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
     if detailed_matches == -1:
         print("Player does not have enough completions.")
         await interaction.followup.send(f"{input_name} needs a minimum of 5 completions from season {season} to analyse. (Has {num_comps})", ephemeral=hidden)
-        update_records("analysis", interaction.user.id, input_name, hidden, False)
+        update_records(interaction, "analysis", input_name, hidden, False)
         return
 
     try:
@@ -435,7 +439,7 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
         print("Error caught!")
         traceback.print_exc()
         await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
-        update_records("analysis", interaction.user.id, input_name, hidden, False)
+        update_records(interaction, "analysis", input_name, hidden, False)
         return
 
     head, comments, split_polygon, ow_polygon = anal
@@ -522,10 +526,12 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
 
     if failed:
         await interaction.followup.send(f"Player not found (`{old_input}`). {extra}", files=[split_file, ow_file], embeds=[embed_general, embed_split, embed_ow], ephemeral=hidden)
-        update_records("analysis", interaction.user.id, input_name, hidden, True)
+        update_records(interaction, "analysis", input_name, hidden, True)
     else:
         await interaction.followup.send(files=[split_file, ow_file], embeds=[embed_general, embed_split, embed_ow], ephemeral=hidden)
-        update_records("analysis", interaction.user.id, input_name, hidden, True)
+        update_records(interaction, "analysis", input_name, hidden, True)
+    os.remove("split.png")
+    os.remove("ow.png")
 
 
 @bot.slash_command(name="race", description="Returns a leaderboard for the current weekly race, or the race specified.")
@@ -547,14 +553,14 @@ async def race(interaction: Interaction, race_no: str = SlashOption(
         if response["data"] == "Too many requests":
             await interaction.response.send_message(f"Too many commands have been issued! The Ranked API is cooling down...")
             print(f"\nRanked API is mad at me...")
-            update_records("race", interaction.user.id, race_no, False, False)
+            update_records(interaction, "race", race_no, False, False)
             return
 
         latest_response = requests.get(f"https://mcsrranked.com/api/weekly-race", headers=HEADERS).json()
         latest_race = latest_response["data"]["id"]
         print("Race not found.")
         await interaction.response.send_message(f"Weekly race not found. (`#{race_no}`). The latest race was weekly race `#{latest_race}`.")
-        update_records("race", interaction.user.id, race_no, False, False)
+        update_records(interaction, "race", race_no, False, False)
         return
     
     response = response["data"]
@@ -567,11 +573,11 @@ async def race(interaction: Interaction, race_no: str = SlashOption(
         print("Error caught!")
         traceback.print_exc()
         await interaction.followup.send("An error has occurred. <@298936021557706754> fix it pls")
-        update_records("race", interaction.user.id, race_no, False, False)
+        update_records(interaction, "race", race_no, False, False)
         return
 
     await interaction.followup.send(embed=race_embed)
-    update_records("race", interaction.user.id, race_no, False, True)
+    update_records(interaction, "race", race_no, False, True)
 
 
 @bot.slash_command(name="customise", description="Allows you to personalise your card. Only applies to connected users.")
@@ -597,7 +603,7 @@ async def customise(interaction: Interaction, background: str = SlashOption(
     input_name = get_name(interaction)
     if not input_name:
         await interaction.response.send_message("Please connect your minecraft account to your discord with </connect:1149442234513637448> to customise your card.", ephemeral=hidden)
-        update_records("background", interaction.user.id, background, hidden, False)
+        update_records(interaction, "background", background, hidden, False)
         return
     
     uid = str(interaction.user.id)
@@ -622,7 +628,7 @@ async def customise(interaction: Interaction, background: str = SlashOption(
         
     if not user_exists:
         await interaction.response.send_message("An error has occurred. <@298936021557706754> fix it pls", ephemeral=hidden)
-        update_records("background", interaction.user.id, background, hidden, False)
+        update_records(interaction, "background", background, hidden, False)
         return
 
     with open (file, "w") as f:
@@ -630,7 +636,7 @@ async def customise(interaction: Interaction, background: str = SlashOption(
         f.write(users_json)
     
     await interaction.response.send_message(f"Updated your card background to {background}!", ephemeral=hidden)
-    update_records("background", interaction.user.id, background, hidden, True)
+    update_records(interaction, "background", background, hidden, True)
     return
 
 
@@ -651,7 +657,7 @@ async def connect(interaction: Interaction, input_name: str):
             user_id = users["users"].index(user)
         elif input_name.lower() == user["minecraft"].lower():
             await interaction.response.send_message(f"`{input_name}` is already connected to {bot.get_user(int(user['discord']))}.")
-            update_records("connect", interaction.user.id, input_name, False, False)
+            update_records(interaction, "connect", input_name, False, False)
             return
 
     if not user_exists:
@@ -671,7 +677,7 @@ async def connect(interaction: Interaction, input_name: str):
         f.write(users_json)
     
     await interaction.response.send_message(f"`{input_name}` has been connected to your discord!")
-    update_records("connect", interaction.user.id, input_name, False, not user_exists)
+    update_records(interaction, "connect", input_name, False, not user_exists)
     return
 
 
@@ -693,11 +699,11 @@ async def disconnect(interaction: Interaction):
                 users_json = json.dumps(users, indent=4)
                 f.write(users_json)
             await interaction.response.send_message(f"`{user['minecraft']}` has been disconnected from your discord.")
-            update_records("disconnect", interaction.user.id, user['minecraft'], False, True)
+            update_records(interaction, "disconnect", user['minecraft'], False, True)
             return
         
     await interaction.response.send_message(f"You are not connected. Please connect your minecraft account with </connect:1149442234513637448> to your discord.")
-    update_records("disconnect", interaction.user.id, "Unknown", False, False)
+    update_records(interaction, "disconnect", "Unknown", False, False)
 
 
 @bot.slash_command(name="help", description="Don't know where to start?")
@@ -764,7 +770,7 @@ async def help(interaction: Interaction,
     )
     
     await interaction.send(embed=embed, ephemeral=hidden)
-    update_records("help", interaction.user.id, "None", hidden, True)
+    update_records(interaction, "help", "None", hidden, True)
 
 
 def get_user_info(response, input_name):
@@ -855,14 +861,18 @@ def get_close(input_name):
     return [extra, first]
 
 
-def update_records(command, caller, callee, hidden, completed):
+def update_records(interaction, command, subject, hidden, completed):
     if updates_disabled:
         return
-    calls_file = path.join("src", "database", "calls.csv")
+    calls_file = path.join("src", "database", "calls_24.csv")
     stats_file = path.join("src", "database", "stats.json")
+    caller_id = interaction.user.id
+    caller_name = interaction.user.name
+    channel_name = interaction.channel.name
+    guild_name = interaction.guild.name
 
     with open(calls_file, "a") as f:
-        row = f"\n{command},{caller},{callee},{int(time())},{hidden},{completed}"
+        row = f"\n{command},{subject},{caller_id},{caller_name},{channel_name},{guild_name},{int(time())},{hidden},{completed}"
         f.write(row)
 
     with open(stats_file, "r") as f:
