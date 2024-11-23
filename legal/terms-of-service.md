@@ -11,7 +11,6 @@ By using the Bot, the User agrees to be bound by the terms of this Agreement. If
 5. Intellectual Property: The Bot and all intellectual property rights therein are and shall remain the property of the Bot Owner. The User agrees not to copy, modify, or distribute the Bot or any portion thereof without the express written consent of the Bot Owner.
 6. Indemnification: The User agrees to indemnify and hold harmless the Bot Owner, its affiliates, and their respective directors, officers, employees, and agents from any and all claims, damages, liabilities, costs, and expenses, including reasonable attorneys' fees, arising out of the User's use of the Bot.
 7. Termination: This Agreement may be terminated by either party at any time for any reason. Upon termination, the User must immediately cease all use of the Bot.
-8. Governing Law: This Agreement shall be governed by and construed in accordance with the laws of [Your country/state/province]. Any dispute arising under or in connection with this Agreement shall be resolved by arbitration in accordance with the rules of [Your arbitration provider].
-9. Entire Agreement: This Agreement constitutes the entire agreement between the parties and supersedes all prior or contemporaneous agreements or representations, whether written or oral, relating to the Bot.
+8. Entire Agreement: This Agreement constitutes the entire agreement between the parties and supersedes all prior or contemporaneous agreements or representations, whether written or oral, relating to the Bot.
 
 By using the Bot, the User acknowledges that they have read this Agreement, understand it, and agree to be bound by its terms and conditions.
