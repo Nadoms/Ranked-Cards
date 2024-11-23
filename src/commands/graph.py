@@ -7,6 +7,7 @@ from graph_functions import add_graph, add_name, add_other, add_skin, add_stats
 from gen_functions import games
 from gen_functions.word import process_split
 
+
 def main(name, response, data_type, season, matches):
     uuid = response["uuid"]
 
@@ -27,9 +28,12 @@ def main(name, response, data_type, season, matches):
 
     return graph
 
+
 if __name__ == "__main__":
     INPUT_NAME = "nadoms"
-    RESPONSE = requests.get(f"https://mcsrranked.com/api/users/{INPUT_NAME}", timeout=10).json()
+    RESPONSE = requests.get(
+        f"https://mcsrranked.com/api/users/{INPUT_NAME}", timeout=10
+    ).json()
     TYPE = "elo"
     SEASON = 5
     main(INPUT_NAME, RESPONSE, TYPE, SEASON).show()

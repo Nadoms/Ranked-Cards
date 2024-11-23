@@ -15,20 +15,32 @@ def main(response):
         "This is how you stack up against the playerbase. "
         f"This section uses data from the current season, S{games.get_season()}."
     )
-    
+
     if not response["eloRate"]:
         general_comments["elo"] = [f"ELO: `-`"]
     else:
         elo = int(response["eloRate"])
-        general_comments["elo"] = [f"ELO: `{elo}`", percentify(get_attr_ranked(elo, 'elo')), get_elo_equivalent(elo, 'elo')]
+        general_comments["elo"] = [
+            f"ELO: `{elo}`",
+            percentify(get_attr_ranked(elo, "elo")),
+            get_elo_equivalent(elo, "elo"),
+        ]
     avg = games.get_avg_completion(response, "season")
     if avg == 0:
         general_comments["avg"] = [f"Avg Finish: `-`"]
         general_comments["sb"] = [f"Avg Finish: `-`"]
     else:
         sb = int(response["statistics"]["season"]["bestTime"]["ranked"])
-        general_comments["avg"] = [f"Avg Finish: `{numb.digital_time(avg)}`", percentify(get_attr_ranked(avg, 'avg')), f"Equivalent to {get_elo_equivalent(avg, 'avg')} ELO"]
-        general_comments["sb"] = [f"Season Best: `{numb.digital_time(sb)}`", percentify(get_attr_ranked(sb, 'sb')), f"Equivalent to {get_elo_equivalent(sb, 'sb')} ELO"]
+        general_comments["avg"] = [
+            f"Avg Finish: `{numb.digital_time(avg)}`",
+            percentify(get_attr_ranked(avg, "avg")),
+            f"Equivalent to {get_elo_equivalent(avg, 'avg')} ELO",
+        ]
+        general_comments["sb"] = [
+            f"Season Best: `{numb.digital_time(sb)}`",
+            percentify(get_attr_ranked(sb, "sb")),
+            f"Equivalent to {get_elo_equivalent(sb, 'sb')} ELO",
+        ]
     ffl = games.get_ff_loss(response, "season")
     general_comments["ffl"] = [f"Forfeit/Loss `{ffl}%`", get_ffl_comments(ffl)]
 
@@ -78,14 +90,16 @@ def get_elo_equivalent(value, attr_type):
 
 
 def get_ffl_comments(ffl):
-    ffl_comments = ["NUTTY mental!?",
-                    "Very persistent and consistent player!",
-                    "Good mental while not afraid to go next.",
-                    "Willing to take some Ls for sanity.",
-                    "Should try playing more seeds out.",
-                    "Despair..."]
+    ffl_comments = [
+        "NUTTY mental!?",
+        "Very persistent and consistent player!",
+        "Good mental while not afraid to go next.",
+        "Willing to take some Ls for sanity.",
+        "Should try playing more seeds out.",
+        "Despair...",
+    ]
 
-    segment_size = 100 / (len(ffl_comments)-1)
+    segment_size = 100 / (len(ffl_comments) - 1)
     index = math.ceil(ffl / segment_size)
     if ffl == 100:
         index = -1

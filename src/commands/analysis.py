@@ -21,7 +21,9 @@ def main(response, num_comps, detailed_matches, season):
     then = process_split(then, "Finding skin")
     general_comments = get_comments.main(response)
     then = process_split(then, "Generating insights")
-    split_comm, split_polygon = split_insights.main(uuid, detailed_matches, elo, season, num_comps)
+    split_comm, split_polygon = split_insights.main(
+        uuid, detailed_matches, elo, season, num_comps
+    )
     then = process_split(then, "Recognising split performance")
     ow_comm, ow_polygon = ow_insights.main(uuid, detailed_matches, season)
     then = process_split(then, "Recognising OW performance")
@@ -34,5 +36,7 @@ def main(response, num_comps, detailed_matches, season):
 
 if __name__ == "__main__":
     INPUT_NAME = "Nadoms"
-    glob_response = requests.get(f"https://mcsrranked.com/api/users/{INPUT_NAME}", timeout=10).json()
+    glob_response = requests.get(
+        f"https://mcsrranked.com/api/users/{INPUT_NAME}", timeout=10
+    ).json()
     main(glob_response).show()

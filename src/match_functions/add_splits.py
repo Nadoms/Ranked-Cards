@@ -8,20 +8,35 @@ from gen_functions import numb, word
 def write(chart, uuids, response):
     splitted_image = ImageDraw.Draw(chart)
     middle = 600
-    x_values = [middle-70, middle+70]
+    x_values = [middle - 70, middle + 70]
     y_values = [550, 1800]
     x_padding = 50
     y_padding = 8
 
     final_time = response["result"]["time"]
     splits = extract_splits(uuids, response, final_time)
-    textures = ["overworld", "nether", "bastion", "fortress", "blind", "stronghold", "end"]
+    textures = [
+        "overworld",
+        "nether",
+        "bastion",
+        "fortress",
+        "blind",
+        "stronghold",
+        "end",
+    ]
     advancements = []
 
     for i in range(0, 2):
-        rect_coords = [x_values[i]-x_padding, y_values[0]-y_padding, x_values[i]+x_padding, y_values[1]+y_padding]
+        rect_coords = [
+            x_values[i] - x_padding,
+            y_values[0] - y_padding,
+            x_values[i] + x_padding,
+            y_values[1] + y_padding,
+        ]
         advancements.append(process_advancements(splits[i], final_time))
-        splitted_image.rectangle(rect_coords, fill="#000000", outline="#ffffff", width=4)
+        splitted_image.rectangle(
+            rect_coords, fill="#000000", outline="#ffffff", width=4
+        )
 
     for i in range(0, 2):
         x = x_values[i]
@@ -33,7 +48,7 @@ def write(chart, uuids, response):
             if j >= len(progressions) - 1:
                 y2 = 1800
             else:
-                y2 = prog_coords[j+1]
+                y2 = prog_coords[j + 1]
 
             if y2 - y1 < 6:
                 continue
@@ -43,11 +58,18 @@ def write(chart, uuids, response):
 
             mask = Image.new("L", chart.size, 0)
             draw = ImageDraw.Draw(mask)
-            draw.rectangle([x-42, y1+3, x+42, y2-3], fill="#ffffff", outline="#000000", width=2)
+            draw.rectangle(
+                [x - 42, y1 + 3, x + 42, y2 - 3],
+                fill="#ffffff",
+                outline="#000000",
+                width=2,
+            )
             chart = Image.composite(texture, chart, mask)
 
             outlined_image = ImageDraw.Draw(chart)
-            outlined_image.rectangle([x-42, y1+3, x+42, y2-3], outline="#ffffff", width=2)
+            outlined_image.rectangle(
+                [x - 42, y1 + 3, x + 42, y2 - 3], outline="#ffffff", width=2
+            )
 
     for i in range(0, 2):
         event_coords = advancements[i][3]
@@ -57,11 +79,11 @@ def write(chart, uuids, response):
         for j, event in enumerate(events):
             icon = get_event_icon(event)
 
-            x = x_values[i] + (2*i-1) * 105 - int(icon.size[0]/2)
-            y = event_coords[j] - int(icon.size[1]/2)
+            x = x_values[i] + (2 * i - 1) * 105 - int(icon.size[0] / 2)
+            y = event_coords[j] - int(icon.size[1] / 2)
 
-            if 0 <= event_coords[j] - event_coords[j-1] <= 40 and not is_shifted:
-                x += (2*i-1) * 220
+            if 0 <= event_coords[j] - event_coords[j - 1] <= 40 and not is_shifted:
+                x += (2 * i - 1) * 220
                 is_shifted = True
             else:
                 is_shifted = False
@@ -78,16 +100,20 @@ def write(chart, uuids, response):
         for j, coord in enumerate(coords):
             time = numb.digital_time(times[j])
             time_size = 35
-            time_font = ImageFont.truetype('minecraft_font.ttf', time_size)
+            time_font = ImageFont.truetype("minecraft_font.ttf", time_size)
 
             if j == 0:
                 time = "START!"
 
-            x = x_values[i] + (2*i-1) * 160 + (i-1) * word.calc_length(time, time_size)
+            x = (
+                x_values[i]
+                + (2 * i - 1) * 160
+                + (i - 1) * word.calc_length(time, time_size)
+            )
             y = coord - word.horiz_to_vert(time_size) / 2
 
-            if 0 <= coord - coords[j-1] <= 40 and not is_shifted:
-                x += (2*i-1) * 220
+            if 0 <= coord - coords[j - 1] <= 40 and not is_shifted:
+                x += (2 * i - 1) * 220
                 is_shifted = True
             else:
                 is_shifted = False

@@ -4,11 +4,12 @@ from PIL import ImageDraw, ImageFont, Image
 
 from gen_functions import word
 
+
 def write(chart, names, response):
     named_image = ImageDraw.Draw(chart)
     middle = 600
-    icon_x_values = [middle-510, middle+510]
-    x_values = [middle+50, middle-50]
+    icon_x_values = [middle - 510, middle + 510]
+    x_values = [middle + 50, middle - 50]
     y_values = [210, 390]
 
     for i in range(0, 2):
@@ -17,11 +18,11 @@ def write(chart, names, response):
         if rank == "None":
             rank = "-"
         rank = " #" + rank
-        rank = "" # FIX: remove rank
+        rank = ""  # FIX: remove rank
 
         tag = names[i] + rank
         tag_size = min(word.calc_size(tag, 500), 75)
-        tag_font = ImageFont.truetype('minecraft_font.ttf', tag_size)
+        tag_font = ImageFont.truetype("minecraft_font.ttf", tag_size)
         text_x = int(x_values[i] - word.calc_length(tag, tag_size) / 2)
         text_y = int(y_values[i] - word.horiz_to_vert(tag_size) / 2)
         if response["players"][i]["uuid"] == response["result"]["uuid"]:
@@ -31,7 +32,7 @@ def write(chart, names, response):
 
         named_image.text((text_x, text_y), names[i], font=tag_font, fill=colour)
 
-        text_x += word.calc_length(names[i], tag_size)+tag_size/5
+        text_x += word.calc_length(names[i], tag_size) + tag_size / 5
         named_image.text((text_x, text_y), rank, font=tag_font, fill=rank_colour)
 
         if response["players"][i]["uuid"] == response["result"]["uuid"]:
@@ -49,8 +50,18 @@ def write(chart, names, response):
 
     return chart
 
+
 def get_rank_colour(rank):
-    rank_colours = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52ba", "#cd7f32", "#c0c0c0", "#ffd700"]
+    rank_colours = [
+        "#888888",
+        "#b3c4c9",
+        "#86b8db",
+        "#50fe50",
+        "#0f52ba",
+        "#cd7f32",
+        "#c0c0c0",
+        "#ffd700",
+    ]
     if rank != "None":
         rounded_rank = int(rank)
         if rounded_rank > 1000:

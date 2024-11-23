@@ -9,7 +9,7 @@ from gen_functions import numb, word
 
 def write(chart, response):
     middle = 600
-    x_values = [middle-80, middle, middle+80]
+    x_values = [middle - 80, middle, middle + 80]
     y = 90
 
     seed = get_seed(response)
@@ -20,8 +20,8 @@ def write(chart, response):
     infoed_image = ImageDraw.Draw(chart)
     info_size = 25
     id_size = 20
-    info_font = ImageFont.truetype('minecraft_font.ttf', info_size)
-    id_font = ImageFont.truetype('minecraft_font.ttf', id_size)
+    info_font = ImageFont.truetype("minecraft_font.ttf", info_size)
+    id_font = ImageFont.truetype("minecraft_font.ttf", id_size)
 
     text_y = round(y - word.horiz_to_vert(info_size) / 2)
 

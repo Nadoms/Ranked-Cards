@@ -1,14 +1,17 @@
 from os import path
 
+
 def main():
-    player_times = {
-
-    }
-    player_nums = {
-
-    }
+    player_times = {}
+    player_nums = {}
     ordered_times = {
-        "ow": [], "nether": [], "bastion": [], "fortress": [], "blind": [], "stronghold": [], "end": []
+        "ow": [],
+        "nether": [],
+        "bastion": [],
+        "fortress": [],
+        "blind": [],
+        "stronghold": [],
+        "end": [],
     }
     split_mapping = {
         "story.enter_the_nether": "ow",
@@ -17,7 +20,7 @@ def main():
         "projectelo..blind_travel": "fortress",
         "story.follow_ender_eye": "blind",
         "story.enter_the_end": "stronghold",
-        "rql.completed": "end"
+        "rql.completed": "end",
     }
     event_mapping = {
         "story.enter_the_nether": "nether",
@@ -26,7 +29,7 @@ def main():
         "projectelo..blind_travel": "blind",
         "story.follow_ender_eye": "stronghold",
         "story.enter_the_end": "end",
-        "rql.completed": "completed"
+        "rql.completed": "completed",
     }
 
     file = path.join("src", "database", "mcsrstats", "cleaner_splits.txt")
@@ -44,10 +47,22 @@ def main():
 
                 if event[2] not in player_times.keys():
                     player_times[event[2]] = {
-                        "ow": 0, "nether": 0, "bastion": 0, "fortress": 0, "blind": 0, "stronghold": 0, "end": 0
+                        "ow": 0,
+                        "nether": 0,
+                        "bastion": 0,
+                        "fortress": 0,
+                        "blind": 0,
+                        "stronghold": 0,
+                        "end": 0,
                     }
                     player_nums[event[2]] = {
-                        "ow": 0, "nether": 0, "bastion": 0, "fortress": 0, "blind": 0, "stronghold": 0, "end": 0
+                        "ow": 0,
+                        "nether": 0,
+                        "bastion": 0,
+                        "fortress": 0,
+                        "blind": 0,
+                        "stronghold": 0,
+                        "end": 0,
                     }
 
                 if event[1] not in split_mapping.keys():
@@ -66,7 +81,9 @@ def main():
     for player_key in player_times:
         for split_key in player_times[player_key]:
             if player_nums[player_key][split_key]:
-                player_times[player_key][split_key] /= player_nums[player_key][split_key]
+                player_times[player_key][split_key] /= player_nums[player_key][
+                    split_key
+                ]
                 ordered_times[split_key].append(player_times[player_key][split_key])
             else:
                 ordered_times[split_key].append(1000000000000)
@@ -89,6 +106,7 @@ def main():
                 else:
                     line += "\n"
             f.write(line)
+
 
 if __name__ == "__main__":
     main()

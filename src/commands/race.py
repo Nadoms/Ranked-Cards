@@ -19,10 +19,7 @@ def main(response, input_name):
     leaderboard = response["leaderboard"]
 
     embed = Embed(
-        title=title,
-        description=description,
-        colour=Colour.blurple(),
-        timestamp=now
+        title=title, description=description, colour=Colour.blurple(), timestamp=now
     )
 
     value = ""
@@ -50,16 +47,14 @@ def main(response, input_name):
         spacing_2 = " " * (16 - len(name))
         value += f"{spacing_1}#{rank} | {name}{spacing_2}| {time} \n"
 
-    embed.add_field(
-        name="Leaderboard",
-        value=f"```{value}```",
-        inline=False
-    )
+    embed.add_field(name="Leaderboard", value=f"```{value}```", inline=False)
 
     # embed.set_thumbnail(url=head)
     # embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar)
     # embed.set_image(url="attachment://ow.png")
-    embed.set_footer(text="Bot made by @Nadoms", icon_url="https://cdn.discordapp.com/avatars/298936021557706754/a_60fb14a1dbfb0d33f3b02cc33579dacf?size=256")
-
+    embed.set_footer(
+        text="Bot made by @Nadoms",
+        icon_url="https://cdn.discordapp.com/avatars/298936021557706754/a_60fb14a1dbfb0d33f3b02cc33579dacf?size=256",
+    )
 
     return embed

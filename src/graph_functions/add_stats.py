@@ -2,11 +2,21 @@ from PIL import ImageDraw, ImageFont
 
 from gen_functions import word, rank
 
+
 def write(graph, response):
     statted_image = ImageDraw.Draw(graph)
     stat_size = 20
-    stat_font = ImageFont.truetype('minecraft_font.ttf', stat_size)
-    rank_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#0f52ba", "#cd7f32", "#c0c0c0", "#ffd700"]
+    stat_font = ImageFont.truetype("minecraft_font.ttf", stat_size)
+    rank_colour = [
+        "#888888",
+        "#b3c4c9",
+        "#86b8db",
+        "#50fe50",
+        "#0f52ba",
+        "#cd7f32",
+        "#c0c0c0",
+        "#ffd700",
+    ]
     white = "#ffffff"
 
     stats = get_stats(response)
@@ -44,13 +54,23 @@ def write(graph, response):
     x = 125
     statted_image.text((x, 60), stats[0], font=stat_font, fill=white)
     x += word.calc_length(stats[0], stat_size)
-    statted_image.text((x, 60), stats[1], font=stat_font, fill=colour[0], stroke_fill=colour[1], stroke_width=1)
+    statted_image.text(
+        (x, 60),
+        stats[1],
+        font=stat_font,
+        fill=colour[0],
+        stroke_fill=colour[1],
+        stroke_width=1,
+    )
     x += word.calc_length(stats[1], stat_size)
     statted_image.text((x, 60), stats[2], font=stat_font, fill=white)
     x += word.calc_length(stats[2], stat_size)
-    statted_image.text((x, 60), stats[3], font=stat_font, fill=rank_colour[rounded_rank])
+    statted_image.text(
+        (x, 60), stats[3], font=stat_font, fill=rank_colour[rounded_rank]
+    )
 
     return graph
+
 
 def get_stats(response):
     elo = response["eloRate"]

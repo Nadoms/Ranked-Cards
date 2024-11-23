@@ -23,35 +23,37 @@ def main(data_oi):
     order = np.argsort(data[0])
     X_raw = torch.FloatTensor(data[0])[order]
     Y_raw = torch.FloatTensor(data[1])[order]
-    X = X_raw.apply_(lambda x : x * 1e-6)
-    Y = Y_raw.apply_(lambda x : x * 1e-3)
+    X = X_raw.apply_(lambda x: x * 1e-6)
+    Y = Y_raw.apply_(lambda x: x * 1e-3)
 
-    W = [torch.tensor(0.0, requires_grad=True),
-         torch.tensor(0.0, requires_grad=True),
-         torch.tensor(0.0, requires_grad=True)]
+    W = [
+        torch.tensor(0.0, requires_grad=True),
+        torch.tensor(0.0, requires_grad=True),
+        torch.tensor(0.0, requires_grad=True),
+    ]
 
     step_sizes = [0.1, 0.1, 0.1]
     loss_list = []
     iter = 10000
-    
+
     for i in range(iter):
         Y_pred = forward(X, W)
         loss = criterion(Y_pred, Y)
         loss_list.append(loss.item())
         loss.backward()
-        
+
         for j in range(len(W)):
             W[j].data = W[j].data - step_sizes[j] * W[j].grad.data
             W[j].grad.data.zero_()
-            
+
         print(f"{i},\t{loss.item()},\t{[w.item() for w in W]}")
-    
-    plt.plot(X.numpy(), Y.numpy(), 'b.', label='Y')
-    plt.plot(X.numpy(), Y_pred.detach().numpy(), 'y', label='pred', linewidth=3)
-    plt.xlabel('x')
-    plt.ylabel('y')
+
+    plt.plot(X.numpy(), Y.numpy(), "b.", label="Y")
+    plt.plot(X.numpy(), Y_pred.detach().numpy(), "y", label="pred", linewidth=3)
+    plt.xlabel("x")
+    plt.ylabel("y")
     plt.legend()
-    plt.grid('True', color='y')
+    plt.grid("True", color="y")
     plt.show()
 
     update_weights(data_oi, W)
@@ -66,7 +68,7 @@ def forward(x, W):
 
 def regular_forward(x, W):
     for i in range(len(W)):
-        sum += W[i] * (x ** (i-1))
+        sum += W[i] * (x ** (i - 1))
 
 
 # Evaluating data points with MSE
@@ -97,7 +99,6 @@ def update_weights(data_oi, W):
         print("Updated!")
     else:
         print("Okay...")
-        
 
 
 if __name__ == "__main__":

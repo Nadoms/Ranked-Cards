@@ -13,6 +13,7 @@ def round_sf(num, sf):
 
     return num
 
+
 def digital_time(raw_time):
     if not isinstance(raw_time, int):
         return raw_time

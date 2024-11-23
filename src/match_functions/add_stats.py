@@ -6,9 +6,9 @@ from gen_functions import word, rank
 def write(chart, uuids, response, vs_response):
     statted_image = ImageDraw.Draw(chart)
     stat_size = 20
-    stat_font = ImageFont.truetype('minecraft_font.ttf', stat_size)
+    stat_font = ImageFont.truetype("minecraft_font.ttf", stat_size)
     middle = 600
-    x_values = [middle+370, middle-370]
+    x_values = [middle + 370, middle - 370]
     y_values = [165, 195, 225, 255]
 
     scores = get_scores(uuids, vs_response)
@@ -32,13 +32,20 @@ def write(chart, uuids, response, vs_response):
             x = int(x_values[i] - i * word.calc_length(overall_line, stat_size))
 
             for k, stat_word in enumerate(stat_words):
-                y = y_values[j] - int(word.horiz_to_vert(stat_size) / 2) + i*180
+                y = y_values[j] - int(word.horiz_to_vert(stat_size) / 2) + i * 180
 
                 if k == 1 and j <= 1:
                     f_colour, s_colour = colours[j]
                 else:
                     f_colour, s_colour = score_colour
-                statted_image.text((x, y), stat_word, font=stat_font, fill=f_colour, stroke_fill=s_colour, stroke_width=1)
+                statted_image.text(
+                    (x, y),
+                    stat_word,
+                    font=stat_font,
+                    fill=f_colour,
+                    stroke_fill=s_colour,
+                    stroke_width=1,
+                )
 
                 x += int(word.calc_length(stat_word, stat_size))
 
@@ -52,7 +59,12 @@ def get_stats(response, scores, uuids, i):
         if score_change["uuid"] == uuids[i]:
             legacy_elo = score_change["eloRate"]
 
-    return [["was ", legacy_elo, " elo"], ["now ", current_elo, " elo"], [scores[0][i]], [scores[1][i]]]
+    return [
+        ["was ", legacy_elo, " elo"],
+        ["now ", current_elo, " elo"],
+        [scores[0][i]],
+        [scores[1][i]],
+    ]
 
 
 def get_scores(uuids, vs_response):

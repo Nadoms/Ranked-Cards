@@ -9,6 +9,7 @@ from commands import match as matching
 from commands import analysis as analysing
 from gen_functions import games
 
+
 async def main(command, name, type, season, match_id):
     response = requests.get(f"https://mcsrranked.com/api/users/{name}").json()
     response2 = requests.get(f"https://mcsrranked.com/api/matches/{match_id}").json()
@@ -22,7 +23,9 @@ async def main(command, name, type, season, match_id):
     elif command == "match":
         img = matching.main(response2)
     elif command == "analysis":
-        response = requests.get(f"https://mcsrranked.com/api/users/{name}").json()["data"]
+        response = requests.get(f"https://mcsrranked.com/api/users/{name}").json()[
+            "data"
+        ]
         detailed_matches = await games.get_detailed_matches(response, 0, 130)
         img1, img2 = analysing.main(response, detailed_matches)[2:4]
         img1.save("test.png")
@@ -32,9 +35,10 @@ async def main(command, name, type, season, match_id):
         return
     else:
         return
-        
+
     img.save("test.png")
     # img.show()
+
 
 if __name__ == "__main__":
     command = "card"

@@ -2,6 +2,7 @@ import json
 from os import path
 import sys
 
+
 def main(rank_no):
     enters = {
         "ow": 0,
@@ -10,7 +11,7 @@ def main(rank_no):
         "fortress": 0,
         "blind": 0,
         "stronghold": 0,
-        "end": 0
+        "end": 0,
     }
     death_types = {
         "ow": 0,
@@ -19,7 +20,7 @@ def main(rank_no):
         "fortress": 0,
         "blind": 0,
         "stronghold": 0,
-        "end": 0
+        "end": 0,
     }
     deaths = 0
     resets = 0
@@ -64,7 +65,7 @@ def main(rank_no):
     for key in death_types:
         death_rates[key] = round(death_types[key] / enters["ow"], 3)
 
-    with open (output, "r") as f:
+    with open(output, "r") as f:
         ranked_death_rates = json.load(f)
 
     ranked_death_rates[str(rank_no)] = death_rates
@@ -89,7 +90,7 @@ def tidy(timeline):
         "story.follow_ender_eye": "stronghold",
         "story.enter_the_end": "end",
         "projectelo.timeline.death": "death",
-        "projectelo.timeline.reset": "reset"
+        "projectelo.timeline.reset": "reset",
     }
 
     good_timeline = []
@@ -98,7 +99,7 @@ def tidy(timeline):
         timeline = timeline.split("),")
     elif timeline[1] == "'":
         timeline = timeline.split(",")
-    
+
     for event in timeline:
         for type_key in event_mapping:
             if type_key in event:

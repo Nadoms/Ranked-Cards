@@ -10,16 +10,30 @@ from gen_functions import word
 def write(card, discord, pfp, response):
     discord = get_discord(discord)
     discord_size = min(word.calc_size(discord, 520), 50)
-    discord_font = ImageFont.truetype('minecraft_font.ttf', discord_size)
+    discord_font = ImageFont.truetype("minecraft_font.ttf", discord_size)
 
     twitch = get_twitch(response)
     twitch_size = min(word.calc_size(twitch, 470), 30)
-    twitch_font = ImageFont.truetype('minecraft_font.ttf', twitch_size)
+    twitch_font = ImageFont.truetype("minecraft_font.ttf", twitch_size)
 
     socialed_image = ImageDraw.Draw(card)
-    socialed_image.text((1700-word.calc_length(discord, discord_size), 927-discord_size/2), discord, font=discord_font, fill="#ffffff", stroke_width=4, stroke_fill="#000000")
+    socialed_image.text(
+        (1700 - word.calc_length(discord, discord_size), 927 - discord_size / 2),
+        discord,
+        font=discord_font,
+        fill="#ffffff",
+        stroke_width=4,
+        stroke_fill="#000000",
+    )
     # socialed_image.text((1650-word.calc_length(get_yt(response), 25), 1035), get_yt(response), font=yt_font, fill="#ff0000", stroke_width=2, stroke_fill="#ffffff")
-    socialed_image.text((1650-word.calc_length(twitch, twitch_size), 1075-twitch_size/2), twitch, font=twitch_font, fill="#9146ff", stroke_width=2, stroke_fill="#ffffff")
+    socialed_image.text(
+        (1650 - word.calc_length(twitch, twitch_size), 1075 - twitch_size / 2),
+        twitch,
+        font=twitch_font,
+        fill="#9146ff",
+        stroke_width=2,
+        stroke_fill="#ffffff",
+    )
     write_pfp(card, 1750, pfp)
     # write_yt(card)
     write_twitch(card)
@@ -41,6 +55,7 @@ def get_yt(response):
         return youtube
     return "Unlinked"
 
+
 def get_twitch(response):
     if "twitch" in response["connections"]:
         twitch = response["connections"]["twitch"]["name"]
@@ -53,7 +68,9 @@ def write_pfp(card, x, pfp):
     y = 877
 
     pfped_image = ImageDraw.Draw(card)
-    pfped_image.ellipse([x-6, y-6, x+124, y+125], fill="#122b30", outline="#000000", width=2)
+    pfped_image.ellipse(
+        [x - 6, y - 6, x + 124, y + 125], fill="#122b30", outline="#000000", width=2
+    )
 
     file = path.join("src", "pics", "other", "circle.png")
     circle = Image.open(file).convert("L")

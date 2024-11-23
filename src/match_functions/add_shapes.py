@@ -6,14 +6,19 @@ from gen_functions import word
 def write(chart):
     chart = chart.convert("RGBA")
     info_size = 20
-    info_font = ImageFont.truetype('minecraft_font.ttf', info_size)
+    info_font = ImageFont.truetype("minecraft_font.ttf", info_size)
 
-    overlay = Image.new('RGBA', chart.size, (0, 0, 0)+(0,))
+    overlay = Image.new("RGBA", chart.size, (0, 0, 0) + (0,))
     draw = ImageDraw.Draw(overlay)
     opacity = 128
 
     for box in get_boxes():
-        draw.rectangle(box, fill=(0, 0, 0)+(opacity,), outline=(255, 255, 255)+(opacity,), width=5)
+        draw.rectangle(
+            box,
+            fill=(0, 0, 0) + (opacity,),
+            outline=(255, 255, 255) + (opacity,),
+            width=5,
+        )
 
     chart = Image.alpha_composite(chart, overlay)
 
@@ -42,8 +47,8 @@ def get_lines():
     coords = [top_y] + get_text_pos()[1] + [bottom_y]
     for i, coord in enumerate(coords):
         if i != 0:
-            lines.append([(x, coords[i-1]+spacing), (x, coord-spacing)])
-    return [] # lines
+            lines.append([(x, coords[i - 1] + spacing), (x, coord - spacing)])
+    return []  # lines
 
 
 def get_text_pos():
@@ -53,7 +58,6 @@ def get_text_pos():
 
 
 def get_boxes():
-    boxes = [[200, 150, 950, 270],
-             [250, 330, 1000, 450]]
+    boxes = [[200, 150, 950, 270], [250, 330, 1000, 450]]
 
     return boxes

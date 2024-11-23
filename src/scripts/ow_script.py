@@ -1,21 +1,18 @@
 from os import path
+
 package = path.join("src", "gen_functions")
 import sys
+
 sys.path.insert(1, package)
 import word
 
+
 def main():
-    ordered_times = {
-        "bt": [], "dt": [], "rp": [], "ship": [], "village": []
-    }
+    ordered_times = {"bt": [], "dt": [], "rp": [], "ship": [], "village": []}
 
     for ow_key in ordered_times:
-        player_times = {
-
-        }
-        player_nums = {
-
-        }
+        player_times = {}
+        player_nums = {}
         file = path.join("src", "database", "mcsrstats", "overworlds", f"{ow_key}.txt")
 
         with open(file, "r") as f:
@@ -33,7 +30,6 @@ def main():
 
                 player_times[info[0]] += raw_time
                 player_nums[info[0]] += 1
-                
 
         for player_key in player_times:
             player_times[player_key] /= player_nums[player_key]
@@ -57,6 +53,7 @@ def main():
                 else:
                     line += "\n"
             f.write(line)
+
 
 if __name__ == "__main__":
     main()
