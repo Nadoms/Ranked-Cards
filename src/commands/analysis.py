@@ -11,7 +11,9 @@ from gen_functions.word import process_split
 
 def main(response, num_comps, detailed_matches, season):
     uuid = response["uuid"]
-    elo = response["eloRate"]
+    elo = response["seasonResult"]["last"]["eloRate"]
+    if elo:
+        elo = int(elo)
 
     split_polygon = Image.new("RGB", (400, 400), "#313338")
     ow_polygon = Image.new("RGB", (400, 400), "#313338")
@@ -19,7 +21,7 @@ def main(response, num_comps, detailed_matches, season):
     then = datetime.now()
     skin = get_skin.main(uuid)
     then = process_split(then, "Finding skin")
-    general_comments = get_comments.main(response)
+    general_comments = get_comments.main(response, elo, season)
     then = process_split(then, "Generating insights")
     split_comm, split_polygon = split_insights.main(
         uuid, detailed_matches, elo, season, num_comps

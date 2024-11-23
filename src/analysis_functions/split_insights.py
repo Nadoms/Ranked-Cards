@@ -30,7 +30,7 @@ def main(uuid, detailed_matches, elo, season, num_comps):
     polygon = add_text(polygon, average_splits, ranked_splits)
 
     comments = {}
-    comments["title"] = f"Split Performance in Season {season}"
+    comments["title"] = f"Split Performance"
     comments["description"] = (
         f"{len(detailed_matches)} games (with {num_comps} completions) were used in analysing your splits. {get_sample_size(num_comps)}"
     )

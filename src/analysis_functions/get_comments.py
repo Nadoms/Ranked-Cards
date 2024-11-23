@@ -8,18 +8,18 @@ from gen_functions import games, rank, numb
 from gen_functions.word import percentify
 
 
-def main(response):
+def main(response, elo, season):
     general_comments = {}
-    general_comments["title"] = f"Analysis of {response['nickname']}"
+    general_comments["title"] = f"Analysis of {response['nickname']} in Season {season}"
     general_comments["description"] = (
         "This is how you stack up against the playerbase. "
-        f"This section uses data from the current season, S{games.get_season()}."
+        f"This section has been updated to use your stats from the specified season, S{season}."
+        "\nComparisons are made with data gathered during season 5."
     )
 
-    if not response["eloRate"]:
+    if not elo:
         general_comments["elo"] = [f"ELO: `-`"]
     else:
-        elo = int(response["eloRate"])
         general_comments["elo"] = [
             f"ELO: `{elo}`",
             percentify(get_attr_ranked(elo, "elo")),

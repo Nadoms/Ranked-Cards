@@ -27,7 +27,7 @@ def main(uuid, detailed_matches, season):
     polygon = add_text(polygon, average_ows, ranked_ows)
 
     comments = {}
-    comments["title"] = f"Overworld Performance in Season {season}"
+    comments["title"] = f"Overworld Performance"
     comments["description"] = (
         f"{len(detailed_matches)} games were used in analysing your overworlds. {get_sample_size(len(detailed_matches))}"
     )

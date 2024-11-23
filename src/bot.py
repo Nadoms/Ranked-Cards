@@ -20,12 +20,24 @@ from commands import (
 )
 from gen_functions import games
 
-intents = intents = nextcord.Intents.all()
-intents.members = True
-bot = commands.Bot(command_prefix="=", intents=intents)
+TESTING_MODE = True
+
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0."
 }
+API = "https://mcsrranked.com/api/"
+CURRENT_SEASON = games.get_season()
+ALL_SEASONS = [str(season) for season in range(1, CURRENT_SEASON + 1)]
+token = "TEST_TOKEN" if TESTING_MODE else "DISCORD_TOKEN"
+default_guild_ids = [735859906434957392] if TESTING_MODE else None
+
+intents = intents = nextcord.Intents.all()
+intents.members = True
+bot = commands.Bot(
+    command_prefix="=",
+    intents=intents,
+    default_guild_ids=default_guild_ids,
+)
 
 
 @bot.event
@@ -77,9 +89,7 @@ async def card(
             return
         connected = True
 
-    response = requests.get(
-        f"https://mcsrranked.com/api/users/{input_name}", headers=HEADERS
-    ).json()
+    response = requests.get(f"{API}users/{input_name}", headers=HEADERS).json()
 
     print(f"\nGenerating card for {input_name}")
     failed = False
@@ -111,20 +121,18 @@ async def card(
             )
             update_records(interaction, "card", input_name, hidden, False)
             return
-        else:
-            print(f"\nAutocorrected to {first}.")
-            response = requests.get(
-                f"https://mcsrranked.com/api/users/{first}", headers=HEADERS
-            ).json()
 
-            if response["status"] == "error":
-                print("Player changed username.")
-                extra = " This player may have changed username."
-                await interaction.response.send_message(
-                    f"Player not found (`{input_name}`). {extra}", ephemeral=hidden
-                )
-                update_records(interaction, "card", input_name, hidden, False)
-                return
+        print(f"\nAutocorrected to {first}.")
+        response = requests.get(f"{API}users/{first}", headers=HEADERS).json()
+
+        if response["status"] == "error":
+            print("Player changed username.")
+            extra = " This player may have changed username."
+            await interaction.response.send_message(
+                f"Player not found (`{input_name}`). {extra}", ephemeral=hidden
+            )
+            update_records(interaction, "card", input_name, hidden, False)
+            return
 
     await interaction.response.defer(ephemeral=hidden)
     response = response["data"]
@@ -190,8 +198,8 @@ async def plot(
         "season",
         required=False,
         description="The season to gather data for.",
-        default="6",
-        choices=["1", "2", "3", "4", "5", "6", "Lifetime"],
+        default=str(CURRENT_SEASON),
+        choices=ALL_SEASONS + ["Lifetime"],
     ),
     hidden: str = SlashOption(
         "hidden",
@@ -220,9 +228,7 @@ async def plot(
             return
         connected = True
 
-    response = requests.get(
-        f"https://mcsrranked.com/api/users/{input_name}", headers=HEADERS
-    ).json()
+    response = requests.get(f"{API}users/{input_name}", headers=HEADERS).json()
 
     print(f"\nDrawing {type} graph for {input_name}")
     failed = False
@@ -254,20 +260,18 @@ async def plot(
             )
             update_records(interaction, "plot", input_name, hidden, False)
             return
-        else:
-            print(f"\nAutocorrected to {first}.")
-            response = requests.get(
-                f"https://mcsrranked.com/api/users/{first}", headers=HEADERS
-            ).json()
 
-            if response["status"] == "error":
-                print("Player changed username.")
-                extra = " This player may have changed username."
-                await interaction.response.send_message(
-                    f"Player not found (`{input_name}`). {extra}", ephemeral=hidden
-                )
-                update_records(interaction, "plot", input_name, hidden, False)
-                return
+        print(f"\nAutocorrected to {first}.")
+        response = requests.get(f"{API}users/{first}", headers=HEADERS).json()
+
+        if response["status"] == "error":
+            print("Player changed username.")
+            extra = " This player may have changed username."
+            await interaction.response.send_message(
+                f"Player not found (`{input_name}`). {extra}", ephemeral=hidden
+            )
+            update_records(interaction, "plot", input_name, hidden, False)
+            return
 
     await interaction.response.defer(ephemeral=hidden)
     response = response["data"]
@@ -373,9 +377,7 @@ async def match(
             return
 
     print(f"\nCharting match {match_id}")
-    response = requests.get(
-        f"https://mcsrranked.com/api/matches/{match_id}", headers=HEADERS
-    ).json()
+    response = requests.get(f"{API}matches/{match_id}", headers=HEADERS).json()
 
     if response["status"] == "error":
         if response["data"] == "Too many requests":
@@ -438,8 +440,8 @@ async def analysis(
         "season",
         required=False,
         description="The season to gather data from.",
-        default="6",
-        choices=["1", "2", "3", "4", "5", "6"],
+        default=str(CURRENT_SEASON),
+        choices=ALL_SEASONS,
     ),
     hidden: str = SlashOption(
         "hidden",
@@ -471,7 +473,7 @@ async def analysis(
     print(f"\nAnalysing {input_name}'s games")
 
     response = requests.get(
-        f"https://mcsrranked.com/api/users/{input_name}", headers=HEADERS
+        f"{API}users/{input_name}?season={season}", headers=HEADERS
     ).json()
 
     failed = False
@@ -503,20 +505,20 @@ async def analysis(
             )
             update_records(interaction, "analysis", input_name, hidden, False)
             return
-        else:
-            print(f"\nAutocorrected to {first}.")
-            response = requests.get(
-                f"https://mcsrranked.com/api/users/{first}", headers=HEADERS
-            ).json()
 
-            if response["status"] == "error":
-                print("Player changed username.")
-                extra = " This player may have changed username."
-                await interaction.response.send_message(
-                    f"Player not found (`{input_name}`). {extra}", ephemeral=hidden
-                )
-                update_records(interaction, "analysis", input_name, hidden, False)
-                return
+        print(f"\nAutocorrected to {first}.")
+        response = requests.get(
+            f"{API}users/{first}?season={season}", headers=HEADERS
+        ).json()
+
+        if response["status"] == "error":
+            print("Player changed username.")
+            extra = " This player may have changed username."
+            await interaction.response.send_message(
+                f"Player not found (`{input_name}`). {extra}", ephemeral=hidden
+            )
+            update_records(interaction, "analysis", input_name, hidden, False)
+            return
 
     await interaction.response.defer(ephemeral=hidden)
     response = response["data"]
@@ -687,9 +689,7 @@ async def race(
         race_no = race_no[1:]
 
     print(f"\nFinding details about weekly race #{race_no}")
-    response = requests.get(
-        f"https://mcsrranked.com/api/weekly-race/{race_no}", headers=HEADERS
-    ).json()
+    response = requests.get(f"{API}weekly-race/{race_no}", headers=HEADERS).json()
 
     if response["status"] == "error":
         if response["data"] == "Too many requests":
@@ -700,9 +700,7 @@ async def race(
             update_records(interaction, "race", race_no, False, False)
             return
 
-        latest_response = requests.get(
-            f"https://mcsrranked.com/api/weekly-race", headers=HEADERS
-        ).json()
+        latest_response = requests.get(f"{API}weekly-race", headers=HEADERS).json()
         latest_race = latest_response["data"]["id"]
         print("Race not found.")
         await interaction.response.send_message(
@@ -1053,7 +1051,7 @@ def get_close(input_name):
 
 
 def update_records(interaction, command, subject, hidden, completed):
-    if updates_disabled:
+    if TESTING_MODE:
         return
     calls_file = path.join("src", "database", "calls_24.csv")
     stats_file = path.join("src", "database", "stats.json")
@@ -1116,5 +1114,4 @@ def update_records(interaction, command, subject, hidden, completed):
 
 
 load_dotenv()
-updates_disabled = True
-bot.run(getenv("TEST_TOKEN"))
+bot.run(getenv(token))
