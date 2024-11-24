@@ -168,6 +168,7 @@ def write(uuid, matches, data_type, season):
 
     plt.legend()
     plt.savefig(file)
+    plt.close()
     return file
 
 
