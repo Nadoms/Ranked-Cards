@@ -333,7 +333,7 @@ def get_best_worst(ranked_splits):
     }
 
     max_key = ""
-    max_val = 0
+    max_val = -1
     min_key = ""
     min_val = 1000000000000000000
 
@@ -384,7 +384,7 @@ def get_death_comments(average_deaths, elo):
         rank_no = 2
     file = path.join("src", "database", "mcsrstats", "deaths", "deaths.json")
     with open (file, "r", encoding="UTF-8") as f:
-        overall_deaths = json.load(f)[str(rank_no)]
+        overall_deaths = json.load(f)["splits"][str(rank_no)]
 
     max_diff = 0
     max_split = None

@@ -18,18 +18,26 @@ ANGLES = [(i * (2 * math.pi)) / SIDES -
           math.pi / 2 +
           2 * math.pi / SIDES for i in range(SIDES)]
 ANGLES.insert(0, ANGLES.pop())
+BASTION_TYPES = ["bridge", "housing", "stables", "treasure"]
+BASTION_MAPPING = {
+    "bridge": "Bridge",
+    "housing": "Housing",
+    "stables": "Stables",
+    "treasure": "Treasure",
+}
 
 
 def main(uuid, detailed_matches, elo, season):
-    number_bastions, average_bastions, average_deaths = get_avg_bastions(uuid, detailed_matches)
+    completed_bastions, average_bastions, average_deaths = get_avg_bastions(uuid, detailed_matches)
     ranked_bastions = get_ranked_bastions(average_bastions)
     polygon = get_polygon(ranked_bastions)
     polygon = add_text(polygon, average_bastions, ranked_bastions)
+    sum_bastions = sum(completed_bastions.values())
 
     comments = {}
     comments["title"] = f"Bastion Performance in Season {season}"
-    comments["description"] = f"{len(detailed_matches)} games were used in analysing your bastions. {get_sample_size(len(detailed_matches))}"
-    comments["count"] = get_count(number_bastions)
+    comments["description"] = f"{sum_bastions} completed bastion splits were used in analysing your performance. {get_sample_size(sum_bastions)}"
+    comments["count"] = get_count(completed_bastions)
     comments["best"], comments["worst"] = get_best_worst(ranked_bastions)
     if season != 1:
         comments["player_deaths"], comments["rank_deaths"] = get_death_comments(average_deaths, elo)
@@ -38,7 +46,10 @@ def main(uuid, detailed_matches, elo, season):
 
 
 def get_avg_bastions(uuid, detailed_matches):
-    number_bastions = {
+    completed_bastions = {
+        "bridge": 0, "housing": 0, "stables": 0, "treasure": 0
+    }
+    entered_bastions = {
         "bridge": 0, "housing": 0, "stables": 0, "treasure": 0
     }
     time_bastions = {
@@ -56,7 +67,7 @@ def get_avg_bastions(uuid, detailed_matches):
         "story.form_obsidian",
     ]
     post_bastion = [
-        "story.find_fortress",
+        "nether.find_fortress",
         "projectelo.timeline.blind_travel",
         "story.follow_ender_eye",
         "story.enter_the_end",
@@ -66,7 +77,7 @@ def get_avg_bastions(uuid, detailed_matches):
         if not match["timelines"]:
             continue
 
-        bastion_type = match["bastionType"]
+        bastion_type = match["bastionType"].lower()
         bastion_entry = 0
         bastion_exit = 0
         found_fortress = False
@@ -76,18 +87,13 @@ def get_avg_bastions(uuid, detailed_matches):
             if event["uuid"] != uuid:
                 continue
 
-            # If fort first or incomplete bastion route, void the run.
-            if (
-                (not bastion_entry or bastion_progression < 2)
-                and event["type"] in post_bastion
-            ):
-                break
-
             # If entering bastion, set entry time.
-            elif event["type"] == "story.find_bastion":
+            if event["type"] == "nether.find_bastion":
                 bastion_entry = event["time"]
+                entered_bastions[bastion_type] += 1
 
-            elif bastion_entry:
+            # If currently inside the bastion,
+            elif bastion_entry and not bastion_exit:
                 # If doing bastion things, increase the bastion progression.
                 if event["type"] in bastion_conditions:
                     bastion_progression += 1
@@ -101,71 +107,50 @@ def get_avg_bastions(uuid, detailed_matches):
                     break
 
                 # If entering fortress after bastion, set the exit time.
-                elif event["type"] == "story.find_fortress":
+                elif event["type"] == "nether.find_fortress":
                     bastion_exit = event["time"]
 
                 # If doing some random other split, void the run.
                 elif event["type"] in post_bastion:
                     break
 
-            elif event["type"] == "story.find_fortress" and prev_event == "story.find_bastion":
-                bastion_length = event["time"] - prev_time
-                time_bastions[prev_event] += bastion_length
-                number_bastions[prev_event] += 1
-
-                prev_time = event["time"]
-                prev_event = event_mapping[event["type"]]
-
-            elif event["type"] == "projectelo.timeline.death":
-                average_deaths[] += 1
-
-        if match["result"]["uuid"] == uuid and match["forfeited"] is False:
-            bastion_length = match["result"]["time"] - prev_time
-            time_bastions[prev_event] += bastion_length
-            number_bastions[prev_event] += 1
+            # If a successful bastion route is completed, add the times.
+            elif bastion_entry and bastion_exit:
+                bastion_length = bastion_exit - bastion_entry
+                time_bastions[bastion_type] += bastion_length
+                completed_bastions[bastion_type] += 1
+                break
 
     for key in average_bastions:
-        if number_bastions[key] == 0:
+        if completed_bastions[key] == 0:
             average_bastions[key] = 1000000000
+        if entered_bastions[key] == 0:
             average_deaths[key] = 0
         else:
-            average_bastions[key] = round(time_bastions[key] / number_bastions[key])
-            average_deaths[key] = round(average_deaths[key] / number_bastions[key], 3)
+            average_bastions[key] = round(time_bastions[key] / completed_bastions[key])
+            average_deaths[key] = round(average_deaths[key] / entered_bastions[key], 3)
 
-    return number_bastions, average_bastions, average_deaths
+    return completed_bastions, average_bastions, average_deaths
 
 
 def get_ranked_bastions(average_bastions):
     ranked_bastions = {
-        "ow": 0,
-        "nether": 0,
-        "bastion": 0,
-        "fortress": 0,
-        "blind": 0,
-        "stronghold": 0,
-        "end": 0
+        "bridge": 0, "housing": 0, "stables": 0, "treasure": 0
     }
     bastions_final_boss = {
-        "ow": [],
-        "nether": [],
-        "bastion": [],
-        "fortress": [],
-        "blind": [],
-        "stronghold": [],
-        "end": []
+        "bridge": [], "housing": [], "stables": [], "treasure": []
     }
 
-    file = path.join("src", "database", "mcsrstats", "player_bastions.csv")
-    bastion_mapping = ["ow", "nether", "bastion", "fortress", "blind", "stronghold", "end"]
+    file = path.join("src", "database", "mcsrstats", "bastion_splits.csv")
 
     with open(file, "r", encoding="UTF-8") as f:
         while True:
-            bastions = f.readline().strip().bastion(",")
+            bastions = f.readline().strip().split(",")
             if not bastions[0]:
                 break
-            for i in range(7):
+            for i in range(4):
                 if bastions[i] != "FALSE":
-                    bastions_final_boss[bastion_mapping[i]].append(int(bastions[i]))
+                    bastions_final_boss[BASTION_TYPES[i]].append(int(bastions[i]))
 
     for key in bastions_final_boss:
         ranked_bastions[key] = np.searchsorted(bastions_final_boss[key], average_bastions[key])
@@ -179,8 +164,6 @@ def get_ranked_bastions(average_bastions):
 
 def get_polygon(ranked_bastions):
     proportions = [INIT_PROP, INIT_PROP * 4/3, INIT_PROP * 2, INIT_PROP * 4, 10000]
-    bastion_mapping = ["ow", "bastion", "fortress", "blind", "stronghold", "end"]
-
     polygon_frame = Image.new('RGBA', (IMG_SIZE_X, IMG_SIZE_Y), (0, 0, 0, 0))
     frame_draw = ImageDraw.Draw(polygon_frame)
 
@@ -222,7 +205,7 @@ def get_polygon(ranked_bastions):
     # Drawing the player's polygon
     xy = []
     for i, angle in enumerate(ANGLES):
-        val = ranked_bastions[bastion_mapping[i]]
+        val = ranked_bastions[BASTION_TYPES[i]]
         if val == 0:
             proportion = 100000
         else:
@@ -245,8 +228,7 @@ def add_text(polygon, average_bastions, ranked_bastions):
     xy = []
     percentiles = [0.3, 0.5, 0.7, 0.9, 0.95, 1.0]
     percentile_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#3f82ff", "#ffd700"]
-    titles = ["Overworld", "Bastion", "Fortress", "Blind", "Stronghold", "The End"]
-    bastion_mapping = ["ow", "bastion", "fortress", "blind", "stronghold", "end"]
+    titles = ["Bridge", "Housing", "Stables", "Treasure"]
 
     text_draw = ImageDraw.Draw(polygon)
     big_size = 50
@@ -256,7 +238,7 @@ def add_text(polygon, average_bastions, ranked_bastions):
     stat_size = 25
     stat_font = ImageFont.truetype('minecraft_font.ttf', stat_size)
 
-    big_title = "Split Performance"
+    big_title = "Bastion Performance"
     big_x = (IMG_SIZE_X - word.calc_length(big_title, big_size)) / 2
     big_y = OFFSET_Y
     text_draw.text((big_x, big_y), big_title, font=big_font, fill="#ffffff", stroke_fill="#000000", stroke_width=3)
@@ -273,31 +255,31 @@ def add_text(polygon, average_bastions, ranked_bastions):
             xy[i][1] -= word.horiz_to_vert(title_size) + word.horiz_to_vert(stat_size)
 
         elif i < math.floor(SIDES / 2):
-            xy[i][0] += word.calc_length("Strongholdddld", title_size) / 2
+            xy[i][0] += word.calc_length("Treasureeee", title_size) / 2
             xy[i][1] -= word.horiz_to_vert(title_size) / 2 + word.horiz_to_vert(stat_size) / 2
 
         elif i == math.ceil(SIDES / 2) and SIDES % 2 == 1:
-            xy[i][0] -= word.calc_length("Strongholddldd", title_size) / 8
+            xy[i][0] -= word.calc_length("Treasureeee", title_size) / 8
 
         elif i == math.floor(SIDES / 2) and SIDES % 2 == 1:
-            xy[i][0] += word.calc_length("Strongholddldd", title_size) / 8
+            xy[i][0] += word.calc_length("Treasureeee", title_size) / 8
 
         elif math.ceil(SIDES / 2) < i:
-            xy[i][0] -= word.calc_length("Strongholddldd", title_size) / 2
+            xy[i][0] -= word.calc_length("Treasureeee", title_size) / 2
             xy[i][1] -= word.horiz_to_vert(title_size) / 2 + word.horiz_to_vert(stat_size) / 2
 
     for i in range(SIDES):
 
         s_colour = percentile_colour[0]
         for j in range(len(percentiles)):
-            if ranked_bastions[bastion_mapping[i]] <= percentiles[j]:
+            if ranked_bastions[BASTION_TYPES[i]] <= percentiles[j]:
                 s_colour = percentile_colour[j]
                 break
-        if average_bastions[bastion_mapping[i]] == 1000000000000:
+        if average_bastions[BASTION_TYPES[i]] == 1000000000000:
             stat = "No data"
         else:
-            time = numb.digital_time(average_bastions[bastion_mapping[i]])
-            stat = f"{time} / {word.percentify(ranked_bastions[bastion_mapping[i]])}"
+            time = numb.digital_time(average_bastions[BASTION_TYPES[i]])
+            stat = f"{time} / {word.percentify(ranked_bastions[BASTION_TYPES[i]])}"
 
         xy[i][0] -= word.calc_length(titles[i], title_size) / 2
         text_draw.text(xy[i], titles[i], font=title_font, fill="#ffffff", stroke_fill="#000000", stroke_width=2)
@@ -309,20 +291,20 @@ def add_text(polygon, average_bastions, ranked_bastions):
     return polygon
 
 
-def get_sample_size(num_games):
-    if num_games < 30:
+def get_sample_size(sum_bastions):
+    if sum_bastions < 24:
         return "This is a very low sample size. Take these stats with a grain of salt."
-    if num_games < 80:
+    if sum_bastions < 60:
         return "This is an OK sample size."
     else:
         return "This is a large sample size and the data will reflect your bastion skills properly."
 
 
-def get_count(number_bastions):
-    names = " OW  / NTR / BAS / FRT / BLN / SH  / END "
+def get_count(completed_bastions):
+    names = " BRDG / HOUS / STBL / TRSR "
     count = ""
-    for bastion in number_bastions:
-        num = number_bastions[bastion]
+    for bastion in completed_bastions:
+        num = completed_bastions[bastion]
         count += f" {num}"
         count += " " * (4 - len(str(num)))
         if bastion != "end":
@@ -330,44 +312,28 @@ def get_count(number_bastions):
     value = f"`|{names}|`\n`|{count}|`"
 
     count_comment = {
-        "name": "Split Counts",
+        "name": "Bastion Counts",
         "value": value
     }
     return count_comment
 
 
 def get_best_worst(ranked_bastions):
-    bastion_mapping = {
-        "ow": "Overworld",
-        "nether": "Nether Terrain",
-        "bastion": "Bastion",
-        "fortress": "Fortress",
-        "blind": "Blind",
-        "stronghold": "Stronghold",
-        "end": "The End"
-    }
-
     best_comments = {
-        "ow": "You can handle the variety of overworld very well. Getting ahead early is key!",
-        "nether": "You excel at navigating nether terrain and finding structures.",
-        "bastion": "Routing bastions is your strongest bastion.",
-        "fortress": "Blaze fighting is your strong suit.",
-        "blind": "Measuring eyes and nether pearl travel is where you shine.",
-        "stronghold": "You are exceptional at finding the portal room quickly.",
-        "end": "You're at your best when taking down the ender dragon."
+        "bridge": "You can handle the variety of overworld very well. Getting ahead early is key!",
+        "housing": "You excel at navigating nether terrain and finding structures.",
+        "stables": "Routing bastions is your strongest bastion.",
+        "treasure": "Blaze fighting is your strong suit.",
     }
     worst_comments = {
-        "ow": "Your overworld routing is slower than your other bastions. Remember to practice every type of overworld!",
-        "nether": "Your terrain nav to the bastion is slower than expected. Try to think through all of the different terrain decisions you can make.",
-        "bastion": "Your bastion routing is slower than other bastions. There are tons of tools to practice routing, so this is the easiest to improve on!",
-        "fortress": "You often falter a little in your fortress bastion. Make sure drop RD for strays on the way to the spawner, and practice your blaze bed.",
-        "blind": "You slow down when measuring eyes and pearling to coords. This bastion is often overlooked, so practice it!",
-        "stronghold": "Your stronghold nav isn't as fast as your other bastions, make sure to practice premptive - even around mineshafts.",
-        "end": "You relax your aggression a bit more when you reach the end. Always go for halfbow or try a zero cycle."
+        "bridge": "Your overworld routing is slower than your other bastions. Remember to practice every type of overworld!",
+        "housing": "Your terrain nav to the bastion is slower than expected. Try to think through all of the different terrain decisions you can make.",
+        "stables": "Your bastion routing is slower than other bastions. There are tons of tools to practice routing, so this is the easiest to improve on!",
+        "treasure": "You often falter a little in your fortress bastion. Make sure drop RD for strays on the way to the spawner, and practice your blaze bed.",
     }
 
     max_key = ""
-    max_val = 0
+    max_val = -1
     min_key = ""
     min_val = 1000000000000000000
 
@@ -381,11 +347,11 @@ def get_best_worst(ranked_bastions):
             min_key = key
 
     best = {
-        "name": f"Best Split: {bastion_mapping[max_key]}",
+        "name": f"Best Split: {BASTION_MAPPING[max_key]}",
         "value": best_comments[max_key]
     }
     worst = {
-        "name": f"Worst Split: {bastion_mapping[min_key]}",
+        "name": f"Worst Split: {BASTION_MAPPING[min_key]}",
         "value": worst_comments[min_key]
     }
 
@@ -393,23 +359,8 @@ def get_best_worst(ranked_bastions):
 
 
 def get_death_comments(average_deaths, elo):
-    bastion_mapping = {
-        "ow": "Overworld",
-        "nether": "Nether Terrain",
-        "bastion": "Bastion",
-        "fortress": "Fortress",
-        "blind": "Blind",
-        "stronghold": "Stronghold",
-        "end": "The End"
-    }
     differences = {
-        "ow": 0,
-        "nether": 0,
-        "bastion": 0,
-        "fortress": 0,
-        "blind": 0,
-        "stronghold": 0,
-        "end": 0
+        "bridge": 0, "housing": 0, "stables": 0, "treasure": 0
     }
     ranks = ["Coal", "Iron", "Gold", "Emerald", "Diamond", "Netherite"]
 
@@ -418,7 +369,7 @@ def get_death_comments(average_deaths, elo):
         rank_no = 2
     file = path.join("src", "database", "mcsrstats", "deaths", "deaths.json")
     with open (file, "r", encoding="UTF-8") as f:
-        overall_deaths = json.load(f)[str(rank_no)]
+        overall_deaths = json.load(f)["bastions"][str(rank_no)]
 
     max_diff = 0
     max_bastion = None
@@ -430,10 +381,10 @@ def get_death_comments(average_deaths, elo):
 
     death_comment = {
         "name": "Your Death Rates",
-        "value": [f"`{numb.round_sf(average_deaths[bastion] * 100, 3)}%` - {bastion_mapping[bastion]}" for bastion in average_deaths]
+        "value": [f"`{numb.round_sf(average_deaths[bastion] * 100, 3)}%` - {BASTION_MAPPING[bastion]}" for bastion in average_deaths]
     }
     rank_comment = {
         "name": f"Death Rates in {ranks[rank_no]} Elo",
-        "value": [f"`{numb.round_sf(overall_deaths[bastion] * 100, 3)}%` - {bastion_mapping[bastion]}" for bastion in overall_deaths]
+        "value": [f"`{numb.round_sf(overall_deaths[bastion] * 100, 3)}%` - {BASTION_MAPPING[bastion]}" for bastion in overall_deaths]
     }
     return death_comment, rank_comment

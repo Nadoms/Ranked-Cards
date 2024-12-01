@@ -438,7 +438,7 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
         update_records("analysis", interaction.user.id, input_name, hidden, False)
         return
 
-    head, comments, split_polygon, ow_polygon, bast_polygon = anal
+    head, comments, split_polygon, ow_polygon, bastion_polygon = anal
 
     embed_general = nextcord.Embed(
         title = comments["general"]["title"],
@@ -454,6 +454,11 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
         title = comments["ow"]["title"],
         description = comments["ow"]["description"],
         colour = nextcord.Colour.yellow(),
+    )
+    embed_bastion = nextcord.Embed(
+        title = comments["bastion"]["title"],
+        description = comments["bastion"]["description"],
+        colour = nextcord.Colour.yellow(),
         timestamp = datetime.now(timezone.utc)
     )
     
@@ -467,7 +472,11 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
     ow_polygon.save("ow.png")
     ow_file = File("ow.png", filename="ow.png")
     embed_ow.set_image(url="attachment://ow.png")
-    embed_ow.set_footer(text="Bot made by @Nadoms // Feedback appreciated :3", icon_url="https://cdn.discordapp.com/avatars/298936021557706754/a_60fb14a1dbfb0d33f3b02cc33579dacf?size=256")
+
+    bastion_polygon.save("bastion.png")
+    bastion_file = File("bastion.png", filename="bastion.png")
+    embed_bastion.set_image(url="attachment://bastion.png")
+    embed_bastion.set_footer(text="Bot made by @Nadoms // Feedback appreciated :3", icon_url="https://cdn.discordapp.com/avatars/298936021557706754/a_60fb14a1dbfb0d33f3b02cc33579dacf?size=256")
 
     for general_key in comments["general"]:
         if general_key == "title" or general_key == "description":
@@ -505,6 +514,22 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
             embed_split.add_field(
                 name = comments["splits"][split_key]["name"],
                 value = comments["splits"][split_key]["value"],
+                inline = False
+            )
+
+    for bastion_key in comments["splits"]:
+        if bastion_key == "title" or bastion_key == "description":
+            continue
+        elif bastion_key == "player_deaths" or bastion_key == "rank_deaths":
+            embed_split.add_field(
+                name = comments["splits"][bastion_key]["name"],
+                value = "\n".join(comments["splits"][bastion_key]["value"]),
+                inline = True
+            )
+        else:
+            embed_split.add_field(
+                name = comments["splits"][bastion_key]["name"],
+                value = comments["splits"][bastion_key]["value"],
                 inline = False
             )
 
