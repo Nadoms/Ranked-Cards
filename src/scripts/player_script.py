@@ -81,7 +81,9 @@ def main():
     for player_key in player_times:
         for split_key in player_times[player_key]:
             if player_nums[player_key][split_key]:
-                player_times[player_key][split_key] /= player_nums[player_key][split_key]
+                player_times[player_key][split_key] /= player_nums[player_key][
+                    split_key
+                ]
                 if player_nums[player_key][split_key] >= 5:
                     ordered_times[split_key].append(player_times[player_key][split_key])
 

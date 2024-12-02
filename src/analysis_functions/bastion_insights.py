@@ -14,9 +14,10 @@ IMG_SIZE_Y = 760
 MIDDLE = IMG_SIZE_Y / 2
 OFFSET_X = (IMG_SIZE_X - IMG_SIZE_Y) / 2
 OFFSET_Y = 40
-ANGLES = [(i * (2 * math.pi)) / SIDES -
-          math.pi / 2 +
-          2 * math.pi / SIDES for i in range(SIDES)]
+ANGLES = [
+    (i * (2 * math.pi)) / SIDES - math.pi / 2 + 2 * math.pi / SIDES
+    for i in range(SIDES)
+]
 ANGLES.insert(0, ANGLES.pop())
 BASTION_TYPES = ["bridge", "housing", "stables", "treasure"]
 BASTION_MAPPING = {
@@ -28,7 +29,9 @@ BASTION_MAPPING = {
 
 
 def main(uuid, detailed_matches, elo, season):
-    completed_bastions, average_bastions, average_deaths = get_avg_bastions(uuid, detailed_matches)
+    completed_bastions, average_bastions, average_deaths = get_avg_bastions(
+        uuid, detailed_matches
+    )
     ranked_bastions = get_ranked_bastions(average_bastions)
     polygon = get_polygon(ranked_bastions)
     polygon = add_text(polygon, average_bastions, ranked_bastions)
@@ -36,31 +39,25 @@ def main(uuid, detailed_matches, elo, season):
 
     comments = {}
     comments["title"] = f"Bastion Performance in Season {season}"
-    comments["description"] = f"{sum_bastions} completed bastion splits were used in analysing your performance. {get_sample_size(sum_bastions)}"
+    comments["description"] = (
+        f"{sum_bastions} completed bastion splits were used in analysing your performance. {get_sample_size(sum_bastions)}"
+    )
     comments["count"] = get_count(completed_bastions)
     comments["best"], comments["worst"] = get_best_worst(ranked_bastions)
     if season != 1:
-        comments["player_deaths"], comments["rank_deaths"] = get_death_comments(average_deaths, elo)
+        comments["player_deaths"], comments["rank_deaths"] = get_death_comments(
+            average_deaths, elo
+        )
 
     return comments, polygon
 
 
 def get_avg_bastions(uuid, detailed_matches):
-    completed_bastions = {
-        "bridge": 0, "housing": 0, "stables": 0, "treasure": 0
-    }
-    entered_bastions = {
-        "bridge": 0, "housing": 0, "stables": 0, "treasure": 0
-    }
-    time_bastions = {
-        "bridge": 0, "housing": 0, "stables": 0, "treasure": 0
-    }
-    average_bastions = {
-        "bridge": 0, "housing": 0, "stables": 0, "treasure": 0
-    }
-    average_deaths = {
-        "bridge": 0, "housing": 0, "stables": 0, "treasure": 0
-    }
+    completed_bastions = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
+    entered_bastions = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
+    time_bastions = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
+    average_bastions = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
+    average_deaths = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
     bastion_conditions = [
         "nether.obtain_crying_obsidian",
         "nether.loot_bastion",
@@ -134,12 +131,8 @@ def get_avg_bastions(uuid, detailed_matches):
 
 
 def get_ranked_bastions(average_bastions):
-    ranked_bastions = {
-        "bridge": 0, "housing": 0, "stables": 0, "treasure": 0
-    }
-    bastions_final_boss = {
-        "bridge": [], "housing": [], "stables": [], "treasure": []
-    }
+    ranked_bastions = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
+    bastions_final_boss = {"bridge": [], "housing": [], "stables": [], "treasure": []}
 
     file = path.join("src", "database", "mcsrstats", "bastion_splits.csv")
 
@@ -153,25 +146,31 @@ def get_ranked_bastions(average_bastions):
                     bastions_final_boss[BASTION_TYPES[i]].append(int(bastions[i]))
 
     for key in bastions_final_boss:
-        ranked_bastions[key] = np.searchsorted(bastions_final_boss[key], average_bastions[key])
+        ranked_bastions[key] = np.searchsorted(
+            bastions_final_boss[key], average_bastions[key]
+        )
         if len(bastions_final_boss[key]) == 0:
             ranked_bastions[key] = 0
         else:
-            ranked_bastions[key] = round(1 - ranked_bastions[key] / len(bastions_final_boss[key]), 3)
+            ranked_bastions[key] = round(
+                1 - ranked_bastions[key] / len(bastions_final_boss[key]), 3
+            )
 
     return ranked_bastions
 
 
 def get_polygon(ranked_bastions):
-    proportions = [INIT_PROP, INIT_PROP * 4/3, INIT_PROP * 2, INIT_PROP * 4, 10000]
-    polygon_frame = Image.new('RGBA', (IMG_SIZE_X, IMG_SIZE_Y), (0, 0, 0, 0))
+    proportions = [INIT_PROP, INIT_PROP * 4 / 3, INIT_PROP * 2, INIT_PROP * 4, 10000]
+    polygon_frame = Image.new("RGBA", (IMG_SIZE_X, IMG_SIZE_Y), (0, 0, 0, 0))
     frame_draw = ImageDraw.Draw(polygon_frame)
 
     # Filling the polygon
     polygon_size = MIDDLE / INIT_PROP
     xy = [
-        ((math.cos(th) + INIT_PROP) * polygon_size + OFFSET_X, 
-        (math.sin(th) + INIT_PROP) * polygon_size + OFFSET_Y) 
+        (
+            (math.cos(th) + INIT_PROP) * polygon_size + OFFSET_X,
+            (math.sin(th) + INIT_PROP) * polygon_size + OFFSET_Y,
+        )
         for th in ANGLES
     ]
     frame_draw.polygon(xy, fill="#413348")
@@ -180,19 +179,24 @@ def get_polygon(ranked_bastions):
     for th in ANGLES:
         polygon_size = MIDDLE / INIT_PROP
         # th = (i * (2 * math.pi) - 0.5 * math.pi) / SIDES
-        xy = [(MIDDLE + OFFSET_X, MIDDLE + OFFSET_Y),
-            ((math.cos(th) + INIT_PROP) * polygon_size + OFFSET_X, 
-            (math.sin(th) + INIT_PROP) * polygon_size + OFFSET_Y)
+        xy = [
+            (MIDDLE + OFFSET_X, MIDDLE + OFFSET_Y),
+            (
+                (math.cos(th) + INIT_PROP) * polygon_size + OFFSET_X,
+                (math.sin(th) + INIT_PROP) * polygon_size + OFFSET_Y,
+            ),
         ]
         frame_draw.line(xy, fill="#515368", width=3)
 
     # Drawing the edge of the polygons
     for proportion in proportions:
         polygon_size = MIDDLE / proportion
-        xy = [ 
-            ((math.cos(th) + proportion) * polygon_size + OFFSET_X, 
-            (math.sin(th) + proportion) * polygon_size + OFFSET_Y) 
-            for th in ANGLES 
+        xy = [
+            (
+                (math.cos(th) + proportion) * polygon_size + OFFSET_X,
+                (math.sin(th) + proportion) * polygon_size + OFFSET_Y,
+            )
+            for th in ANGLES
         ]
         if proportion == INIT_PROP:
             frame_draw.polygon(xy, outline="#ffffff", width=6)
@@ -211,10 +215,12 @@ def get_polygon(ranked_bastions):
         else:
             proportion = INIT_PROP / val
         polygon_size = MIDDLE / proportion
-        
+
         xy.append(
-            ((math.cos(angle) + proportion) * polygon_size + OFFSET_X,
-            (math.sin(angle) + proportion) * polygon_size + OFFSET_Y)
+            (
+                (math.cos(angle) + proportion) * polygon_size + OFFSET_X,
+                (math.sin(angle) + proportion) * polygon_size + OFFSET_Y,
+            )
         )
     stats_draw.polygon(xy, fill="#716388", outline="#a1d3f8", width=4)
 
@@ -227,27 +233,43 @@ def add_text(polygon, average_bastions, ranked_bastions):
     text_prop = INIT_PROP * 0.95
     xy = []
     percentiles = [0.3, 0.5, 0.7, 0.9, 0.95, 1.0]
-    percentile_colour = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#3f82ff", "#ffd700"]
+    percentile_colour = [
+        "#888888",
+        "#b3c4c9",
+        "#86b8db",
+        "#50fe50",
+        "#3f82ff",
+        "#ffd700",
+    ]
     titles = ["Bridge", "Housing", "Stables", "Treasure"]
 
     text_draw = ImageDraw.Draw(polygon)
     big_size = 50
-    big_font = ImageFont.truetype('minecraft_font.ttf', big_size)
+    big_font = ImageFont.truetype("minecraft_font.ttf", big_size)
     title_size = 30
-    title_font = ImageFont.truetype('minecraft_font.ttf', title_size)
+    title_font = ImageFont.truetype("minecraft_font.ttf", title_size)
     stat_size = 25
-    stat_font = ImageFont.truetype('minecraft_font.ttf', stat_size)
+    stat_font = ImageFont.truetype("minecraft_font.ttf", stat_size)
 
     big_title = "Bastion Performance"
     big_x = (IMG_SIZE_X - word.calc_length(big_title, big_size)) / 2
     big_y = OFFSET_Y
-    text_draw.text((big_x, big_y), big_title, font=big_font, fill="#ffffff", stroke_fill="#000000", stroke_width=3)
+    text_draw.text(
+        (big_x, big_y),
+        big_title,
+        font=big_font,
+        fill="#ffffff",
+        stroke_fill="#000000",
+        stroke_width=3,
+    )
 
     for angle in ANGLES:
         polygon_size = MIDDLE / text_prop
         xy.append(
-            [(math.cos(angle) + text_prop) * polygon_size + OFFSET_X,
-            (math.sin(angle) + text_prop) * polygon_size + OFFSET_Y]
+            [
+                (math.cos(angle) + text_prop) * polygon_size + OFFSET_X,
+                (math.sin(angle) + text_prop) * polygon_size + OFFSET_Y,
+            ]
         )
 
     for i in range(SIDES):
@@ -256,7 +278,9 @@ def add_text(polygon, average_bastions, ranked_bastions):
 
         elif i < math.floor(SIDES / 2):
             xy[i][0] += word.calc_length("Treasureeee", title_size) / 2
-            xy[i][1] -= word.horiz_to_vert(title_size) / 2 + word.horiz_to_vert(stat_size) / 2
+            xy[i][1] -= (
+                word.horiz_to_vert(title_size) / 2 + word.horiz_to_vert(stat_size) / 2
+            )
 
         elif i == math.ceil(SIDES / 2) and SIDES % 2 == 1:
             xy[i][0] -= word.calc_length("Treasureeee", title_size) / 8
@@ -266,7 +290,9 @@ def add_text(polygon, average_bastions, ranked_bastions):
 
         elif math.ceil(SIDES / 2) < i:
             xy[i][0] -= word.calc_length("Treasureeee", title_size) / 2
-            xy[i][1] -= word.horiz_to_vert(title_size) / 2 + word.horiz_to_vert(stat_size) / 2
+            xy[i][1] -= (
+                word.horiz_to_vert(title_size) / 2 + word.horiz_to_vert(stat_size) / 2
+            )
 
     for i in range(SIDES):
 
@@ -282,11 +308,28 @@ def add_text(polygon, average_bastions, ranked_bastions):
             stat = f"{time} / {word.percentify(ranked_bastions[BASTION_TYPES[i]])}"
 
         xy[i][0] -= word.calc_length(titles[i], title_size) / 2
-        text_draw.text(xy[i], titles[i], font=title_font, fill="#ffffff", stroke_fill="#000000", stroke_width=2)
+        text_draw.text(
+            xy[i],
+            titles[i],
+            font=title_font,
+            fill="#ffffff",
+            stroke_fill="#000000",
+            stroke_width=2,
+        )
 
-        xy[i][0] += word.calc_length(titles[i], title_size) / 2 - word.calc_length(stat, stat_size) / 2
+        xy[i][0] += (
+            word.calc_length(titles[i], title_size) / 2
+            - word.calc_length(stat, stat_size) / 2
+        )
         xy[i][1] += word.horiz_to_vert(title_size)
-        text_draw.text(xy[i], stat, font=stat_font, fill=s_colour, stroke_fill="#000000", stroke_width=2)
+        text_draw.text(
+            xy[i],
+            stat,
+            font=stat_font,
+            fill=s_colour,
+            stroke_fill="#000000",
+            stroke_width=2,
+        )
 
     return polygon
 
@@ -362,34 +405,40 @@ def get_best_worst(ranked_bastions):
 
 
 def get_death_comments(average_deaths, elo):
-    differences = {
-        "bridge": 0, "housing": 0, "stables": 0, "treasure": 0
-    }
+    differences = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
     ranks = ["Coal", "Iron", "Gold", "Emerald", "Diamond", "Netherite"]
 
     rank_no = rank.get_rank(elo)
     if rank_no == -1:
         rank_no = 2
     file = path.join("src", "database", "mcsrstats", "deaths", "deaths.json")
-    with open (file, "r", encoding="UTF-8") as f:
+    with open(file, "r", encoding="UTF-8") as f:
         overall_deaths = json.load(f)["bastions"][str(rank_no)]
 
     max_diff = 0
     max_bastion = None
     for bastion_key in differences:
-        differences[bastion_key] = average_deaths[bastion_key] / overall_deaths[bastion_key]
+        differences[bastion_key] = (
+            average_deaths[bastion_key] / overall_deaths[bastion_key]
+        )
         if differences[bastion_key] > max_diff:
             max_diff = differences[bastion_key]
             max_bastion = bastion_key
 
     death_comment = {
         "name": "Your Death Rates",
-        "value": [f"`{' ' if average_deaths[bastion] < 0.1 else ''}{numb.round_sf(average_deaths[bastion] * 100, 3)}%` - {BASTION_MAPPING[bastion]}" for bastion in average_deaths],
+        "value": [
+            f"`{' ' if average_deaths[bastion] < 0.1 else ''}{numb.round_sf(average_deaths[bastion] * 100, 3)}%` - {BASTION_MAPPING[bastion]}"
+            for bastion in average_deaths
+        ],
         "inline": True,
     }
     rank_comment = {
         "name": f"{ranks[rank_no]} Death Rates",
-        "value": [f"`{' ' if overall_deaths[bastion] < 0.1 else ''}{numb.round_sf(overall_deaths[bastion] * 100, 3)}%` - {BASTION_MAPPING[bastion]}" for bastion in overall_deaths],
+        "value": [
+            f"`{' ' if overall_deaths[bastion] < 0.1 else ''}{numb.round_sf(overall_deaths[bastion] * 100, 3)}%` - {BASTION_MAPPING[bastion]}"
+            for bastion in overall_deaths
+        ],
         "inline": True,
     }
     return death_comment, rank_comment

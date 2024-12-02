@@ -1,18 +1,21 @@
 from os import path
+
 package = path.join("src")
 import sys
+
 sys.path.insert(1, package)
 from gen_functions import word
 
+
 def main():
-    ordered_times = {
-        "bridge": [], "housing": [], "stables": [], "treasure": []
-    }
+    ordered_times = {"bridge": [], "housing": [], "stables": [], "treasure": []}
 
     for bastion_key in ordered_times:
         player_times = {}
         player_nums = {}
-        file = path.join("src", "database", "mcsrstats", "bastions", f"{bastion_key}.txt")
+        file = path.join(
+            "src", "database", "mcsrstats", "bastions", f"{bastion_key}.txt"
+        )
 
         with open(file, "r") as f:
             while True:
@@ -56,6 +59,7 @@ def main():
                 else:
                     line += "\n"
             f.write(line)
+
 
 if __name__ == "__main__":
     main()

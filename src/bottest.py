@@ -23,9 +23,15 @@ async def main(command, name, type, season, match_id):
     elif command == "match":
         img = matching.main(response2)
     elif command == "analysis":
-        response = requests.get(f"https://mcsrranked.com/api/users/{name}").json()["data"]
-        num_comps, detailed_matches = await games.get_detailed_matches(response, season, 5, 30)
-        img1, img2, img3 = analysing.main(response, num_comps, detailed_matches, season)[2:5]
+        response = requests.get(f"https://mcsrranked.com/api/users/{name}").json()[
+            "data"
+        ]
+        num_comps, detailed_matches = await games.get_detailed_matches(
+            response, season, 5, 30
+        )
+        img1, img2, img3 = analysing.main(
+            response, num_comps, detailed_matches, season
+        )[2:5]
         img1.save("test.png")
         img2.save("test2.png")
         img3.save("test3.png")

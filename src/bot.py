@@ -271,9 +271,7 @@ async def plot(
             msg2 = f" from season {season}"
         else:
             msg2 = ""
-        await interaction.followup.send(
-            f"`{input_name}` has not enough {msg1}{msg2}."
-        )
+        await interaction.followup.send(f"`{input_name}` has not enough {msg1}{msg2}.")
         update_records(interaction, "plot", input_name, False)
         return
 
@@ -345,9 +343,7 @@ async def match(
             return
 
         print("Match not found.")
-        await interaction.response.send_message(
-            f"Match not found. (`{match_id}`)"
-        )
+        await interaction.response.send_message(f"Match not found. (`{match_id}`)")
         update_records(interaction, "match", match_id, False)
         return
 
@@ -525,7 +521,7 @@ async def analysis(
         description=comments["ow"]["description"],
         colour=nextcord.Colour.yellow(),
     )
-    embed_bastion=nextcord.Embed(
+    embed_bastion = nextcord.Embed(
         title=comments["bastion"]["title"],
         description=comments["bastion"]["description"],
         colour=nextcord.Colour.yellow(),
@@ -565,17 +561,13 @@ async def analysis(
             value = gen_comms[key][1]
 
         embed_general.add_field(
-            name = gen_comms[key][0],
-            value = value,
-            inline = True,
+            name=gen_comms[key][0],
+            value=value,
+            inline=True,
         )
 
         if key == "avg":
-            embed_general.add_field(
-                name = "",
-                value = "",
-                inline = False
-            )
+            embed_general.add_field(name="", value="", inline=False)
 
     split_comms = comments["splits"]
     for key in split_comms:
@@ -583,21 +575,21 @@ async def analysis(
             continue
         elif key == "player_deaths" or key == "rank_deaths":
             embed_split.add_field(
-                name = split_comms[key]["name"],
-                value = "\n".join(split_comms[key]["value"]),
-                inline = split_comms[key]["inline"],
+                name=split_comms[key]["name"],
+                value="\n".join(split_comms[key]["value"]),
+                inline=split_comms[key]["inline"],
             )
         else:
             embed_split.add_field(
-                name = split_comms[key]["name"],
-                value = split_comms[key]["value"],
-                inline = split_comms[key]["inline"],
+                name=split_comms[key]["name"],
+                value=split_comms[key]["value"],
+                inline=split_comms[key]["inline"],
             )
         if key == "worst":
             embed_split.add_field(
-                name = "",
-                value = "",
-                inline = False,
+                name="",
+                value="",
+                inline=False,
             )
 
     bastion_comms = comments["bastion"]
@@ -606,21 +598,21 @@ async def analysis(
             continue
         elif key == "player_deaths" or key == "rank_deaths":
             embed_bastion.add_field(
-                name = bastion_comms[key]["name"],
-                value = "\n".join(bastion_comms[key]["value"]),
-                inline = bastion_comms[key]["inline"],
+                name=bastion_comms[key]["name"],
+                value="\n".join(bastion_comms[key]["value"]),
+                inline=bastion_comms[key]["inline"],
             )
         else:
             embed_bastion.add_field(
-                name = bastion_comms[key]["name"],
-                value = bastion_comms[key]["value"],
-                inline = bastion_comms[key]["inline"],
+                name=bastion_comms[key]["name"],
+                value=bastion_comms[key]["value"],
+                inline=bastion_comms[key]["inline"],
             )
         if key == "worst":
             embed_bastion.add_field(
-                name = "",
-                value = "",
-                inline = False,
+                name="",
+                value="",
+                inline=False,
             )
 
     ow_comms = comments["ow"]
@@ -628,9 +620,9 @@ async def analysis(
         if key == "title" or key == "description":
             continue
         embed_ow.add_field(
-            name = ow_comms[key]["name"],
-            value = ow_comms[key]["value"],
-            inline = ow_comms[key]["inline"],
+            name=ow_comms[key]["name"],
+            value=ow_comms[key]["value"],
+            inline=ow_comms[key]["inline"],
         )
 
     jump_url = f"https://discord.com/channels/{interaction.guild.id}/{interaction.channel.id}/{interaction.id}"
@@ -1050,7 +1042,7 @@ def update_records(interaction, command, subject, completed):
     elif command == "race":
         stats["stats"]["totalGenerated"] += 1
         stats["stats"]["races"]["success"] += completed
-        stats["stats"]["races"]["fail"] += 1-completed
+        stats["stats"]["races"]["fail"] += 1 - completed
 
     elif command == "connect":
         stats["stats"]["connectedUsers"] += 1
