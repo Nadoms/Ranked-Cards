@@ -469,87 +469,104 @@ async def analysis(interaction: Interaction, input_name: str = SlashOption(
     split_file = File("split.png", filename="split.png")
     embed_split.set_image(url="attachment://split.png")
 
-    ow_polygon.save("ow.png")
-    ow_file = File("ow.png", filename="ow.png")
-    embed_ow.set_image(url="attachment://ow.png")
-
     bastion_polygon.save("bastion.png")
     bastion_file = File("bastion.png", filename="bastion.png")
     embed_bastion.set_image(url="attachment://bastion.png")
+
+    ow_polygon.save("ow.png")
+    ow_file = File("ow.png", filename="ow.png")
+    embed_ow.set_image(url="attachment://ow.png")
     embed_bastion.set_footer(text="Bot made by @Nadoms // Feedback appreciated :3", icon_url="https://cdn.discordapp.com/avatars/298936021557706754/a_60fb14a1dbfb0d33f3b02cc33579dacf?size=256")
 
-    for general_key in comments["general"]:
-        if general_key == "title" or general_key == "description":
-            continue
-        elif len(comments['general'][general_key]) == 1:
-            value = ""
-        elif general_key != "ffl":
-            value = f"➢ {comments['general'][general_key][1]}\n➢ {comments['general'][general_key][2]}"
-        else:
-            value = comments['general'][general_key][1]
 
-        if general_key == "sb":
+    gen_comms = comments["general"]
+    for key in gen_comms:
+        if key == "title" or key == "description":
+            continue
+        elif len(gen_comms[key]) == 1:
+            value = ""
+        elif key != "ffl":
+            value = f"➢ {gen_comms[key][1]}\n➢ {gen_comms[key][2]}"
+        else:
+            value = gen_comms[key][1]
+
+        embed_general.add_field(
+            name = gen_comms[key][0],
+            value = value,
+            inline = True
+        )
+
+        if key == "avg":
             embed_general.add_field(
                 name = "",
                 value = "",
                 inline = False
             )
 
-        embed_general.add_field(
-            name = comments['general'][general_key][0],
-            value = value,
-            inline = True
-        )
-
-    for split_key in comments["splits"]:
-        if split_key == "title" or split_key == "description":
+    split_comms = comments["splits"]
+    for key in split_comms:
+        if key == "title" or key == "description":
             continue
-        elif split_key == "player_deaths" or split_key == "rank_deaths":
+        elif key == "player_deaths" or key == "rank_deaths":
             embed_split.add_field(
-                name = comments["splits"][split_key]["name"],
-                value = "\n".join(comments["splits"][split_key]["value"]),
-                inline = True
+                name = split_comms[key]["name"],
+                value = "\n".join(split_comms[key]["value"]),
+                inline = split_comms[key]["inline"],
             )
         else:
             embed_split.add_field(
-                name = comments["splits"][split_key]["name"],
-                value = comments["splits"][split_key]["value"],
+                name = split_comms[key]["name"],
+                value = split_comms[key]["value"],
+                inline = split_comms[key]["inline"],
+            )
+        if key == "worst":
+            embed_split.add_field(
+                name = "",
+                value = "",
                 inline = False
             )
 
-    for bastion_key in comments["splits"]:
-        if bastion_key == "title" or bastion_key == "description":
+    bastion_comms = comments["bastion"]
+    for key in bastion_comms:
+        if key == "title" or key == "description":
             continue
-        elif bastion_key == "player_deaths" or bastion_key == "rank_deaths":
-            embed_split.add_field(
-                name = comments["splits"][bastion_key]["name"],
-                value = "\n".join(comments["splits"][bastion_key]["value"]),
-                inline = True
+        elif key == "player_deaths" or key == "rank_deaths":
+            embed_bastion.add_field(
+                name = bastion_comms[key]["name"],
+                value = "\n".join(bastion_comms[key]["value"]),
+                inline = bastion_comms[key]["inline"],
             )
         else:
-            embed_split.add_field(
-                name = comments["splits"][bastion_key]["name"],
-                value = comments["splits"][bastion_key]["value"],
+            embed_bastion.add_field(
+                name = bastion_comms[key]["name"],
+                value = bastion_comms[key].get("value"),
+                inline = bastion_comms[key]["inline"],
+            )
+        if key == "worst":
+            embed_bastion.add_field(
+                name = "",
+                value = "",
                 inline = False
             )
 
-    for ow_key in comments["ow"]:
-        if ow_key == "title" or ow_key == "description":
+    ow_comms = comments["ow"]
+    for key in ow_comms:
+        if key == "title" or key == "description":
             continue
         embed_ow.add_field(
-            name = comments["ow"][ow_key]["name"],
-            value = comments["ow"][ow_key]["value"],
-            inline = False
+            name = ow_comms[key]["name"],
+            value = ow_comms[key].get("value"),
+            inline = ow_comms[key]["inline"],
         )
 
     jump_url = f"https://discord.com/channels/{interaction.guild.id}/{interaction.channel.id}/{interaction.id}"
     set_cooldown(jump_url, input_name)
 
     if failed:
-        await interaction.followup.send(f"Player not found (`{old_input}`). {extra}", files=[split_file, ow_file], embeds=[embed_general, embed_split, embed_ow], ephemeral=hidden)
+        await interaction.followup.send(f"Player not found (`{old_input}`). {extra}", files=[split_file, bastion_file, ow_file], embeds=[embed_general, embed_bastion, embed_split, embed_ow], ephemeral=hidden)
         update_records("analysis", interaction.user.id, input_name, hidden, True)
     else:
-        await interaction.followup.send(files=[split_file, ow_file], embeds=[embed_general, embed_split, embed_ow], ephemeral=hidden)
+        await interaction.followup.send(files=[split_file, bastion_file, ow_file], embeds=[embed_general, embed_split, embed_bastion, embed_ow], ephemeral=hidden)
         update_records("analysis", interaction.user.id, input_name, hidden, True)
 
 

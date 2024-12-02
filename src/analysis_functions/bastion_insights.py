@@ -306,31 +306,32 @@ def get_count(completed_bastions):
     for bastion in completed_bastions:
         num = completed_bastions[bastion]
         count += f" {num}"
-        count += " " * (4 - len(str(num)))
-        if bastion != "end":
+        count += " " * (5 - len(str(num)))
+        if bastion != "treasure":
             count += "/"
     value = f"`|{names}|`\n`|{count}|`"
 
     count_comment = {
         "name": "Bastion Counts",
-        "value": value
+        "value": value,
+        "inline": False,
     }
     return count_comment
 
 
 def get_best_worst(ranked_bastions):
-    best_comments = {
-        "bridge": "You can handle the variety of overworld very well. Getting ahead early is key!",
-        "housing": "You excel at navigating nether terrain and finding structures.",
-        "stables": "Routing bastions is your strongest bastion.",
-        "treasure": "Blaze fighting is your strong suit.",
-    }
-    worst_comments = {
-        "bridge": "Your overworld routing is slower than your other bastions. Remember to practice every type of overworld!",
-        "housing": "Your terrain nav to the bastion is slower than expected. Try to think through all of the different terrain decisions you can make.",
-        "stables": "Your bastion routing is slower than other bastions. There are tons of tools to practice routing, so this is the easiest to improve on!",
-        "treasure": "You often falter a little in your fortress bastion. Make sure drop RD for strays on the way to the spawner, and practice your blaze bed.",
-    }
+    # best_comments = {
+    #     "bridge": "You can handle the variety of overworld very well. Getting ahead early is key!",
+    #     "housing": "You excel at navigating nether terrain and finding structures.",
+    #     "stables": "Routing bastions is your strongest bastion.",
+    #     "treasure": "Blaze fighting is your strong suit.",
+    # }
+    # worst_comments = {
+    #     "bridge": "Your overworld routing is slower than your other bastions. Remember to practice every type of overworld!",
+    #     "housing": "Your terrain nav to the bastion is slower than expected. Try to think through all of the different terrain decisions you can make.",
+    #     "stables": "Your bastion routing is slower than other bastions. There are tons of tools to practice routing, so this is the easiest to improve on!",
+    #     "treasure": "You often falter a little in your fortress bastion. Make sure drop RD for strays on the way to the spawner, and practice your blaze bed.",
+    # }
 
     max_key = ""
     max_val = -1
@@ -347,12 +348,14 @@ def get_best_worst(ranked_bastions):
             min_key = key
 
     best = {
-        "name": f"Best Split: {BASTION_MAPPING[max_key]}",
-        "value": best_comments[max_key]
+        "name": "Strongest Bastion Type",
+        "value": f"`{word.percentify(ranked_bastions[max_key])}` - {BASTION_MAPPING[max_key]}",
+        "inline": True,
     }
     worst = {
-        "name": f"Worst Split: {BASTION_MAPPING[min_key]}",
-        "value": worst_comments[min_key]
+        "name": "Weakest Bastion Type",
+        "value": f"`{word.percentify(ranked_bastions[min_key])}` - {BASTION_MAPPING[min_key]}",
+        "inline": True,
     }
 
     return [best, worst]
@@ -381,10 +384,12 @@ def get_death_comments(average_deaths, elo):
 
     death_comment = {
         "name": "Your Death Rates",
-        "value": [f"`{numb.round_sf(average_deaths[bastion] * 100, 3)}%` - {BASTION_MAPPING[bastion]}" for bastion in average_deaths]
+        "value": [f"`{' ' if average_deaths[bastion] < 0.1 else ''}{numb.round_sf(average_deaths[bastion] * 100, 3)}%` - {BASTION_MAPPING[bastion]}" for bastion in average_deaths],
+        "inline": True,
     }
     rank_comment = {
-        "name": f"Death Rates in {ranks[rank_no]} Elo",
-        "value": [f"`{numb.round_sf(overall_deaths[bastion] * 100, 3)}%` - {BASTION_MAPPING[bastion]}" for bastion in overall_deaths]
+        "name": f"{ranks[rank_no]} Death Rates",
+        "value": [f"`{' ' if overall_deaths[bastion] < 0.1 else ''}{numb.round_sf(overall_deaths[bastion] * 100, 3)}%` - {BASTION_MAPPING[bastion]}" for bastion in overall_deaths],
+        "inline": True,
     }
     return death_comment, rank_comment
