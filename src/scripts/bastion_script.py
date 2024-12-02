@@ -1,28 +1,31 @@
 from os import path
-
 package = path.join("src")
 import sys
-
 sys.path.insert(1, package)
 from gen_functions import word
 
-
 def main():
-    ordered_times = {"bt": [], "dt": [], "rp": [], "ship": [], "village": []}
+    ordered_times = {
+        "bridge": [], "housing": [], "stables": [], "treasure": []
+    }
 
-    for ow_key in ordered_times:
+    for bastion_key in ordered_times:
         player_times = {}
         player_nums = {}
-        file = path.join("src", "database", "mcsrstats", "overworlds", f"{ow_key}.txt")
+        file = path.join("src", "database", "mcsrstats", "bastions", f"{bastion_key}.txt")
 
         with open(file, "r") as f:
             while True:
                 info = f.readline().strip().split()
                 if not info:
                     break
-                elif info[0] == "<None>":
+                if info[0] == "<None>":
                     continue
-                elif info[0] not in player_times.keys():
+                if info[2] == "Invalid":
+                    continue
+                if info[2][0] == "-":
+                    continue
+                if info[0] not in player_times.keys():
                     player_times[info[0]] = 0
                     player_nums[info[0]] = 0
 
@@ -34,27 +37,25 @@ def main():
         for player_key in player_times:
             player_times[player_key] /= player_nums[player_key]
             if player_nums[player_key] >= 5:
-                ordered_times[ow_key].append(player_times[player_key])
+                ordered_times[bastion_key].append(player_times[player_key])
 
-    for ow_key in ordered_times:
-        ordered_times[ow_key].sort()
+        ordered_times[bastion_key].sort()
 
-    file = path.join("src", "database", "mcsrstats", "ow_splits.csv")
+    file = path.join("src", "database", "mcsrstats", "bastion_splits.csv")
     with open(file, "w") as f:
-        for i in range(len(ordered_times["village"])):
+        for i in range(len(ordered_times["bridge"])):
             line = ""
-            for ow_key in ordered_times:
-                if i >= len(ordered_times[ow_key]):
+            for bastion_key in ordered_times:
+                if i >= len(ordered_times[bastion_key]):
                     line += "FALSE"
                 else:
-                    line += str(int(ordered_times[ow_key][i]))
+                    line += str(int(ordered_times[bastion_key][i]))
 
-                if ow_key != "village":
+                if bastion_key != "treasure":
                     line += ","
                 else:
                     line += "\n"
             f.write(line)
-
 
 if __name__ == "__main__":
     main()

@@ -81,12 +81,9 @@ def main():
     for player_key in player_times:
         for split_key in player_times[player_key]:
             if player_nums[player_key][split_key]:
-                player_times[player_key][split_key] /= player_nums[player_key][
-                    split_key
-                ]
-                ordered_times[split_key].append(player_times[player_key][split_key])
-            else:
-                ordered_times[split_key].append(1000000000000)
+                player_times[player_key][split_key] /= player_nums[player_key][split_key]
+                if player_nums[player_key][split_key] >= 5:
+                    ordered_times[split_key].append(player_times[player_key][split_key])
 
     for split_key in ordered_times:
         ordered_times[split_key].sort()
@@ -96,7 +93,7 @@ def main():
         for i in range(len(ordered_times["ow"])):
             line = ""
             for split_key in ordered_times:
-                if ordered_times[split_key][i] == 1000000000000:
+                if i >= len(ordered_times[split_key]):
                     line += "FALSE"
                 else:
                     line += str(int(ordered_times[split_key][i]))

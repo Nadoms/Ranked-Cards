@@ -301,7 +301,11 @@ def get_count(number_ows):
             count += "/"
     value = f"`|{names}|`\n`|{count}|`"
 
-    count_comment = {"name": "Overworld Counts", "value": value}
+    count_comment = {
+        "name": "Overworld Counts",
+        "value": value,
+        "inline": False,
+    }
     return count_comment
 
 
@@ -313,23 +317,23 @@ def get_best_worst(ranked_ows):
         "ship": "Shipwreck",
         "village": "Village",
     }
-    best_comments = {
-        "bt": "You're most comfortable with mapless, island crafts and magma portals.",
-        "dt": "You're fastest with routing the overworlds of desert temples.",
-        "rp": "You excel at finding and looting ruined portals, as well as foraging around them.",
-        "ship": "You're at your best when spotting shipwrecks and magma ravines.",
-        "village": "Routing villages is your strongest overworld ability.",
-    }
-    worst_comments = {
-        "bt": "You're slower at finding buried treasures than expected. Practice finding the correct chunk with only 2 pie chart swipes!",
-        "dt": "Your desert temple overworlds are slower than others. Make sure to take mental notes of what's around you as you move.",
-        "rp": "You falter with ruined portal overworlds. Make sure to think ahead about what you're crafting while getting wood or food.",
-        "ship": "Your shipwrecks aren't as fast as your other overworlds. Remember that you can use mapless for these too!",
-        "village": "Routing villages is where you slow down the most. Plan out movements in advance as you go from the blacksmith, to hay, to the golem.",
-    }
+    # best_comments = {
+    #     "bt": "You're most comfortable with mapless, island crafts and magma portals.",
+    #     "dt": "You're fastest with routing the overworlds of desert temples.",
+    #     "rp": "You excel at finding and looting ruined portals, as well as foraging around them.",
+    #     "ship": "You're at your best when spotting shipwrecks and magma ravines.",
+    #     "village": "Routing villages is your strongest overworld ability."
+    # }
+    # worst_comments = {
+    #     "bt": "You're slower at finding buried treasures than expected. Practice finding the correct chunk with only 2 pie chart swipes!",
+    #     "dt": "Your desert temple overworlds are slower than others. Make sure to take mental notes of what's around you as you move.",
+    #     "rp": "You falter with ruined portal overworlds. Make sure to think ahead about what you're crafting while getting wood or food.",
+    #     "ship": "Your shipwrecks aren't as fast as your other overworlds. Remember that you can use mapless for these too!",
+    #     "village": "Routing villages is where you slow down the most. Plan out movements in advance as you go from the blacksmith, to hay, to the golem."
+    # }
 
     max_key = ""
-    max_val = 0
+    max_val = -1
     min_key = ""
     min_val = 1000000000000000000
 
@@ -343,12 +347,14 @@ def get_best_worst(ranked_ows):
             min_key = key
 
     best = {
-        "name": f"Best Seed Type: {ow_mapping[max_key]}",
-        "value": best_comments[max_key],
+        "name": "Strongest Overworld Type",
+        "value": f"`{word.percentify(ranked_ows[max_key])}` - {ow_mapping[max_key]}",
+        "inline": True,
     }
     worst = {
-        "name": f"Worst Seed Type: {ow_mapping[min_key]}",
-        "value": worst_comments[min_key],
+        "name": f"Weakest Overworld Type",
+        "value": f"`{word.percentify(ranked_ows[min_key])}` - {ow_mapping[min_key]}",
+        "inline": True,
     }
 
     return [best, worst]

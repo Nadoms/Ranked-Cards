@@ -386,7 +386,11 @@ def get_count(number_splits):
             count += "/"
     value = f"`|{names}|`\n`|{count}|`"
 
-    count_comment = {"name": "Split Counts", "value": value}
+    count_comment = {
+        "name": "Split Counts",
+        "value": value,
+        "inline": False,
+    }
     return count_comment
 
 
@@ -401,27 +405,27 @@ def get_best_worst(ranked_splits):
         "end": "The End",
     }
 
-    best_comments = {
-        "ow": "You can handle the variety of overworld very well. Getting ahead early is key!",
-        "nether": "You excel at navigating nether terrain and finding structures.",
-        "bastion": "Routing bastions is your strongest split.",
-        "fortress": "Blaze fighting is your strong suit.",
-        "blind": "Measuring eyes and nether pearl travel is where you shine.",
-        "stronghold": "You are exceptional at finding the portal room quickly.",
-        "end": "You're at your best when taking down the ender dragon.",
-    }
-    worst_comments = {
-        "ow": "Your overworld routing is slower than your other splits. Remember to practice every type of overworld!",
-        "nether": "Your terrain nav to the bastion is slower than expected. Try to think through all of the different terrain decisions you can make.",
-        "bastion": "Your bastion routing is slower than other splits. There are tons of tools to practice routing, so this is the easiest to improve on!",
-        "fortress": "You often falter a little in your fortress split. Make sure drop RD for strays on the way to the spawner, and practice your blaze bed.",
-        "blind": "You slow down when measuring eyes and pearling to coords. This split is often overlooked, so practice it!",
-        "stronghold": "Your stronghold nav isn't as fast as your other splits, make sure to practice premptive - even around mineshafts.",
-        "end": "You relax your aggression a bit more when you reach the end. Always go for halfbow or try a zero cycle.",
-    }
+    # best_comments = {
+    #     "ow": "You can handle the variety of overworld very well. Getting ahead early is key!",
+    #     "nether": "You excel at navigating nether terrain and finding structures.",
+    #     "bastion": "Routing bastions is your strongest split.",
+    #     "fortress": "Blaze fighting is your strong suit.",
+    #     "blind": "Measuring eyes and nether pearl travel is where you shine.",
+    #     "stronghold": "You are exceptional at finding the portal room quickly.",
+    #     "end": "You're at your best when taking down the ender dragon."
+    # }
+    # worst_comments = {
+    #     "ow": "Your overworld routing is slower than your other splits. Remember to practice every type of overworld!",
+    #     "nether": "Your terrain nav to the bastion is slower than expected. Try to think through all of the different terrain decisions you can make.",
+    #     "bastion": "Your bastion routing is slower than other splits. There are tons of tools to practice routing, so this is the easiest to improve on!",
+    #     "fortress": "You often falter a little in your fortress split. Make sure drop RD for strays on the way to the spawner, and practice your blaze bed.",
+    #     "blind": "You slow down when measuring eyes and pearling to coords. This split is often overlooked, so practice it!",
+    #     "stronghold": "Your stronghold nav isn't as fast as your other splits, make sure to practice premptive - even around mineshafts.",
+    #     "end": "You relax your aggression a bit more when you reach the end. Always go for halfbow or try a zero cycle."
+    # }
 
     max_key = ""
-    max_val = 0
+    max_val = -1
     min_key = ""
     min_val = 1000000000000000000
 
@@ -435,12 +439,14 @@ def get_best_worst(ranked_splits):
             min_key = key
 
     best = {
-        "name": f"Best Split: {split_mapping[max_key]}",
-        "value": best_comments[max_key],
+        "name": "Strongest Split",
+        "value": f"`{word.percentify(ranked_splits[max_key])}` - {split_mapping[max_key]}",
+        "inline": True,
     }
     worst = {
-        "name": f"Worst Split: {split_mapping[min_key]}",
-        "value": worst_comments[min_key],
+        "name": f"Weakest Split",
+        "value": f"`{word.percentify(ranked_splits[min_key])}` - {split_mapping[min_key]}",
+        "inline": True,
     }
 
     return [best, worst]
@@ -472,7 +478,7 @@ def get_death_comments(average_deaths, elo):
         rank_no = 2
     file = path.join("src", "database", "mcsrstats", "deaths", "deaths.json")
     with open(file, "r", encoding="UTF-8") as f:
-        overall_deaths = json.load(f)[str(rank_no)]
+        overall_deaths = json.load(f)["splits"][str(rank_no)]
 
     max_diff = 0
     max_split = None
@@ -485,15 +491,23 @@ def get_death_comments(average_deaths, elo):
     death_comment = {
         "name": "Your Death Rates",
         "value": [
-            f"`{numb.round_sf(average_deaths[split] * 100, 3)}%` - {split_mapping[split]}"
+            (
+                f"`{' ' if average_deaths[split] < 0.1 else ''}"
+                f"{numb.round_sf(average_deaths[split] * 100, 3)}%` - {split_mapping[split]}"
+            )
             for split in average_deaths
         ],
+        "inline": True,
     }
     rank_comment = {
-        "name": f"Death Rates in {ranks[rank_no]} Elo",
+        "name": f"{ranks[rank_no]} Death Rates",
         "value": [
-            f"`{numb.round_sf(overall_deaths[split] * 100, 3)}%` - {split_mapping[split]}"
+            (
+                f"`{' ' if overall_deaths[split] < 0.1 else ''}"
+                f"{numb.round_sf(overall_deaths[split] * 100, 3)}%` - {split_mapping[split]}"
+            )
             for split in overall_deaths
         ],
+        "inline": True,
     }
     return death_comment, rank_comment
