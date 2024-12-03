@@ -40,6 +40,27 @@ bot = commands.Bot(
 )
 
 
+class Topics(nextcord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.value = None
+
+    @nextcord.ui.button(label="Splits", style=nextcord.ButtonStyle.red)
+    async def show_splits(self, button: nextcord.ui.Button, interaction: Interaction):
+        print("Flipping to splits")
+        self.value = "splits"
+
+    @nextcord.ui.button(label="Bastions", style=nextcord.ButtonStyle.blurple)
+    async def show_splits(self, button: nextcord.ui.Button, interaction: Interaction):
+        print("Flipping to bastions")
+        self.value = "bastions"
+
+    @nextcord.ui.button(label="Overworlds", style=nextcord.ButtonStyle.green)
+    async def show_splits(self, button: nextcord.ui.Button, interaction: Interaction):
+        print("Flipping to overworlds")
+        self.value = "ows"
+
+
 @bot.event
 async def on_ready():
     print("Bot is running")
@@ -627,22 +648,37 @@ async def analysis(
 
     jump_url = f"https://discord.com/channels/{interaction.guild.id}/{interaction.channel.id}/{interaction.id}"
     set_cooldown(jump_url, input_name)
+    view = Topics()
+
+    embeds = [embed_general]
+    if view.value == "bastions":
+        embeds.append(embed_bastion)
+        files = [bastion_file]
+    elif view.value == "ows":
+        embeds.append(embed_ow)
+        files = [ow_file]
+    else:
+        embeds.append(embed_split)
+        files = [split_file]
 
     if failed:
         await interaction.followup.send(
             f"Player not found (`{old_input}`). {extra}",
-            files=[split_file, bastion_file, ow_file],
-            embeds=[embed_general, embed_bastion, embed_split, embed_ow],
+            files=files,
+            embeds=embeds,
+            view=view,
         )
         update_records(interaction, "analysis", input_name, True)
     else:
         await interaction.followup.send(
-            files=[split_file, bastion_file, ow_file],
-            embeds=[embed_general, embed_split, embed_bastion, embed_ow],
+            files=files,
+            embeds=embeds,
+            view=view,
         )
         update_records(interaction, "analysis", input_name, True)
     os.remove("split.png")
     os.remove("ow.png")
+    os.remove("bastion.png")
 
 
 @bot.slash_command(
