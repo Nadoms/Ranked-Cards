@@ -49,7 +49,7 @@ def main(response, elo, season):
 
 def get_attr_ranked(value, attr_type):
     attr_mapping = {
-        "avg": "avg",
+        "avg": "avg_vs_elo",
         "sb": "sb_vs_elo",
         "elo": "elo",
     }

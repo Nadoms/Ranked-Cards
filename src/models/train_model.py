@@ -9,7 +9,7 @@ import sys
 def main(data_oi):
     # Getting the data into two arrays
     data = [[], []]
-    data_path = path.join("src", "database", "mcsrstats", f"{data_oi}_vs_elo.txt")
+    data_path = path.join("src", "models", f"{data_oi}_vs_elo.txt")
     with open(data_path, "r") as f:
         while True:
             line = f.readline().strip().split(" ")
@@ -54,6 +54,7 @@ def main(data_oi):
     plt.ylabel("y")
     plt.legend()
     plt.grid("True", color="y")
+    plt.savefig(path.join("src", "models", f"model_{data_oi}.png"))
     plt.show()
 
     update_weights(data_oi, W)
