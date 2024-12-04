@@ -50,30 +50,42 @@ class Topics(nextcord.ui.View):
         self.files = files
 
     @nextcord.ui.button(label="Splits", style=nextcord.ButtonStyle.red)
-    async def show_splits(self, button: nextcord.ui.Button, interaction: Interaction):
+    async def show_splits(
+        self,
+        button: nextcord.ui.Button,
+        interaction: Interaction,
+    ):
         print(f"Flipping to splits for {interaction.user.name}")
         self.value = "splits"
         await self.interaction.edit_original_message(
             embeds=[self.general_embed, self.topic_embeds[0]],
-            file=self.files[0]
+            file=self.files[0],
         )
 
     @nextcord.ui.button(label="Bastions", style=nextcord.ButtonStyle.blurple)
-    async def show_bastions(self, button: nextcord.ui.Button, interaction: Interaction):
+    async def show_bastions(
+        self,
+        button: nextcord.ui.Button,
+        interaction: Interaction,
+    ):
         print(f"Flipping to bastions for {interaction.user.name}")
         self.value = "bastions"
         await self.interaction.edit_original_message(
             embeds=[self.general_embed, self.topic_embeds[1]],
-            file=self.files[1]
+            file=self.files[1],
         )
 
     @nextcord.ui.button(label="Overworlds", style=nextcord.ButtonStyle.green)
-    async def show_overworlds(self, button: nextcord.ui.Button, interaction: Interaction):
+    async def show_overworlds(
+        self,
+        button: nextcord.ui.Button,
+        interaction: Interaction,
+    ):
         print(f"Flipping to overworlds for {interaction.user.name}")
         self.value = "ows"
         await self.interaction.edit_original_message(
             embeds=[self.general_embed, self.topic_embeds[2]],
-            file=self.files[2]
+            file=self.files[2],
         )
 
 
