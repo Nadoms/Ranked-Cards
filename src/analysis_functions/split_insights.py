@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from gen_functions import word, numb, rank
 
-SIDES = 6
+SIDES = 7
 INIT_PROP = 1.8
 IMG_SIZE_X = 960
 IMG_SIZE_Y = 760
@@ -188,7 +188,7 @@ def get_ranked_splits(average_splits):
 
 def get_polygon(ranked_splits):
     proportions = [INIT_PROP, INIT_PROP * 4 / 3, INIT_PROP * 2, INIT_PROP * 4, 10000]
-    split_mapping = ["ow", "bastion", "fortress", "blind", "stronghold", "end"]
+    split_mapping = ["ow", "nether", "bastion", "fortress", "blind", "stronghold", "end"]
 
     polygon_frame = Image.new("RGBA", (IMG_SIZE_X, IMG_SIZE_Y), (0, 0, 0, 0))
     frame_draw = ImageDraw.Draw(polygon_frame)
@@ -270,8 +270,8 @@ def add_text(polygon, average_splits, ranked_splits):
         "#3f82ff",
         "#ffd700",
     ]
-    titles = ["Overworld", "Bastion", "Fortress", "Blind", "Stronghold", "The End"]
-    split_mapping = ["ow", "bastion", "fortress", "blind", "stronghold", "end"]
+    titles = ["Overworld", "Nether", "Bastion", "Fortress", "Blind", "Stronghold", "The End"]
+    split_mapping = ["ow", "nether", "bastion", "fortress", "blind", "stronghold", "end"]
 
     text_draw = ImageDraw.Draw(polygon)
     big_size = 50
@@ -313,13 +313,13 @@ def add_text(polygon, average_splits, ranked_splits):
             )
 
         elif i == math.ceil(SIDES / 2) and SIDES % 2 == 1:
-            xy[i][0] -= word.calc_length("Strongholddldd", title_size) / 8
+            xy[i][0] -= word.calc_length("Strongholddld", title_size) / 8
 
         elif i == math.floor(SIDES / 2) and SIDES % 2 == 1:
-            xy[i][0] += word.calc_length("Strongholddldd", title_size) / 8
+            xy[i][0] += word.calc_length("Strongholddld", title_size) / 8
 
         elif math.ceil(SIDES / 2) < i:
-            xy[i][0] -= word.calc_length("Strongholddldd", title_size) / 2
+            xy[i][0] -= word.calc_length("Strongholddld", title_size) / 2
             xy[i][1] -= (
                 word.horiz_to_vert(title_size) / 2 + word.horiz_to_vert(stat_size) / 2
             )
