@@ -41,24 +41,40 @@ bot = commands.Bot(
 
 
 class Topics(nextcord.ui.View):
-    def __init__(self):
+    def __init__(self, interaction, embeds, files):
         super().__init__()
         self.value = None
+        self.interaction = interaction
+        self.general_embed = embeds[0]
+        self.topic_embeds = embeds[1:]
+        self.files = files
 
     @nextcord.ui.button(label="Splits", style=nextcord.ButtonStyle.red)
     async def show_splits(self, button: nextcord.ui.Button, interaction: Interaction):
-        print("Flipping to splits")
+        print(f"Flipping to splits for {interaction.user.name}")
         self.value = "splits"
+        await self.interaction.edit_original_message(
+            embeds=[self.general_embed, self.topic_embeds[0]],
+            file=self.files[0]
+        )
 
     @nextcord.ui.button(label="Bastions", style=nextcord.ButtonStyle.blurple)
-    async def show_splits(self, button: nextcord.ui.Button, interaction: Interaction):
-        print("Flipping to bastions")
+    async def show_bastions(self, button: nextcord.ui.Button, interaction: Interaction):
+        print(f"Flipping to bastions for {interaction.user.name}")
         self.value = "bastions"
+        await self.interaction.edit_original_message(
+            embeds=[self.general_embed, self.topic_embeds[1]],
+            file=self.files[1]
+        )
 
     @nextcord.ui.button(label="Overworlds", style=nextcord.ButtonStyle.green)
-    async def show_splits(self, button: nextcord.ui.Button, interaction: Interaction):
-        print("Flipping to overworlds")
+    async def show_overworlds(self, button: nextcord.ui.Button, interaction: Interaction):
+        print(f"Flipping to overworlds for {interaction.user.name}")
         self.value = "ows"
+        await self.interaction.edit_original_message(
+            embeds=[self.general_embed, self.topic_embeds[2]],
+            file=self.files[2]
+        )
 
 
 @bot.event
@@ -502,8 +518,9 @@ async def analysis(
         update_records(interaction, "analysis", input_name, False)
         return
 
+    target_games = 30 if TESTING_MODE else 150
     num_comps, detailed_matches = await games.get_detailed_matches(
-        response, season, 5, 150
+        response, season, 5, target_games
     )
 
     if detailed_matches == -1:
@@ -536,15 +553,17 @@ async def analysis(
         title=comments["splits"]["title"],
         description=comments["splits"]["description"],
         colour=nextcord.Colour.yellow(),
-    )
-    embed_ow = nextcord.Embed(
-        title=comments["ow"]["title"],
-        description=comments["ow"]["description"],
-        colour=nextcord.Colour.yellow(),
+        timestamp=datetime.now(timezone.utc),
     )
     embed_bastion = nextcord.Embed(
         title=comments["bastion"]["title"],
         description=comments["bastion"]["description"],
+        colour=nextcord.Colour.yellow(),
+        timestamp=datetime.now(timezone.utc),
+    )
+    embed_ow = nextcord.Embed(
+        title=comments["ow"]["title"],
+        description=comments["ow"]["description"],
         colour=nextcord.Colour.yellow(),
         timestamp=datetime.now(timezone.utc),
     )
@@ -557,15 +576,23 @@ async def analysis(
     split_polygon.save("split.png")
     split_file = File("split.png", filename="split.png")
     embed_split.set_image(url="attachment://split.png")
+    embed_split.set_footer(
+        text="Bot made by @Nadoms // Feedback appreciated :3",
+        icon_url="https://cdn.discordapp.com/avatars/298936021557706754/a_60fb14a1dbfb0d33f3b02cc33579dacf?size=256",
+    )
 
     bastion_polygon.save("bastion.png")
     bastion_file = File("bastion.png", filename="bastion.png")
     embed_bastion.set_image(url="attachment://bastion.png")
+    embed_bastion.set_footer(
+        text="Bot made by @Nadoms // Feedback appreciated :3",
+        icon_url="https://cdn.discordapp.com/avatars/298936021557706754/a_60fb14a1dbfb0d33f3b02cc33579dacf?size=256",
+    )
 
     ow_polygon.save("ow.png")
     ow_file = File("ow.png", filename="ow.png")
     embed_ow.set_image(url="attachment://ow.png")
-    embed_bastion.set_footer(
+    embed_ow.set_footer(
         text="Bot made by @Nadoms // Feedback appreciated :3",
         icon_url="https://cdn.discordapp.com/avatars/298936021557706754/a_60fb14a1dbfb0d33f3b02cc33579dacf?size=256",
     )
@@ -648,34 +675,24 @@ async def analysis(
 
     jump_url = f"https://discord.com/channels/{interaction.guild.id}/{interaction.channel.id}/{interaction.id}"
     set_cooldown(jump_url, input_name)
-    view = Topics()
-
-    embeds = [embed_general]
-    if view.value == "bastions":
-        embeds.append(embed_bastion)
-        files = [bastion_file]
-    elif view.value == "ows":
-        embeds.append(embed_ow)
-        files = [ow_file]
-    else:
-        embeds.append(embed_split)
-        files = [split_file]
+    embeds = [embed_general, embed_split, embed_bastion, embed_ow]
+    files = [split_file, bastion_file, ow_file]
+    view = Topics(interaction, embeds, files)
 
     if failed:
         await interaction.followup.send(
             f"Player not found (`{old_input}`). {extra}",
-            files=files,
-            embeds=embeds,
+            file=split_file,
+            embeds=[embed_general, embed_split],
             view=view,
         )
-        update_records(interaction, "analysis", input_name, True)
     else:
         await interaction.followup.send(
-            files=files,
-            embeds=embeds,
+            file=split_file,
+            embeds=[embed_general, embed_split],
             view=view,
         )
-        update_records(interaction, "analysis", input_name, True)
+    update_records(interaction, "analysis", input_name, True)
     os.remove("split.png")
     os.remove("ow.png")
     os.remove("bastion.png")
