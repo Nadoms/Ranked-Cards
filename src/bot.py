@@ -540,7 +540,7 @@ async def analysis(
         update_records(interaction, "analysis", input_name, False)
         return
 
-    target_games = 30 if TESTING_MODE else 150
+    target_games = 30 if TESTING_MODE else 100
     num_comps, detailed_matches = await games.get_detailed_matches(
         response, season, 5, target_games
     )

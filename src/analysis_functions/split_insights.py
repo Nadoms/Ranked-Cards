@@ -123,7 +123,7 @@ def get_avg_splits(uuid, detailed_matches):
 
     for key in average_splits:
         if number_splits[key] == 0:
-            average_splits[key] = 1000000000
+            average_splits[key] = 1000000000000
             average_deaths[key] = 0
         else:
             average_splits[key] = round(time_splits[key] / number_splits[key])

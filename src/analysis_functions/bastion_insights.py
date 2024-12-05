@@ -38,7 +38,7 @@ def main(uuid, detailed_matches, elo, season):
     sum_bastions = sum(completed_bastions.values())
 
     comments = {}
-    comments["title"] = f"Bastion Performance in Season {season}"
+    comments["title"] = f"Bastion Performance"
     comments["description"] = (
         f"{sum_bastions} completed bastion splits were used in analysing your performance. {get_sample_size(sum_bastions)}"
     )
@@ -71,7 +71,7 @@ def get_avg_bastions(uuid, detailed_matches):
     ]
 
     for match in detailed_matches:
-        if not match["timelines"]:
+        if not match["timelines"] or not match["bastionType"]:
             continue
 
         bastion_type = match["bastionType"].lower()
@@ -120,7 +120,7 @@ def get_avg_bastions(uuid, detailed_matches):
 
     for key in average_bastions:
         if completed_bastions[key] == 0:
-            average_bastions[key] = 1000000000
+            average_bastions[key] = 1000000000000
         if entered_bastions[key] == 0:
             average_deaths[key] = 0
         else:
