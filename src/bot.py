@@ -540,7 +540,7 @@ async def analysis(
         update_records(interaction, "analysis", input_name, False)
         return
 
-    target_games = 30 if TESTING_MODE else 100
+    target_games = 30 if TESTING_MODE else 75
     num_comps, detailed_matches = await games.get_detailed_matches(
         response, season, 5, target_games
     )
@@ -690,6 +690,8 @@ async def analysis(
         )
 
     jump_url = f"https://discord.com/channels/{interaction.guild.id}/{interaction.channel.id}/{interaction.id}"
+    if TESTING_MODE or interaction.guild.id != 1056779246728658984:
+        return
     set_cooldown(jump_url, input_name)
     embeds = [embed_general, embed_split, embed_bastion, embed_ow]
     images = [split_polygon, bastion_polygon, ow_polygon]
@@ -1025,8 +1027,6 @@ def get_cooldown(input_name):
 
 
 def set_cooldown(jump_url, input_name):
-    if TESTING_MODE:
-        return
     file = path.join("src", "database", "users.json")
     with open(file, "r") as f:
         users = json.load(f)

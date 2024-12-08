@@ -81,6 +81,15 @@ def get_avg_splits(uuid, detailed_matches):
         "stronghold": 0,
         "end": 0,
     }
+    death_opportunities = {
+        "ow": 0,
+        "nether": 0,
+        "bastion": 0,
+        "fortress": 0,
+        "blind": 0,
+        "stronghold": 0,
+        "end": 0,
+    }
     event_mapping = {
         "story.enter_the_nether": "nether",
         "nether.find_bastion": "bastion",
@@ -96,6 +105,7 @@ def get_avg_splits(uuid, detailed_matches):
 
         prev_event = "ow"
         prev_time = 0
+        death_opportunities["ow"] += 1
 
         for event in reversed(match["timelines"]):
             if event["uuid"] != uuid:
@@ -104,6 +114,7 @@ def get_avg_splits(uuid, detailed_matches):
             if event["type"] == "projectelo.timeline.reset":
                 prev_time = event["time"]
                 prev_event = "ow"
+                death_opportunities[prev_event] += 1
 
             elif event["type"] in event_mapping:
                 split_length = event["time"] - prev_time
@@ -112,9 +123,18 @@ def get_avg_splits(uuid, detailed_matches):
 
                 prev_time = event["time"]
                 prev_event = event_mapping[event["type"]]
+                death_opportunities[prev_event] += 1
 
             elif event["type"] == "projectelo.timeline.death":
                 average_deaths[prev_event] += 1
+
+        # If the opponent ended the game, discount the split as an opportunity to die.
+        else:
+            if (
+                match["result"]["uuid"] != uuid and not match["forfeited"]
+                and match["result"]["uuid"] == uuid and match["forfeited"]
+            ):
+                death_opportunities[prev_event] -= 1
 
         if match["result"]["uuid"] == uuid and match["forfeited"] is False:
             split_length = match["result"]["time"] - prev_time
@@ -124,10 +144,11 @@ def get_avg_splits(uuid, detailed_matches):
     for key in average_splits:
         if number_splits[key] == 0:
             average_splits[key] = 1000000000000
-            average_deaths[key] = 0
+            if death_opportunities[key] == 0:
+                average_deaths[key] = 0
         else:
             average_splits[key] = round(time_splits[key] / number_splits[key])
-            average_deaths[key] = round(average_deaths[key] / number_splits[key], 3)
+            average_deaths[key] = round(average_deaths[key] / death_opportunities[key], 3)
 
     return number_splits, average_splits, average_deaths
 

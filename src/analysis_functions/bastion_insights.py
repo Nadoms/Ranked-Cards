@@ -58,6 +58,7 @@ def get_avg_bastions(uuid, detailed_matches):
     time_bastions = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
     average_bastions = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
     average_deaths = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
+    death_opportunities = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
     bastion_conditions = [
         "nether.obtain_crying_obsidian",
         "nether.loot_bastion",
@@ -77,7 +78,6 @@ def get_avg_bastions(uuid, detailed_matches):
         bastion_type = match["bastionType"].lower()
         bastion_entry = 0
         bastion_exit = 0
-        found_fortress = False
         bastion_progression = 0
 
         for event in reversed(match["timelines"]):
@@ -88,6 +88,7 @@ def get_avg_bastions(uuid, detailed_matches):
             if event["type"] == "nether.find_bastion":
                 bastion_entry = event["time"]
                 entered_bastions[bastion_type] += 1
+                death_opportunities[bastion_type] += 1
 
             # If currently inside the bastion,
             elif bastion_entry and not bastion_exit:
@@ -99,9 +100,10 @@ def get_avg_bastions(uuid, detailed_matches):
                 elif event["type"] == "projectelo.timeline.death":
                     average_deaths[bastion_type] += 1
 
-                # If resetting, void the rest of the run.
+                # If resetting, set everything to how it was.
                 elif event["type"] == "projectelo.timeline.reset":
-                    break
+                    bastion_entry = 0
+                    bastion_progression = 0
 
                 # If entering fortress after bastion, set the exit time.
                 elif event["type"] == "nether.find_fortress":
@@ -112,20 +114,28 @@ def get_avg_bastions(uuid, detailed_matches):
                     break
 
             # If a successful bastion route is completed, add the times.
-            elif bastion_entry and bastion_exit:
+            if bastion_exit:
                 bastion_length = bastion_exit - bastion_entry
                 time_bastions[bastion_type] += bastion_length
                 completed_bastions[bastion_type] += 1
                 break
+        # If the opponent ended the game, discount the split as an opportunity to die.
+        else:
+            if (
+                match["result"]["uuid"] != uuid and not match["forfeited"]
+                and match["result"]["uuid"] == uuid and match["forfeited"]
+                and bastion_entry and not bastion_exit
+            ):
+                death_opportunities[bastion_type] -= 1
 
     for key in average_bastions:
         if completed_bastions[key] == 0:
             average_bastions[key] = 1000000000000
-        if entered_bastions[key] == 0:
+        if death_opportunities[key] == 0:
             average_deaths[key] = 0
         else:
             average_bastions[key] = round(time_bastions[key] / completed_bastions[key])
-            average_deaths[key] = round(average_deaths[key] / entered_bastions[key], 3)
+            average_deaths[key] = round(average_deaths[key] / death_opportunities[key], 3)
 
     return completed_bastions, average_bastions, average_deaths
 
