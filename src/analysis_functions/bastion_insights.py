@@ -90,6 +90,11 @@ def get_avg_bastions(uuid, detailed_matches):
                 entered_bastions[bastion_type] += 1
                 death_opportunities[bastion_type] += 1
 
+            # If resetting, set everything to how it was.
+            elif event["type"] == "projectelo.timeline.reset":
+                bastion_entry = 0
+                bastion_progression = 0
+
             # If currently inside the bastion,
             elif bastion_entry and not bastion_exit:
                 # If doing bastion things, increase the bastion progression.
@@ -100,25 +105,16 @@ def get_avg_bastions(uuid, detailed_matches):
                 elif event["type"] == "projectelo.timeline.death":
                     average_deaths[bastion_type] += 1
 
-                # If resetting, set everything to how it was.
-                elif event["type"] == "projectelo.timeline.reset":
-                    bastion_entry = 0
-                    bastion_progression = 0
-
-                # If entering fortress after bastion, set the exit time.
-                elif event["type"] == "nether.find_fortress":
-                    bastion_exit = event["time"]
-
-                # If doing some random other split, void the run.
+                # If entering another split after bastion, set the exit time.
                 elif event["type"] in post_bastion:
-                    break
+                    bastion_exit = event["time"]
 
             # If a successful bastion route is completed, add the times.
             if bastion_exit:
                 bastion_length = bastion_exit - bastion_entry
                 time_bastions[bastion_type] += bastion_length
                 completed_bastions[bastion_type] += 1
-                break
+
         # If the opponent ended the game, discount the split as an opportunity to die.
         else:
             if (
