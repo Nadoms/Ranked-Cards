@@ -690,7 +690,7 @@ async def analysis(
         )
 
     jump_url = f"https://discord.com/channels/{interaction.guild.id}/{interaction.channel.id}/{interaction.id}"
-    if not TESTING_MODE or interaction.guild.id != 735859906434957392:
+    if not TESTING_MODE or interaction.guild.id != 1056779246728658984:
         set_cooldown(jump_url, input_name)
     embeds = [embed_general, embed_split, embed_bastion, embed_ow]
     images = [split_polygon, bastion_polygon, ow_polygon]
