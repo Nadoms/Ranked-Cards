@@ -108,12 +108,9 @@ def get_avg_bastions(uuid, detailed_matches):
                 # If entering another split after bastion, set the exit time.
                 elif event["type"] in post_bastion:
                     bastion_exit = event["time"]
-
-            # If a successful bastion route is completed, add the times.
-            if bastion_exit:
-                bastion_length = bastion_exit - bastion_entry
-                time_bastions[bastion_type] += bastion_length
-                completed_bastions[bastion_type] += 1
+                    bastion_length = bastion_exit - bastion_entry
+                    time_bastions[bastion_type] += bastion_length
+                    completed_bastions[bastion_type] += 1
 
         # If the opponent ended the game, discount the split as an opportunity to die.
         else:
