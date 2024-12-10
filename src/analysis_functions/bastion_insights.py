@@ -124,10 +124,11 @@ def get_avg_bastions(uuid, detailed_matches):
     for key in average_bastions:
         if completed_bastions[key] == 0:
             average_bastions[key] = 1000000000000
+        else:
+            average_bastions[key] = round(time_bastions[key] / completed_bastions[key])
         if death_opportunities[key] == 0:
             average_deaths[key] = 0
         else:
-            average_bastions[key] = round(time_bastions[key] / completed_bastions[key])
             average_deaths[key] = round(average_deaths[key] / death_opportunities[key], 3)
 
     return completed_bastions, average_bastions, average_deaths
