@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 import math
 from os import path
 import matplotlib.pyplot as plt
@@ -52,7 +52,7 @@ def write(uuid, matches, data_type, season):
         "text.color": "white",
         "axes.spines.top": False,
         "axes.grid": True,
-        "grid.color": "#424549",
+        "grid.color": "#525559",
         "font.family": prop.get_name(),
     }
     sns.set(font_scale=0.8, rc=custom_params)
@@ -68,6 +68,7 @@ def write(uuid, matches, data_type, season):
         alpha=0.7,
         label=data_type,
     )
+    smoothing = math.ceil(len(data) / 10) + 1
     sns.lineplot(
         data=data,
         x=data["Games ago"],
@@ -75,13 +76,23 @@ def write(uuid, matches, data_type, season):
         ax=ax,
         color="#FFFF00",
         alpha=1,
+        label=f"Moving avg ({smoothing} wide)",
     )
 
     # Axis adjustments.
+    if data_type == "Elo":
+        ax.set_yticks([i for i in range(0, 3000, 50)])
+        ax.set_yticklabels([str(i) if i % 100 == 0 else "" for i in range(0, 3000, 50)])
+    elif data_type == "Completion time":
+        ax.set_yticks([i / 24 / 60 for i in range(0, 1000, 1)])
+        ax.yaxis.set_major_formatter(md.DateFormatter("%M"))
+        yticklabels = [
+            (datetime(1900, 1, 1) + timedelta(minutes=i)).strftime(f"{'%H:' if i >= 60 else ''}%M:%S") if i % 5 == 0 else ""
+            for i in range(0, 1000, 1)
+        ]
+        ax.set_yticklabels(yticklabels)
     ax.invert_xaxis()
     ax.grid(axis="x")
-    if data_type == "Completion time":
-        ax.yaxis.set_major_formatter(md.DateFormatter("%M:%S"))
 
     # Fill under line.
     if data_type == "Elo":
@@ -118,7 +129,7 @@ def write(uuid, matches, data_type, season):
                 vert = data["Games ago"].loc[data.index[i]]
                 ax.axvline(
                     vert,
-                    color=[1, 1 - 0.2 * (season - 1), 0.1 * (season - 1)],
+                    color=[(0.2 * season) % 1, (1.3 - 0.3 * season) % 1, (0.1 * season) % 1],
                     alpha=0.8,
                     linestyle="--",
                     label=f"Season {season} end",
@@ -160,13 +171,16 @@ def write(uuid, matches, data_type, season):
         ax.set_ylim(min(data[data_type]) - 30, max(data[data_type]) + 30)
     if data_type == "Completion time":
         ax.set_ylim(
-            min(data[data_type]) - timedelta(minutes=1),
-            max(data[data_type]) + timedelta(minutes=1),
+            data[data_type].min() - timedelta(minutes=1),
+            min(
+                (data["Completion time"].max()),
+                pd.Timestamp(year=1970, month=1, day=1, hour=0, minute=35)
+            ) + timedelta(minutes=1),
         )
 
     file = path.join("src", "graph_functions", "graph.png")
 
-    plt.legend()
+    plt.legend(fontsize=7)
     plt.savefig(file)
     plt.close()
     return file
