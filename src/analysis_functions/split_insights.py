@@ -19,6 +19,14 @@ ANGLES = [
     for i in range(SIDES)
 ]
 ANGLES.insert(0, ANGLES.pop())
+EVENT_MAPPING = {
+    "story.enter_the_nether": "nether",
+    "nether.find_bastion": "bastion",
+    "nether.find_fortress": "fortress",
+    "projectelo.timeline.blind_travel": "blind",
+    "story.follow_ender_eye": "stronghold",
+    "story.enter_the_end": "end",
+}
 
 
 def main(uuid, detailed_matches, elo, season, num_comps):
@@ -42,6 +50,79 @@ def main(uuid, detailed_matches, elo, season, num_comps):
         )
 
     return comments, polygon
+
+
+def get_avg_splits(uuid, detailed_matches):
+    entered_splits = {
+        "ow": 0,
+        "nether": 0,
+        "bastion": 0,
+        "fortress": 0,
+        "blind": 0,
+        "stronghold": 0,
+        "end": 0,
+    }
+    won_splits = {
+        "ow": 0,
+        "nether": 0,
+        "bastion": 0,
+        "fortress": 0,
+        "blind": 0,
+        "stronghold": 0,
+        "end": 0,
+    }
+
+    for match in detailed_matches:
+        if not match["timelines"]:
+            continue
+
+        sub_prev_event = opp_prev_event = "ow"
+        sub_prev_time = opp_prev_time = 0
+        sub_times = opp_times = {
+            "ow": None,
+            "nether": None,
+            "bastion": None,
+            "fortress": None,
+            "blind": None,
+            "stronghold": None,
+            "end": None,
+        }
+        sub_entered = opp_entered = {
+            "ow": True,
+            "nether": False,
+            "bastion": False,
+            "fortress": False,
+            "blind": False,
+            "stronghold": False,
+            "end": False,
+        }
+        entered_splits["ow"] += 1
+        won_match = match["result"]["uuid"] == uuid
+
+        for event in reversed(match["timelines"]):
+            is_sub = event["uuid"] == uuid
+            if event["type"] in EVENT_MAPPING:
+                if is_sub:
+                    sub_times[sub_prev_event] += event["time"] - sub_prev_time
+                    sub_prev_event = EVENT_MAPPING[event["type"]]
+                    sub_entered[sub_prev_event] = True
+                    entered_splits[EVENT_MAPPING[event["type"]]] += 1
+                else:
+                    opp_times[opp_prev_event] += event["time"] - opp_prev_time
+                    opp_prev_event = EVENT_MAPPING[event["type"]]
+                    opp_entered[opp_prev_event] = True
+
+        for split in sub_times:
+            if sub_entered[split] and opp_entered[split]:
+                if sub_times[split] and opp_times[split]:
+                    if sub_times[split] >= opp_times[split]:
+                        won_splits[split] += 1
+                else:
+                    if won_match:
+                        won_splits[split] += 1
+                    break
+
+    return number_splits, average_splits, average_deaths
 
 
 def get_avg_splits(uuid, detailed_matches):
@@ -90,14 +171,6 @@ def get_avg_splits(uuid, detailed_matches):
         "stronghold": 0,
         "end": 0,
     }
-    event_mapping = {
-        "story.enter_the_nether": "nether",
-        "nether.find_bastion": "bastion",
-        "nether.find_fortress": "fortress",
-        "projectelo.timeline.blind_travel": "blind",
-        "story.follow_ender_eye": "stronghold",
-        "story.enter_the_end": "end",
-    }
 
     for match in detailed_matches:
         if not match["timelines"]:
@@ -116,13 +189,13 @@ def get_avg_splits(uuid, detailed_matches):
                 prev_event = "ow"
                 death_opportunities[prev_event] += 1
 
-            elif event["type"] in event_mapping:
+            elif event["type"] in EVENT_MAPPING:
                 split_length = event["time"] - prev_time
                 time_splits[prev_event] += split_length
                 number_splits[prev_event] += 1
 
                 prev_time = event["time"]
-                prev_event = event_mapping[event["type"]]
+                prev_event = EVENT_MAPPING[event["type"]]
                 death_opportunities[prev_event] += 1
 
             elif event["type"] == "projectelo.timeline.death":
@@ -131,8 +204,8 @@ def get_avg_splits(uuid, detailed_matches):
         # If the opponent ended the game, discount the split as an opportunity to die.
         else:
             if (
-                match["result"]["uuid"] != uuid and not match["forfeited"]
-                and match["result"]["uuid"] == uuid and match["forfeited"]
+                (match["result"]["uuid"] != uuid and not match["forfeited"])
+                or (match["result"]["uuid"] == uuid and match["forfeited"])
             ):
                 death_opportunities[prev_event] -= 1
 

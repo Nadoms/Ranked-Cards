@@ -115,8 +115,8 @@ def get_avg_bastions(uuid, detailed_matches):
         # If the opponent ended the game, discount the split as an opportunity to die.
         else:
             if (
-                match["result"]["uuid"] != uuid and not match["forfeited"]
-                and match["result"]["uuid"] == uuid and match["forfeited"]
+                (match["result"]["uuid"] != uuid and not match["forfeited"])
+                or (match["result"]["uuid"] == uuid and match["forfeited"])
                 and bastion_entry and not bastion_exit
             ):
                 death_opportunities[bastion_type] -= 1
