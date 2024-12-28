@@ -28,7 +28,7 @@ async def main(command, name, type, season, match_id):
             "data"
         ]
         num_comps, detailed_matches = await games.get_detailed_matches(
-            response, season, 5, 30
+            response, season, 5, 75
         )
         img1, img2, img3 = analysing.main(
             response, num_comps, detailed_matches, season

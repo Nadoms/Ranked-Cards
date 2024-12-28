@@ -33,6 +33,9 @@ def main(uuid, detailed_matches, elo, season, num_comps):
     number_splits, average_splits, average_deaths = get_avg_splits(
         uuid, detailed_matches
     )
+    winrates = get_winrates(
+        uuid, detailed_matches
+    )
     ranked_splits = get_ranked_splits(average_splits)
     polygon = get_polygon(ranked_splits)
     polygon = add_text(polygon, average_splits, ranked_splits)
@@ -52,8 +55,8 @@ def main(uuid, detailed_matches, elo, season, num_comps):
     return comments, polygon
 
 
-def get_avg_splits(uuid, detailed_matches):
-    entered_splits = {
+def get_winrates(uuid, detailed_matches):
+    won_splits = {
         "ow": 0,
         "nether": 0,
         "bastion": 0,
@@ -62,7 +65,7 @@ def get_avg_splits(uuid, detailed_matches):
         "stronghold": 0,
         "end": 0,
     }
-    won_splits = {
+    lost_splits = {
         "ow": 0,
         "nether": 0,
         "bastion": 0,
@@ -78,7 +81,7 @@ def get_avg_splits(uuid, detailed_matches):
 
         sub_prev_event = opp_prev_event = "ow"
         sub_prev_time = opp_prev_time = 0
-        sub_times = opp_times = {
+        sub_times = {
             "ow": None,
             "nether": None,
             "bastion": None,
@@ -87,7 +90,16 @@ def get_avg_splits(uuid, detailed_matches):
             "stronghold": None,
             "end": None,
         }
-        sub_entered = opp_entered = {
+        opp_times = {
+            "ow": None,
+            "nether": None,
+            "bastion": None,
+            "fortress": None,
+            "blind": None,
+            "stronghold": None,
+            "end": None,
+        }
+        sub_entered = {
             "ow": True,
             "nether": False,
             "bastion": False,
@@ -96,33 +108,76 @@ def get_avg_splits(uuid, detailed_matches):
             "stronghold": False,
             "end": False,
         }
-        entered_splits["ow"] += 1
+        opp_entered = {
+            "ow": True,
+            "nether": False,
+            "bastion": False,
+            "fortress": False,
+            "blind": False,
+            "stronghold": False,
+            "end": False,
+        }
         won_match = match["result"]["uuid"] == uuid
 
         for event in reversed(match["timelines"]):
             is_sub = event["uuid"] == uuid
+
             if event["type"] in EVENT_MAPPING:
-                if is_sub:
-                    sub_times[sub_prev_event] += event["time"] - sub_prev_time
-                    sub_prev_event = EVENT_MAPPING[event["type"]]
+                curr_event = EVENT_MAPPING[event["type"]]
+                if is_sub and not sub_entered[curr_event]:
+                    sub_times[sub_prev_event] = event["time"] - sub_prev_time
+                    sub_prev_time = event["time"]
+                    sub_prev_event = curr_event
                     sub_entered[sub_prev_event] = True
-                    entered_splits[EVENT_MAPPING[event["type"]]] += 1
-                else:
-                    opp_times[opp_prev_event] += event["time"] - opp_prev_time
-                    opp_prev_event = EVENT_MAPPING[event["type"]]
+                elif not is_sub and not opp_entered[curr_event]:
+                    opp_times[opp_prev_event] = event["time"] - opp_prev_time
+                    opp_prev_time = event["time"]
+                    opp_prev_event = curr_event
                     opp_entered[opp_prev_event] = True
 
+        if won_match and not match["forfeited"]:
+            sub_times["end"] = match["result"]["time"] - sub_prev_time
+        if not won_match and not match["forfeited"]:
+            opp_times["end"] = match["result"]["time"] - opp_prev_time
+
+        # Check if a split was won for each one where both players entered.
         for split in sub_times:
             if sub_entered[split] and opp_entered[split]:
-                if sub_times[split] and opp_times[split]:
-                    if sub_times[split] >= opp_times[split]:
+                # If both players completed the split, compare.
+                if sub_times[split] is not None and opp_times[split] is not None:
+                    if sub_times[split] <= opp_times[split]:
                         won_splits[split] += 1
-                else:
+                    else:
+                        lost_splits[split] += 1
+                # If the subject was ahead,
+                elif sub_times[split] is not None and opp_times[split] is None:
+                    # and the subject won, count the opponent's last split as won.
                     if won_match:
                         won_splits[split] += 1
+                    # and the subject lost, don't compare the opponent's last split.
+                    else:
+                        pass
+                    break
+                # If the subject was behind,
+                elif sub_times[split] is None and opp_times[split] is not None:
+                    # and the subject won, don't compare the last split.
+                    if won_match:
+                        pass
+                    # and the subject lost, count the last split as lost.
+                    else:
+                        lost_splits[split] += 1
+                    break
+                else:
                     break
 
-    return number_splits, average_splits, average_deaths
+    winrates = {
+        split: round(won_splits[split] / (won_splits[split] + lost_splits[split]), 3)
+        if won_splits[split] + lost_splits[split] != 0
+        else 0
+        for split in won_splits
+    }
+
+    return winrates
 
 
 def get_avg_splits(uuid, detailed_matches):
