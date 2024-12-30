@@ -8,6 +8,7 @@ import numpy as np
 import requests
 import aiohttp
 
+from gen_functions import api
 from gen_functions.word import process_split
 
 
@@ -26,7 +27,13 @@ async def get_matches(name, season, decays):
         while True:
             matches = await asyncio.gather(
                 *[
-                    get_user_matches(name=name, season=s, decays=decays, page=page)
+                    api.UserMatches(
+                        name=name,
+                        page=page,
+                        type=2,
+                        season=s,
+                        exclude_decay=not decays
+                    ).get_async()
                     for page in range(i, i + step_size)
                 ]
             )
@@ -37,65 +44,6 @@ async def get_matches(name, season, decays):
 
     process_split(then, "Gathering data")
     return master_matches
-
-
-async def get_user_matches(
-    name: str,
-    page: int = 0,
-    count: int = 50,
-    m_type: int = 2,
-    season: int = -1,
-    decays: bool = False,
-):
-    headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0."
-    }
-
-    if not decays:
-        excludedecay = "&excludedecay"
-    else:
-        excludedecay = ""
-    if season == -1:
-        season = get_season()
-
-    url = f"https://mcsrranked.com/api/users/{name}/matches?page={page}&count={count}&type={m_type}&season={season}{excludedecay}"
-
-    async with aiohttp.ClientSession() as session:
-        try:
-            async with session.get(url, headers=headers, timeout=10) as response:
-                response_data = await response.json()
-        except asyncio.TimeoutError:
-            return None
-
-        if isinstance(response, str):
-            return None
-        if response_data["status"] == "success":
-            return response_data["data"]
-        return None
-
-
-def get_last_match(name):
-    headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0."
-    }
-    player_response = requests.get(
-        f"https://mcsrranked.com/api/users/{name}", headers=headers, timeout=10
-    ).json()
-    if player_response["data"] == "Too many requests":
-        return -1
-
-    if player_response["status"] == "error":
-        return None
-
-    matches_response = requests.get(
-        f"https://mcsrranked.com/api/users/{name}/matches?count=1&type=2&excludedecay",
-        headers=headers,
-        timeout=10,
-    ).json()
-    if matches_response["data"] == []:
-        return None
-
-    return matches_response["data"][0]["id"]
 
 
 def get_playtime(response, season_or_total):
@@ -152,18 +100,19 @@ async def get_detailed_matches(player_response, season, min_comps, target_games)
     }
 
     while True:
-        response = requests.get(
-            f"https://mcsrranked.com/api/users/{name}/matches?page={i}&season={season}&count=50&type=2&excludedecay",
-            headers=headers,
-            timeout=10,
-        ).json()["data"]
+        response = api.UserMatches(
+            name=name,
+            page=i,
+            type=2,
+            season=season
+        ).get()
 
         games_left = target_games - num_games
         if games_left <= 49 and len(response) > games_left:
             response = response[0:games_left]
 
         matches = await asyncio.gather(
-            *[get_match_details(match["id"]) for match in response]
+            *[api.Match(id=match["id"]).get_async() for match in response]
         )
         detailed_matches += matches
         i += 1
@@ -185,49 +134,8 @@ async def get_detailed_matches(player_response, season, min_comps, target_games)
     return num_comps, detailed_matches
 
 
-async def get_match_details(match_id):
-    headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0."
-    }
-    url = f"https://mcsrranked.com/api/matches/{match_id}"
-
-    async with aiohttp.ClientSession() as session:
-        try:
-            async with session.get(url, headers=headers, timeout=10) as response:
-                response_data = await response.json()
-        except asyncio.TimeoutError:
-            return None
-        if response_data == "Too many requests":
-            return None
-        if response_data["status"] == "success":
-            return response_data["data"]
-        return None
-
-
-def get_match_details_sync(match_id):
-    headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0."
-    }
-    url = f"https://mcsrranked.com/api/matches/{match_id}"
-
-    try:
-        response = requests.get(url, headers=headers, timeout=10)
-    except:
-        return None
-    if isinstance(response, str):
-        return None
-    if response["status"] == "success":
-        return response["data"]
-    return None
-
-
 def get_season():
-    """
-    response = requests.get("https://mcsrranked.com/api/matches/?count=1").json()["data"]
-    season = response[0]["match_season"]
-    return season
-    """
-    return 6
+    return 7
 
 
 def split(then, name="That"):

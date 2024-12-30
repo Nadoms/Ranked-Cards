@@ -10,7 +10,6 @@ from time import time
 from datetime import datetime, timezone
 import traceback
 
-import requests
 from commands import (
     card as carding,
     graph as graphing,
@@ -18,16 +17,12 @@ from commands import (
     analysis as analysing,
     race as racing,
 )
-from gen_functions import games
+from gen_functions import games, api
 
 TESTING_MODE = True
-
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0."
-}
-API = "https://mcsrranked.com/api/"
 CURRENT_SEASON = games.get_season()
 ALL_SEASONS = [str(season) for season in range(1, CURRENT_SEASON + 1)]
+API_COOLDOWN_MSG = "Too many commands have been issued! The Ranked API is cooling down... (~10 mins)"
 token = "TEST_TOKEN" if TESTING_MODE else "DISCORD_TOKEN"
 default_guild_ids = [735859906434957392] if TESTING_MODE else None
 
@@ -122,9 +117,7 @@ async def card(
         default="",
     ),
 ):
-
     connected = False
-
     if not input_name:
         input_name = get_name(interaction)
         if not input_name:
@@ -135,53 +128,33 @@ async def card(
             return
         connected = True
 
-    response = requests.get(f"{API}users/{input_name}", headers=HEADERS).json()
+    async def fail_get(msg):
+        await interaction.response.send_message(msg)
+        traceback.print_exc()
+        update_records(interaction, "card", input_name, False)
 
-    print(f"\nGenerating card for {input_name}")
-    failed = False
-    if response["status"] == "error":
-        if response["data"] == "Too many requests":
-            await interaction.response.send_message(
-                f"Too many commands have been issued! The Ranked API is cooling down...",
-            )
-            print(f"\nRanked API is mad at me...")
-            update_records(interaction, "card", input_name, False)
-            return
+    print(f"---\nGenerating card for {input_name}")
+    try:
+        response = api.User(name=input_name).get()
 
-        print(f"Player not found (`{input_name}`).")
+    except api.APINotFoundError:
+        not_found = f"Player not found (`{input_name}`)."
         if connected:
-            await interaction.response.send_message(
-                f"Player not found (`{input_name}`). Connect to your new Minecraft username with </connect:1149442234513637448>.",
-            )
-            update_records(interaction, "card", input_name, False)
+            fail_get(f"{not_found} Connect to your new Minecraft username with </connect:1149442234513637448>.")
             return
-
-        failed = True
-        extra, first = get_close(input_name)
-
-        if not first:
-            await interaction.response.send_message(
-                f"Player not found (`{input_name}`)."
-            )
-            update_records(interaction, "card", input_name, False)
+        close_names = get_close(input_name)
+        if close_names:
+            fail_get(f"{not_found} Similar usernames include:\n{', '.join(close_names)}")
             return
+        fail_get(not_found)
+        return
 
-        print(f"\nAutocorrected to {first}.")
-        response = requests.get(f"{API}users/{first}", headers=HEADERS).json()
-
-        if response["status"] == "error":
-            print("Player changed username.")
-            extra = " This player may have changed username."
-            await interaction.response.send_message(
-                f"Player not found (`{input_name}`). {extra}"
-            )
-            update_records(interaction, "card", input_name, False)
-            return
+    except api.APIRateLimitError:
+        fail_get(API_COOLDOWN_MSG)
+        return
 
     await interaction.response.defer()
-    response = response["data"]
 
-    old_input = input_name
     input_name = response["nickname"]
     uid, background = get_user_info(response, input_name)
     user = await bot.fetch_user(uid)
@@ -192,15 +165,16 @@ async def card(
     if discord[-2:] == "#0":
         discord = discord[:-2]
 
-    history = await games.get_user_matches(name=input_name, page=0, count=50)
+    history = api.UserMatches(name=input_name, type=2).get()
 
     try:
         img = carding.main(input_name, response, discord, pfp, background, history)
-    except Exception as e:
+    except Exception:
         print("Error caught!")
         traceback.print_exc()
         await interaction.followup.send(
-            "An error has occurred. <@298936021557706754> fix it pls"
+            "An error has occurred. <@298936021557706754> fix it pls:\n"
+            f"```{traceback.format_exc()}```"
         )
         update_records(interaction, "card", input_name, False)
         return
@@ -208,14 +182,8 @@ async def card(
     img.save("card.png")
     with open("card.png", "rb") as f:
         img = File(f)
-    if failed:
-        await interaction.followup.send(
-            f"Player not found (`{old_input}`). {extra}", file=img
-        )
-        update_records(interaction, "card", input_name, True)
-    else:
-        await interaction.followup.send(file=img)
-        update_records(interaction, "card", input_name, True)
+    await interaction.followup.send(file=img)
+    update_records(interaction, "card", input_name, True)
     os.remove("card.png")
 
 
@@ -246,9 +214,7 @@ async def plot(
         choices=ALL_SEASONS + ["Lifetime"],
     ),
 ):
-
     connected = False
-
     if not input_name:
         input_name = get_name(interaction)
         if not input_name:
@@ -259,64 +225,44 @@ async def plot(
             return
         connected = True
 
-    response = requests.get(f"{API}users/{input_name}", headers=HEADERS).json()
+    async def fail_get(msg):
+        await interaction.response.send_message(msg)
+        traceback.print_exc()
+        update_records(interaction, "plot", input_name, False)
 
-    print(f"\nDrawing {type} graph for {input_name}")
-    failed = False
-    if response["status"] == "error":
-        if response["data"] == "Too many requests":
-            await interaction.response.send_message(
-                f"Too many commands have been issued! The Ranked API is cooling down...",
-            )
-            print(f"\nRanked API is mad at me...")
-            update_records(interaction, "plot", input_name, False)
-            return
+    print(f"---\nDrawing {type} graph for {input_name}")
+    try:
+        response = api.User(name=input_name).get()
 
-        print(f"Player not found (`{input_name}`).")
+    except api.APINotFoundError:
+        not_found = f"Player not found (`{input_name}`)."
         if connected:
-            await interaction.response.send_message(
-                f"Player not found (`{input_name}`). Connect to your new Minecraft username with </connect:1149442234513637448>.",
-            )
-            update_records(interaction, "plot", input_name, False)
+            fail_get(f"{not_found} Connect to your new Minecraft username with </connect:1149442234513637448>.")
             return
-
-        failed = True
-        extra, first = get_close(input_name)
-
-        if not first:
-            await interaction.response.send_message(
-                f"Player not found  (`{input_name}`)."
-            )
-            update_records(interaction, "plot", input_name, False)
+        close_names = get_close(input_name)
+        if close_names:
+            fail_get(f"{not_found} Similar usernames include:\n{', '.join(close_names)}")
             return
+        fail_get(not_found)
+        return
 
-        print(f"\nAutocorrected to {first}.")
-        response = requests.get(f"{API}users/{first}", headers=HEADERS).json()
-
-        if response["status"] == "error":
-            print("Player changed username.")
-            extra = " This player may have changed username."
-            await interaction.response.send_message(
-                f"Player not found (`{input_name}`). {extra}"
-            )
-            update_records(interaction, "plot", input_name, False)
-            return
+    except api.APIRateLimitError:
+        fail_get(API_COOLDOWN_MSG)
+        return
 
     await interaction.response.defer()
-    response = response["data"]
 
-    old_input = input_name
     input_name = response["nickname"]
-
     matches = await games.get_matches(response["nickname"], season, True)
 
     try:
         img = graphing.main(input_name, response, type, season, matches)
-    except Exception as e:
+    except Exception:
         print("Error caught!")
         traceback.print_exc()
         await interaction.followup.send(
-            "An error has occurred. <@298936021557706754> fix it pls"
+            "An error has occurred. <@298936021557706754> fix it pls:\n"
+            f"```{traceback.format_exc()}```"
         )
         update_records(interaction, "plot", input_name, False)
         return
@@ -337,14 +283,8 @@ async def plot(
     img.save("graph.png")
     with open("graph.png", "rb") as f:
         img = File(f)
-    if failed:
-        await interaction.followup.send(
-            f"Player not found (`{old_input}`). {extra}", file=img
-        )
-        update_records(interaction, "plot", input_name, True)
-    else:
-        await interaction.followup.send(file=img)
-        update_records(interaction, "plot", input_name, True)
+    await interaction.followup.send(file=img)
+    update_records(interaction, "plot", input_name, True)
     os.remove("graph.png")
 
 
@@ -361,10 +301,8 @@ async def match(
         default=None,
     ),
 ):
-
-    input_name = get_name(interaction)
-
     if not match_id:
+        input_name = get_name(interaction)
         if not input_name:
             await interaction.response.send_message(
                 "Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a match ID.",
@@ -372,44 +310,42 @@ async def match(
             update_records(interaction, "match", "Unknown", False)
             return
 
-        print(f"\nFinding {input_name}'s last match")
-        match_id = games.get_last_match(input_name)
-        if not match_id:
+        print(f"---\nFinding {input_name}'s last match")
+        try:
+            match_response = api.UserMatches(
+                name=input_name, count=1, type=2, exclude_decay=True
+            ).get()
+        except api.APIRateLimitError:
+            await interaction.response.send_message(API_COOLDOWN_MSG)
+            traceback.print_exc()
+            update_records(interaction, "match", "Unknown", False)
+            return
+
+        if match_response == []:
             await interaction.response.send_message(
-                "Player has no matches from this season."
+                f"Player has no matches from this season. ({input_name})"
             )
             update_records(interaction, "match", "Unknown", False)
             return
 
-        if match_id == -1:
-            await interaction.response.send_message(
-                f"Too many commands have been issued! The Ranked API is cooling down...",
-            )
-            print(f"\nRanked API is mad at me...")
-            update_records(interaction, "match", "Unknown", False)
-            return
+        match_id = match_response[0]["id"]
 
-    print(f"\nCharting match {match_id}")
-    response = requests.get(f"{API}matches/{match_id}", headers=HEADERS).json()
-
-    if response["status"] == "error":
-        if response["data"] == "Too many requests":
-            await interaction.response.send_message(
-                f"Too many commands have been issued! The Ranked API is cooling down...",
-            )
-            print(f"\nRanked API is mad at me...")
-            update_records(interaction, "match", input_name, False)
-            return
-
-        print("Match not found.")
-        await interaction.response.send_message(f"Match not found. (`{match_id}`)")
+    async def fail_get(msg):
+        await interaction.response.send_message(msg)
+        traceback.print_exc()
         update_records(interaction, "match", match_id, False)
+
+    print(f"---\nCharting match {match_id}")
+    try:
+        response = api.Match(match_id=match_id).get()
+    except api.APINotFoundError:
+        fail_get(f"Match not found (`{match_id}`).")
+        return
+    except api.APIRateLimitError:
+        fail_get(API_COOLDOWN_MSG)
         return
 
-    response = response["data"]
-
     if response["type"] >= 3 or response["decayed"] == True:
-        print("Match is invalid.")
         await interaction.response.send_message(
             f"Match must be a ranked or casual game. (`{match_id}`)"
         )
@@ -420,11 +356,12 @@ async def match(
 
     try:
         img = matching.main(response)
-    except Exception as e:
+    except Exception:
         print("Error caught!")
         traceback.print_exc()
         await interaction.followup.send(
-            "An error has occurred. <@298936021557706754> fix it pls"
+            "An error has occurred. <@298936021557706754> fix it pls:\n"
+            f"```{traceback.format_exc()}```"
         )
         update_records(interaction, "match", match_id, False)
         return
@@ -454,9 +391,7 @@ async def analysis(
         choices=ALL_SEASONS,
     ),
 ):
-
     connected = False
-
     if not input_name:
         input_name = get_name(interaction)
         if not input_name:
@@ -467,61 +402,36 @@ async def analysis(
             return
         connected = True
 
-    print(f"\nAnalysing {input_name}'s games")
+    async def fail_get(msg):
+        await interaction.response.send_message(msg)
+        traceback.print_exc()
+        update_records(interaction, "analysis", input_name, False)
 
-    response = requests.get(
-        f"{API}users/{input_name}?season={season}", headers=HEADERS
-    ).json()
+    print(f"---\nAnalysing {input_name}'s games")
 
-    failed = False
-    if response["status"] == "error":
-        if response["data"] == "Too many requests":
-            await interaction.response.send_message(
-                f"Too many commands have been issued! The Ranked API is cooling down...",
-            )
-            print(f"\nRanked API is mad at me...")
-            update_records(interaction, "analysis", input_name, False)
-            return
+    try:
+        response = api.User(name=input_name, season=season).get()
 
-        print(f"Player not found (`{input_name}`).")
+    except api.APINotFoundError:
+        not_found = f"Player not found (`{input_name}`)."
         if connected:
-            await interaction.response.send_message(
-                f"Player not found (`{input_name}`). Connect to your new Minecraft username with </connect:1149442234513637448>.",
-            )
-            update_records(interaction, "analysis", input_name, False)
+            fail_get(f"{not_found} Connect to your new Minecraft username with </connect:1149442234513637448>.")
             return
-
-        failed = True
-        extra, first = get_close(input_name)
-
-        if not first:
-            await interaction.response.send_message(
-                f"Player not found (`{input_name}`)."
-            )
-            update_records(interaction, "analysis", input_name, False)
+        close_names = get_close(input_name)
+        if close_names:
+            fail_get(f"{not_found} Similar usernames include:\n{', '.join(close_names)}")
             return
+        fail_get(not_found)
+        return
 
-        print(f"\nAutocorrected to {first}.")
-        response = requests.get(
-            f"{API}users/{first}?season={season}", headers=HEADERS
-        ).json()
-
-        if response["status"] == "error":
-            print("Player changed username.")
-            extra = " This player may have changed username."
-            await interaction.response.send_message(
-                f"Player not found (`{input_name}`). {extra}"
-            )
-            update_records(interaction, "analysis", input_name, False)
-            return
+    except api.APIRateLimitError:
+        fail_get(API_COOLDOWN_MSG)
+        return
 
     await interaction.response.defer()
-    response = response["data"]
 
-    old_input = input_name
     input_name = response["nickname"]
-
-    cooldown = 60 * 60 * 1  # 1 hour cooldown
+    cooldown = 60 * 30  # 30 min cooldown
     user_cooldown, last_link = get_cooldown(input_name)
 
     cd_extra = ""
@@ -540,7 +450,7 @@ async def analysis(
         update_records(interaction, "analysis", input_name, False)
         return
 
-    target_games = 30 if TESTING_MODE else 100
+    target_games = 50 if TESTING_MODE else 200
     num_comps, detailed_matches = await games.get_detailed_matches(
         response, season, 5, target_games
     )
@@ -555,11 +465,12 @@ async def analysis(
 
     try:
         anal = analysing.main(response, num_comps, detailed_matches, season)
-    except Exception as e:
+    except Exception:
         print("Error caught!")
         traceback.print_exc()
         await interaction.followup.send(
-            "An error has occurred. <@298936021557706754> fix it pls"
+            "An error has occurred. <@298936021557706754> fix it pls:\n"
+            f"```{traceback.format_exc()}```"
         )
         update_records(interaction, "analysis", input_name, False)
         return
@@ -695,19 +606,11 @@ async def analysis(
     images = [split_polygon, bastion_polygon, ow_polygon]
     view = Topics(interaction, embeds, images)
 
-    if failed:
-        await interaction.followup.send(
-            f"Player not found (`{old_input}`). {extra}",
-            file=split_file,
-            embeds=[embed_general, embed_split],
-            view=view,
-        )
-    else:
-        await interaction.followup.send(
-            file=split_file,
-            embeds=[embed_general, embed_split],
-            view=view,
-        )
+    await interaction.followup.send(
+        file=split_file,
+        embeds=[embed_general, embed_split],
+        view=view,
+    )
     update_records(interaction, "analysis", input_name, True)
     os.remove("split.png")
 
@@ -725,49 +628,46 @@ async def race(
         default="",
     ),
 ):
-
     input_name = get_name(interaction)
     if race_no and race_no[0] == "#":
         race_no = race_no[1:]
 
-    print(f"\nFinding details about weekly race #{race_no}")
-    response = requests.get(f"{API}weekly-race/{race_no}", headers=HEADERS).json()
+    print(f"---\nFinding details about weekly race #{race_no}")
+    try:
+        response = api.WeeklyRace(id=race_no).get()
 
-    if response["status"] == "error":
-        if response["data"] == "Too many requests":
-            await interaction.response.send_message(
-                f"Too many commands have been issued! The Ranked API is cooling down..."
-            )
-            print(f"\nRanked API is mad at me...")
-            update_records(interaction, "race", race_no, False, False)
-            return
-
-        latest_response = requests.get(f"{API}weekly-race", headers=HEADERS).json()
-        latest_race = latest_response["data"]["id"]
-        print("Race not found.")
+    except api.APINotFoundError:
+        latest_race_id = api.WeeklyRace().get()["id"]
         await interaction.response.send_message(
-            f"Weekly race not found. (`#{race_no}`). The latest race was weekly race `#{latest_race}`."
+            f"Weekly race not found (`#{race_no}`)."
+            f"The latest race was weekly race `#{latest_race_id}`."
         )
-        update_records(interaction, "race", race_no, False, False)
+        traceback.print_exc()
+        update_records(interaction, "race", race_no, False)
         return
 
-    response = response["data"]
+    except api.APIRateLimitError:
+        await interaction.response.send_message(API_COOLDOWN_MSG)
+        traceback.print_exc()
+        update_records(interaction, "race", race_no, False)
+        return
 
     await interaction.response.defer()
 
     try:
         race_embed = racing.main(response, input_name)
-    except Exception as e:
+    except Exception:
         print("Error caught!")
         traceback.print_exc()
         await interaction.followup.send(
-            "An error has occurred. <@298936021557706754> fix it pls"
+            "An error has occurred. <@298936021557706754> fix it pls:\n"
+            f"```{traceback.format_exc()}```"
         )
-        update_records(interaction, "race", race_no, False, False)
+        update_records(interaction, "race", race_no, False)
         return
 
     await interaction.followup.send(embed=race_embed)
-    update_records(interaction, "race", race_no, False, True)
+    update_records(interaction, "race", race_no, True)
 
 
 @bot.slash_command(
@@ -1043,30 +943,14 @@ def set_cooldown(jump_url, input_name):
 
 
 def get_close(input_name):
-    extra = ""
-    first = None
-
     file = path.join("src", "database", "players.txt")
     with open(file, "r") as f:
         players = f.readlines()
-        close = difflib.get_close_matches(input_name, players)
-    if close:
-        first = close[0].strip()
-        extra += f" Autocorrected to `{first}`"
-
-        if len(close) > 1:
-            extra += ", but you may have also meant "
-
-        for i in range(1, len(close)):
-            player = close[i].strip()
-            extra += f"`{player}`"
-            if i < len(close) - 2:
-                extra += ", "
-            elif i == len(close) - 2:
-                extra += " or "
-        extra += "."
-
-    return [extra, first]
+    close_names = [
+        f"`{name.strip()}`"
+        for name in difflib.get_close_matches(input_name, players)[:10]
+    ]
+    return close_names
 
 
 def update_records(interaction, command, subject, completed):

@@ -1,10 +1,13 @@
 import asyncio
+from os import getenv
 from typing import Optional
 import aiohttp
+from dotenv import load_dotenv
 import requests
 
 
-API_KEY = "vua4gftosjp5u6p325picczvem7i0h6rn22bscyvfsxwopx0juz1e43l92071kax"
+load_dotenv()
+API_KEY = getenv("API_KEY")
 API_URL = "https://mcsrranked.com/api"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0."
@@ -12,6 +15,7 @@ HEADERS = {
 NOT_FOUND_DATA = [
     "User is not exists.",
     "match `id` is not found",
+    "race is not found",
 ]
 
 
@@ -152,7 +156,7 @@ class RecentMatches(Matches):
         count: int = 50,
         type: Optional[int] = None,
         season: Optional[int] = None,
-        excludedecay: bool = None,
+        excludedecay: bool = True,
     ):
         self.excludedecay = excludedecay
         super().__init__(
@@ -175,10 +179,10 @@ class UserMatches(Matches):
         count: int = 50,
         type: Optional[int] = None,
         season: Optional[int] = None,
-        exclude_decay: bool = None,
+        excludedecay: bool = True,
     ):
         self.name = name
-        self.exclude_decay = exclude_decay
+        self.excludedecay = excludedecay
         super().__init__(
             directory=f"users/{self.name}/matches",
             page=page,
@@ -215,10 +219,10 @@ class Match(API):
 
     def __init__(
         self,
-        match_id: int,
+        id: int,
     ):
-        self.match_id = match_id
-        super().__init__(f"/matches/{self.match_id}")
+        self.id = id
+        super().__init__(f"/matches/{self.id}")
 
 
 class Versus(API):
@@ -234,3 +238,14 @@ class Versus(API):
         self.name_2 = name_2
         super().__init__(directory=f"users/{self.name_1}/versus/{self.name_2}")
         self.append(season=season)
+
+
+class WeeklyRace(API):
+
+    def __init__(
+        self,
+        *,
+        id: Optional[int] = None,
+    ):
+        self.id = id
+        super().__init__(f"/weekly-race/{self.id}")
