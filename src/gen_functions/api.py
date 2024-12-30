@@ -61,7 +61,7 @@ class API():
         self,
         directory: str,
     ):
-        self.base_url : str = f"{API_URL}/{directory}?API-Key={API_KEY}&"
+        self.url : str = f"{API_URL}/{directory}?API-Key={API_KEY}&"
 
     def append(self, **kwargs: dict[str, any]):
         parameters = []
@@ -72,7 +72,7 @@ class API():
                 parameters.append(key)
             else:
                 parameters.append(f"{key}={kwargs['key']}")
-        self.base_url += "&".join(parameters)
+        self.url += "&".join(parameters)
 
     def get(self) -> dict[str, any]:
         try:
