@@ -1,8 +1,11 @@
+import asyncio
 from typing import Optional
+import aiohttp
 import requests
 
 
-API_URL = "https://mcsrranked.com/api/"
+API_KEY = "vua4gftosjp5u6p325picczvem7i0h6rn22bscyvfsxwopx0juz1e43l92071kax"
+API_URL = "https://mcsrranked.com/api"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0."
 }
@@ -54,37 +57,53 @@ class API():
         self,
         directory: str,
     ):
-        self.url : str = f"{API_URL}{directory}?"
+        self.base_url : str = f"{API_URL}/{directory}?API-Key={API_KEY}&"
 
-    def add(self, parameters: dict):
-        formatted_parameters = []
-        for key in parameters:
-            if key is None:
+    def append(self, **kwargs: dict[str, any]):
+        parameters = []
+        for key in kwargs:
+            if kwargs[key] is None:
                 continue
-            if parameters[key] == "":
-                formatted_parameters.append(parameters["key"])
+            if kwargs[key] == "":
+                parameters.append(key)
             else:
-                formatted_parameters.append(f"{key}={parameters['key']}")
-        self.url += "&".join(formatted_parameters)
+                parameters.append(f"{key}={kwargs['key']}")
+        self.base_url += "&".join(parameters)
 
-
-    def get(directory_url: str) -> dict:
-        url = API_URL + directory_url
-
+    def get(self) -> dict[str, any]:
         try:
-            response = requests.get(url, headers=HEADERS, timeout=5)
+            response = requests.get(self.url, headers=HEADERS, timeout=5).json()
         except requests.exceptions.Timeout:
-            raise APITimeoutError(url)
+            raise APITimeoutError(self.url)
 
         if response["status"] == "error":
             if response["data"] == "Too many requests":
-                raise APIRateLimitError(url)
+                raise APIRateLimitError(self.url)
             elif response["data"] in NOT_FOUND_DATA:
-                raise APINotFoundError(url)
+                raise APINotFoundError(self.url)
             else:
-                raise APIError(url)
+                raise APIError(self.url)
 
-        return response.json()["data"]
+        return response["data"]
+
+    async def get_async(self) -> dict[str, any]:
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(self.url, headers=HEADERS, timeout=10) as fetch:
+                    response = await fetch.json()
+            except asyncio.TimeoutError:
+                raise APITimeoutError(self.url)
+
+        if response["status"] == "error":
+            if response["data"] == "Too many requests":
+                raise APIRateLimitError(self.url)
+            elif response["data"] in NOT_FOUND_DATA:
+                raise APINotFoundError(self.url)
+            else:
+                raise APIError(self.url)
+
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}: {self.url}"
 
 
 class User(API):
@@ -97,18 +116,15 @@ class User(API):
     ):
         self.name = name
         self.season = season
-        self.set_url()
-
-    def set_url(self):
-        self.url = f"users/{self.name}?"
-        if self.season:
-            self.url += f"season={self.season}"
+        super().__init__(f"/users/{self.name}")
+        self.append(season=self.season)
 
 
 class Matches(API):
 
     def __init__(
         self,
+        directory: str,
         page: int,
         count: int,
         type: int,
@@ -118,6 +134,13 @@ class Matches(API):
         self.count = count
         self.type = type
         self.season = season
+        super().__init__(directory)
+        self.append(
+            page=self.page,
+            count=self.count,
+            type=self.type,
+            season=self.season
+        )
 
 
 class RecentMatches(Matches):
@@ -131,8 +154,15 @@ class RecentMatches(Matches):
         season: Optional[int] = None,
         excludedecay: bool = None,
     ):
-        super().__init__(page=page, count=count, type=type, season=season)
         self.excludedecay = excludedecay
+        super().__init__(
+            directory="matches",
+            page=page,
+            count=count,
+            type=type,
+            season=season
+        )
+        self.append(excludedecay=self.excludedecay)
 
 
 class UserMatches(Matches):
@@ -147,10 +177,16 @@ class UserMatches(Matches):
         season: Optional[int] = None,
         exclude_decay: bool = None,
     ):
-        super().__init__(page=page, count=count, type=type, season=season)
         self.name = name
         self.exclude_decay = exclude_decay
-
+        super().__init__(
+            directory=f"users/{self.name}/matches",
+            page=page,
+            count=count,
+            type=type,
+            season=season
+        )
+        self.append(excludedecay=self.excludedecay)
 
 class VersusMatches(Matches):
 
@@ -164,9 +200,15 @@ class VersusMatches(Matches):
         type: Optional[int] = None,
         season: Optional[int] = None,
     ):
-        super().__init__(page=page, count=count, type=type, season=season)
         self.name_1 = name_1
         self.name_2 = name_2
+        super().__init__(
+            directory=f"users/{self.name_1}/versus/{self.name_2}/matches",
+            page=page,
+            count=count,
+            type=type,
+            season=season
+        )
 
 
 class Match(API):
@@ -176,6 +218,7 @@ class Match(API):
         match_id: int,
     ):
         self.match_id = match_id
+        super().__init__(f"/matches/{self.match_id}")
 
 
 class Versus(API):
@@ -189,3 +232,5 @@ class Versus(API):
     ):
         self.name_1 = name_1
         self.name_2 = name_2
+        super().__init__(directory=f"users/{self.name_1}/versus/{self.name_2}")
+        self.append(season=season)
