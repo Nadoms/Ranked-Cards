@@ -32,7 +32,7 @@ async def get_matches(name, season, decays):
                         page=page,
                         type=2,
                         season=s,
-                        exclude_decay=not decays
+                        excludedecay=not decays
                     ).get_async()
                     for page in range(i, i + step_size)
                 ]

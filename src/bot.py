@@ -45,10 +45,10 @@ class Topics(nextcord.ui.View):
         self.images = images
 
     def image_to_file(self, embed, image):
-        image.save("image.png")
-        file = File("image.png", filename="image.png")
-        embed.set_image(url="attachment://image.png")
-        os.remove("image.png")
+        image.save(f"{self.value}.png")
+        file = File(f"{self.value}.png", filename=f"{self.value}.png")
+        embed.set_image(url=f"attachment://{self.value}.png")
+        os.remove(f"{self.value}.png")
         return file
 
     @nextcord.ui.button(label="Splits", style=nextcord.ButtonStyle.red)
@@ -179,12 +179,12 @@ async def card(
         update_records(interaction, "card", input_name, False)
         return
 
-    img.save("card.png")
-    with open("card.png", "rb") as f:
+    img.save(f"card_{input_name}.png")
+    with open(f"card_{input_name}.png", "rb") as f:
         img = File(f)
     await interaction.followup.send(file=img)
     update_records(interaction, "card", input_name, True)
-    os.remove("card.png")
+    os.remove(f"card_{input_name}.png")
 
 
 @bot.slash_command(
@@ -280,12 +280,12 @@ async def plot(
         update_records(interaction, "plot", input_name, False)
         return
 
-    img.save("graph.png")
-    with open("graph.png", "rb") as f:
+    img.save(f"graph_{input_name}.png")
+    with open(f"graph_{input_name}.png", "rb") as f:
         img = File(f)
     await interaction.followup.send(file=img)
     update_records(interaction, "plot", input_name, True)
-    os.remove("graph.png")
+    os.remove(f"graph_{input_name}.png")
 
 
 @bot.slash_command(
@@ -313,7 +313,7 @@ async def match(
         print(f"---\nFinding {input_name}'s last match")
         try:
             match_response = api.UserMatches(
-                name=input_name, count=1, type=2, exclude_decay=True
+                name=input_name, count=1, type=2, excludedecay=True
             ).get()
         except api.APIRateLimitError:
             await interaction.response.send_message(API_COOLDOWN_MSG)
@@ -366,12 +366,12 @@ async def match(
         update_records(interaction, "match", match_id, False)
         return
 
-    img.save("chart.png")
-    with open("chart.png", "rb") as f:
+    img.save(f"chart_{match_id}.png")
+    with open(f"chart_{match_id}.png", "rb") as f:
         img = File(f)
     await interaction.followup.send(file=img)
     update_records(interaction, "match", match_id, True)
-    os.remove("chart.png")
+    os.remove(f"chart_{match_id}.png")
 
 
 @bot.slash_command(
@@ -612,7 +612,7 @@ async def analysis(
         view=view,
     )
     update_records(interaction, "analysis", input_name, True)
-    os.remove("split.png")
+    os.remove(f"split_{input_name}.png")
 
 
 @bot.slash_command(

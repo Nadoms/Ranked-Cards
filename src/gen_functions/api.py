@@ -61,20 +61,18 @@ class API():
         self,
         directory: str,
     ):
-        self.url : str = f"{API_URL}/{directory}?API-Key={API_KEY}&"
+        self.url : str = f"{API_URL}/{directory}?API-Key={API_KEY}"
 
     def append(self, **kwargs: dict[str, any]):
         parameters = []
         for key in kwargs:
             if kwargs[key] is None:
                 continue
-            if kwargs[key] == "":
-                parameters.append(key)
-            else:
-                parameters.append(f"{key}={kwargs['key']}")
-        self.url += "&".join(parameters)
+            parameters.append(f"{key}={kwargs[key]}")
+        self.url += "&" + "&".join(parameters)
 
     def get(self) -> dict[str, any]:
+        print(self.url)
         try:
             response = requests.get(self.url, headers=HEADERS, timeout=5).json()
         except requests.exceptions.Timeout:
@@ -91,6 +89,7 @@ class API():
         return response["data"]
 
     async def get_async(self) -> dict[str, any]:
+        print(self.url)
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.get(self.url, headers=HEADERS, timeout=10) as fetch:
@@ -106,6 +105,8 @@ class API():
             else:
                 raise APIError(self.url)
 
+        return response["data"]
+
     def __str__(self) -> str:
         return f"{self.__class__.__name__}: {self.url}"
 
@@ -120,7 +121,7 @@ class User(API):
     ):
         self.name = name
         self.season = season
-        super().__init__(f"/users/{self.name}")
+        super().__init__(f"users/{self.name}")
         self.append(season=self.season)
 
 
@@ -222,7 +223,7 @@ class Match(API):
         id: int,
     ):
         self.id = id
-        super().__init__(f"/matches/{self.id}")
+        super().__init__(f"matches/{self.id}")
 
 
 class Versus(API):
@@ -236,7 +237,7 @@ class Versus(API):
     ):
         self.name_1 = name_1
         self.name_2 = name_2
-        super().__init__(directory=f"users/{self.name_1}/versus/{self.name_2}")
+        super().__init__(f"users/{self.name_1}/versus/{self.name_2}")
         self.append(season=season)
 
 
@@ -248,4 +249,4 @@ class WeeklyRace(API):
         id: Optional[int] = None,
     ):
         self.id = id
-        super().__init__(f"/weekly-race/{self.id}")
+        super().__init__(f"weekly-race/{self.id}")
