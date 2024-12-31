@@ -1,19 +1,10 @@
-from pathlib import Path
 import time
 from datetime import timedelta, datetime
 import asyncio
 from itertools import chain
 
-import numpy as np
-import requests
-import aiohttp
-
 from gen_functions import api
 from gen_functions.word import process_split
-
-
-ROOT = Path(__file__).parent.parent.parent.resolve()
-MATCHES_FILE = ROOT / "src" / "database" / "matches.json"
 
 
 async def get_matches(name, season, decays):
@@ -115,13 +106,15 @@ async def get_detailed_matches(player_response, season, min_comps, target_games)
         if games_left <= 49 and len(response) > games_left:
             response = response[0:games_left]
 
-        with open (MATCHES_FILE, "r+") as fp:
-            matches = await asyncio.gather(
-                *[
-                    api.Match(id=match["id"], fp=fp).get_async()
-                    for match in response
-                ]
-            )
+        api.Match.load_cache()
+        matches = await asyncio.gather(
+            *[
+                api.Match(id=match["id"]).get_async()
+                for match in response
+            ]
+        )
+        api.Match.dump_cache()
+
         detailed_matches += matches
         i += 1
         num_games = len(detailed_matches)

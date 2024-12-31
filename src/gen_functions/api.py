@@ -1,10 +1,15 @@
 import asyncio
 import json
 from os import getenv
-from typing import IO, Optional
+from pathlib import Path
+from typing import TextIO, Optional
 import aiohttp
 from dotenv import load_dotenv
 import requests
+
+
+ROOT = Path(__file__).parent.parent.parent.resolve()
+MATCHES_FILE = ROOT / "src" / "database" / "matches.json"
 
 
 load_dotenv()
@@ -227,30 +232,34 @@ class VersusMatches(Matches):
 
 
 class Match(API):
+    _cache: dict[str, any] = {}
+    _additions: int = 0
 
     def __init__(
         self,
         id: int,
-        *,
-        fp: Optional[IO] = None,
     ):
         self.id = id
-        self.fp = fp
         super().__init__(f"matches/{self.id}")
 
     def _cache_result(self, data: dict[str, any]):
-        if self.fp is None:
-            return
-        matches = json.load(self.fp)
-        matches[str(data["id"])] = data
-        json.dump(matches, self.fp, indent=4, sort_keys=True)
+        Match._cache[str(self.id)] = data
+        Match._additions += 1
 
     def _check_cache(self) -> dict[str, any]:
-        if self.fp is None:
-            return
-        matches = json.load(self.fp)
-        data = matches.get(str(self.id))
+        data = Match._cache.get(str(self.id))
         return data
+
+    @classmethod
+    def load_cache(cls):
+        cls._cache = json.loads(MATCHES_FILE.read_text())
+        cls._additions = 0
+
+    @classmethod
+    def dump_cache(cls):
+        MATCHES_FILE.write_text(json.dumps(cls._cache, indent=4, sort_keys=True))
+        cls._cache = {}
+        return cls._additions
 
 
 class Versus(API):
