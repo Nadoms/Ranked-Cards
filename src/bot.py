@@ -130,27 +130,28 @@ async def card(
 
     async def fail_get(msg):
         await interaction.response.send_message(msg)
-        traceback.print_exc()
         update_records(interaction, "card", input_name, False)
 
     print(f"---\nGenerating card for {input_name}")
     try:
         response = api.User(name=input_name).get()
 
-    except api.APINotFoundError:
+    except api.APINotFoundError as e:
+        print(e)
         not_found = f"Player not found (`{input_name}`)."
         if connected:
-            fail_get(f"{not_found} Connect to your new Minecraft username with </connect:1149442234513637448>.")
+            await fail_get(f"{not_found} Connect to your new Minecraft username with </connect:1149442234513637448>.")
             return
         close_names = get_close(input_name)
         if close_names:
-            fail_get(f"{not_found} Similar usernames include:\n{', '.join(close_names)}")
+            await fail_get(f"{not_found} Similar usernames include:\n{', '.join(close_names)}")
             return
-        fail_get(not_found)
+        await fail_get(not_found)
         return
 
-    except api.APIRateLimitError:
-        fail_get(API_COOLDOWN_MSG)
+    except api.APIRateLimitError as e:
+        print(e)
+        await fail_get(API_COOLDOWN_MSG)
         return
 
     await interaction.response.defer()
@@ -227,27 +228,28 @@ async def plot(
 
     async def fail_get(msg):
         await interaction.response.send_message(msg)
-        traceback.print_exc()
         update_records(interaction, "plot", input_name, False)
 
     print(f"---\nDrawing {type} graph for {input_name}")
     try:
         response = api.User(name=input_name).get()
 
-    except api.APINotFoundError:
+    except api.APINotFoundError as e:
+        print(e)
         not_found = f"Player not found (`{input_name}`)."
         if connected:
-            fail_get(f"{not_found} Connect to your new Minecraft username with </connect:1149442234513637448>.")
+            await fail_get(f"{not_found} Connect to your new Minecraft username with </connect:1149442234513637448>.")
             return
         close_names = get_close(input_name)
         if close_names:
-            fail_get(f"{not_found} Similar usernames include:\n{', '.join(close_names)}")
+            await fail_get(f"{not_found} Similar usernames include:\n{', '.join(close_names)}")
             return
-        fail_get(not_found)
+        await fail_get(not_found)
         return
 
-    except api.APIRateLimitError:
-        fail_get(API_COOLDOWN_MSG)
+    except api.APIRateLimitError as e:
+        print(e)
+        await fail_get(API_COOLDOWN_MSG)
         return
 
     await interaction.response.defer()
@@ -315,9 +317,9 @@ async def match(
             match_response = api.UserMatches(
                 name=input_name, count=1, type=2, excludedecay=True
             ).get()
-        except api.APIRateLimitError:
+        except api.APIRateLimitError as e:
+            print(e)
             await interaction.response.send_message(API_COOLDOWN_MSG)
-            traceback.print_exc()
             update_records(interaction, "match", "Unknown", False)
             return
 
@@ -332,17 +334,18 @@ async def match(
 
     async def fail_get(msg):
         await interaction.response.send_message(msg)
-        traceback.print_exc()
         update_records(interaction, "match", match_id, False)
 
     print(f"---\nCharting match {match_id}")
     try:
-        response = api.Match(match_id=match_id).get()
-    except api.APINotFoundError:
-        fail_get(f"Match not found (`{match_id}`).")
+        response = api.Match(id=match_id).get()
+    except api.APINotFoundError as e:
+        print(e)
+        await fail_get(f"Match not found (`{match_id}`).")
         return
-    except api.APIRateLimitError:
-        fail_get(API_COOLDOWN_MSG)
+    except api.APIRateLimitError as e:
+        print(e)
+        await fail_get(API_COOLDOWN_MSG)
         return
 
     if response["type"] >= 3 or response["decayed"] == True:
@@ -404,7 +407,6 @@ async def analysis(
 
     async def fail_get(msg):
         await interaction.response.send_message(msg)
-        traceback.print_exc()
         update_records(interaction, "analysis", input_name, False)
 
     print(f"---\nAnalysing {input_name}'s games")
@@ -412,20 +414,22 @@ async def analysis(
     try:
         response = api.User(name=input_name, season=season).get()
 
-    except api.APINotFoundError:
+    except api.APINotFoundError as e:
+        print(e)
         not_found = f"Player not found (`{input_name}`)."
         if connected:
-            fail_get(f"{not_found} Connect to your new Minecraft username with </connect:1149442234513637448>.")
+            await fail_get(f"{not_found} Connect to your new Minecraft username with </connect:1149442234513637448>.")
             return
         close_names = get_close(input_name)
         if close_names:
-            fail_get(f"{not_found} Similar usernames include:\n{', '.join(close_names)}")
+            await fail_get(f"{not_found} Similar usernames include:\n{', '.join(close_names)}")
             return
-        fail_get(not_found)
+        await fail_get(not_found)
         return
 
-    except api.APIRateLimitError:
-        fail_get(API_COOLDOWN_MSG)
+    except api.APIRateLimitError as e:
+        print(e)
+        await fail_get(API_COOLDOWN_MSG)
         return
 
     await interaction.response.defer()
@@ -636,19 +640,19 @@ async def race(
     try:
         response = api.WeeklyRace(id=race_no).get()
 
-    except api.APINotFoundError:
+    except api.APINotFoundError as e:
+        print(e)
         latest_race_id = api.WeeklyRace().get()["id"]
         await interaction.response.send_message(
             f"Weekly race not found (`#{race_no}`)."
             f"The latest race was weekly race `#{latest_race_id}`."
         )
-        traceback.print_exc()
         update_records(interaction, "race", race_no, False)
         return
 
-    except api.APIRateLimitError:
+    except api.APIRateLimitError as e:
+        print(e)
         await interaction.response.send_message(API_COOLDOWN_MSG)
-        traceback.print_exc()
         update_records(interaction, "race", race_no, False)
         return
 

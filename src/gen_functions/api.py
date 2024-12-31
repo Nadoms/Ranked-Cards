@@ -72,7 +72,6 @@ class API():
         self.url += "&" + "&".join(parameters)
 
     def get(self) -> dict[str, any]:
-        print(self.url)
         try:
             response = requests.get(self.url, headers=HEADERS, timeout=5).json()
         except requests.exceptions.Timeout:
@@ -89,7 +88,6 @@ class API():
         return response["data"]
 
     async def get_async(self) -> dict[str, any]:
-        print(self.url)
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.get(self.url, headers=HEADERS, timeout=10) as fetch:
