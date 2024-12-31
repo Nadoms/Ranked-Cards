@@ -1,6 +1,7 @@
 import asyncio
+import json
 from os import getenv
-from typing import Optional
+from typing import IO, Optional
 import aiohttp
 from dotenv import load_dotenv
 import requests
@@ -72,22 +73,22 @@ class API():
         self.url += "&" + "&".join(parameters)
 
     def get(self) -> dict[str, any]:
+        cached_result = self._check_cache()
+        if cached_result is not None:
+            return cached_result
+
         try:
             response = requests.get(self.url, headers=HEADERS, timeout=5).json()
         except requests.exceptions.Timeout:
             raise APITimeoutError(self.url)
 
-        if response["status"] == "error":
-            if response["data"] == "Too many requests":
-                raise APIRateLimitError(self.url)
-            elif response["data"] in NOT_FOUND_DATA:
-                raise APINotFoundError(self.url)
-            else:
-                raise APIError(self.url)
-
-        return response["data"]
+        return self._handle_response(response)
 
     async def get_async(self) -> dict[str, any]:
+        cached_result = self._check_cache()
+        if cached_result is not None:
+            return cached_result
+
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.get(self.url, headers=HEADERS, timeout=10) as fetch:
@@ -95,6 +96,9 @@ class API():
             except asyncio.TimeoutError:
                 raise APITimeoutError(self.url)
 
+        return self._handle_response(response)
+
+    def _handle_response(self, response: dict[str, any]) -> dict[str, any]:
         if response["status"] == "error":
             if response["data"] == "Too many requests":
                 raise APIRateLimitError(self.url)
@@ -103,7 +107,14 @@ class API():
             else:
                 raise APIError(self.url)
 
+        self._cache_result(response["data"])
         return response["data"]
+
+    def _cache_result(self, data: dict[str, any]):
+        pass
+
+    def _check_cache(self):
+        pass
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}: {self.url}"
@@ -191,6 +202,7 @@ class UserMatches(Matches):
         )
         self.append(excludedecay=self.excludedecay)
 
+
 class VersusMatches(Matches):
 
     def __init__(
@@ -219,9 +231,26 @@ class Match(API):
     def __init__(
         self,
         id: int,
+        *,
+        fp: Optional[IO] = None,
     ):
         self.id = id
+        self.fp = fp
         super().__init__(f"matches/{self.id}")
+
+    def _cache_result(self, data: dict[str, any]):
+        if self.fp is None:
+            return
+        matches = json.load(self.fp)
+        matches[str(data["id"])] = data
+        json.dump(matches, self.fp, indent=4, sort_keys=True)
+
+    def _check_cache(self) -> dict[str, any]:
+        if self.fp is None:
+            return
+        matches = json.load(self.fp)
+        data = matches.get(str(self.id))
+        return data
 
 
 class Versus(API):
