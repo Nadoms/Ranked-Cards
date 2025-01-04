@@ -91,7 +91,7 @@ class API():
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.get(self.url, headers=HEADERS, timeout=10) as fetch:
-                    response = await fetch.json()
+                    response = await fetch.json(content_type=None)
             except asyncio.TimeoutError:
                 raise APITimeoutError(self.url)
 
