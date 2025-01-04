@@ -510,9 +510,9 @@ async def analysis(
         name=interaction.user.name, icon_url=interaction.user.display_avatar
     )
 
-    split_polygon.save("split.png")
-    split_file = File("split.png", filename="split.png")
-    embed_split.set_image(url="attachment://split.png")
+    split_polygon.save(f"split_{input_name}.png")
+    split_file = File(f"split_{input_name}.png", filename=f"split_{input_name}.png")
+    embed_split.set_image(url=f"attachment://split_{input_name}.png")
     embed_split.set_footer(
         text="Bot made by @Nadoms // Feedback appreciated :3",
         icon_url="https://cdn.discordapp.com/avatars/298936021557706754/a_60fb14a1dbfb0d33f3b02cc33579dacf?size=256",
@@ -767,7 +767,7 @@ async def connect(interaction: Interaction, input_name: str):
             await interaction.response.send_message(
                 f"`{input_name}` is already connected to {bot.get_user(int(user['discord']))}."
             )
-            update_records(interaction, "connect", input_name, False, False)
+            update_records(interaction, "connect", input_name, False)
             return
 
     if not user_exists:
@@ -789,8 +789,7 @@ async def connect(interaction: Interaction, input_name: str):
     await interaction.response.send_message(
         f"`{input_name}` has been connected to your discord!"
     )
-    update_records(interaction, "connect", input_name, False, not user_exists)
-    return
+    update_records(interaction, "connect", input_name, not user_exists)
 
 
 @bot.slash_command(
@@ -816,13 +815,13 @@ async def disconnect(interaction: Interaction):
             await interaction.response.send_message(
                 f"`{user['minecraft']}` has been disconnected from your discord."
             )
-            update_records(interaction, "disconnect", user["minecraft"], False, True)
+            update_records(interaction, "disconnect", user["minecraft"], True)
             return
 
     await interaction.response.send_message(
         f"You are not connected. Please connect your minecraft account with </connect:1149442234513637448> to your discord."
     )
-    update_records(interaction, "disconnect", "Unknown", False, False)
+    update_records(interaction, "disconnect", "Unknown", False)
 
 
 @bot.slash_command(name="help", description="Don't know where to start?")
