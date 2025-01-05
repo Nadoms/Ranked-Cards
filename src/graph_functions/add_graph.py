@@ -55,7 +55,7 @@ def write(uuid, matches, data_type, season):
         "grid.color": "#525559",
         "font.family": prop.get_name(),
     }
-    sns.set(font_scale=0.8, rc=custom_params)
+    sns.set_theme(font_scale=0.8, rc=custom_params)
 
     fig, ax = plt.subplots(figsize=(8, 5.5))
     fig.subplots_adjust(top=0.8, left=0.1, right=0.95)

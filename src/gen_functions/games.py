@@ -132,10 +132,3 @@ async def get_detailed_matches(player_response, season, min_comps, target_games)
 
 def get_season():
     return 7
-
-
-def split(then, name="That"):
-    now = datetime.now()
-    diff = round((now - then).total_seconds() * 1000)
-    print(f"{name} took {diff}ms")
-    return now
