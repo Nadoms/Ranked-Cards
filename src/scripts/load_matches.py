@@ -18,7 +18,7 @@ async def spam_redlime():
 
     while True:
         print(f"Loading matches {i} to {i + step_size} / Total: {new_additions}")
-        api.Match.load_cache()
+        api.Match.load_db()
         try:
             matches = await asyncio.gather(
                 *[
@@ -28,11 +28,11 @@ async def spam_redlime():
             )
         except api.APIRateLimitError:
             print("Rate limit reached, total loaded:", new_additions)
-            new_additions += api.Match.dump_cache()
+            new_additions += api.Match.save_db()
             await asyncio.sleep(600)
             continue
 
-        new_additions += api.Match.dump_cache()
+        new_additions += api.Match.save_db()
         i += step_size
         if matches == []:
             break

@@ -2,10 +2,12 @@ import asyncio
 import json
 from os import getenv
 from pathlib import Path
+import sqlite3
 from typing import TextIO, Optional
 import aiohttp
 from dotenv import load_dotenv
 import requests
+from .db import insert_match, query_matches
 
 
 ROOT = Path(__file__).parent.parent.parent.resolve()
@@ -78,7 +80,7 @@ class API():
         self.url += "&" + "&".join(parameters)
 
     def get(self) -> dict[str, any]:
-        cached_result = self._check_cache()
+        cached_result = self._check_db()
         if cached_result is not None:
             return cached_result
 
@@ -90,7 +92,7 @@ class API():
         return self._handle_response(response)
 
     async def get_async(self) -> dict[str, any]:
-        cached_result = self._check_cache()
+        cached_result = self._check_db()
         if cached_result is not None:
             return cached_result
 
@@ -112,13 +114,13 @@ class API():
             else:
                 raise APIError(self.url)
 
-        self._cache_result(response["data"])
+        self._save_result(response["data"])
         return response["data"]
 
-    def _cache_result(self, data: dict[str, any]):
+    def _save_result(self, data: dict[str, any]):
         pass
 
-    def _check_cache(self):
+    def _check_db(self):
         pass
 
     def __str__(self) -> str:
@@ -232,8 +234,9 @@ class VersusMatches(Matches):
 
 
 class Match(API):
-    _cache: dict[str, any] = {}
     _additions: int = 0
+    _conn: sqlite3.Connection
+    _cursor: sqlite3.Cursor
 
     def __init__(
         self,
@@ -242,22 +245,25 @@ class Match(API):
         self.id = id
         super().__init__(f"matches/{self.id}")
 
-    def _cache_result(self, data: dict[str, any]):
-        Match._cache[str(self.id)] = data
+    def _save_result(self, data: dict[str, any]):
+        insert_match(Match._cursor, data)
         Match._additions += 1
 
-    def _check_cache(self) -> dict[str, any]:
-        data = Match._cache.get(str(self.id))
-        return data
+    def _check_db(self) -> dict[str, any]:
+        data = query_matches(Match._cursor, id=self.id)
+        if data:
+            return data[0]
+        return None
 
     @classmethod
-    def load_cache(cls):
-        cls._cache = json.loads(MATCHES_FILE.read_text())
+    def load_db(cls):
+        cls._conn = sqlite3.connect(Path("src") / "database" / "ranked.db")
+        cls._cursor = cls._conn.cursor()
         cls._additions = 0
 
     @classmethod
-    def dump_cache(cls):
-        MATCHES_FILE.write_text(json.dumps(cls._cache, indent=4, sort_keys=True))
+    def save_db(cls):
+        cls._conn.close()
         cls._cache = {}
         return cls._additions
 
