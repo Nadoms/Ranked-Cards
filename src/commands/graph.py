@@ -1,4 +1,5 @@
 from datetime import datetime
+import os
 
 import requests
 from PIL import Image
@@ -16,6 +17,7 @@ def main(name, response, data_type, season, matches):
     if file == -1:
         return -1
     graph = Image.open(file)
+    os.remove(file)
     then = process_split(then, "Drawing graph")
     add_name.write(graph, name)
     then = process_split(then, "Writing username")

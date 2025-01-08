@@ -18,7 +18,8 @@ load_dotenv()
 API_KEY = getenv("API_KEY")
 API_URL = "https://mcsrranked.com/api"
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0."
+    "User-Agent": "Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0.",
+    "API-Key": API_KEY,
 }
 NOT_FOUND_DATA = [
     "User is not exists.",
@@ -69,7 +70,7 @@ class API():
         self,
         directory: str,
     ):
-        self.url : str = f"{API_URL}/{directory}?API-Key={API_KEY}"
+        self.url : str = f"{API_URL}/{directory}?"
 
     def append(self, **kwargs: dict[str, any]):
         parameters = []
@@ -99,7 +100,7 @@ class API():
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.get(self.url, headers=HEADERS, timeout=10) as fetch:
-                    response = await fetch.json()
+                    response = await fetch.json(content_type=None)
             except asyncio.TimeoutError:
                 raise APITimeoutError(self.url)
 

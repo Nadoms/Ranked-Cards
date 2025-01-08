@@ -90,9 +90,6 @@ async def get_detailed_matches(player_response, season, min_comps, target_games)
     name = player_response["nickname"]
     uuid = player_response["uuid"]
     response = "PLACEHOLDER"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux i686; rv:110.0) Gecko/20100101 Firefox/110.0."
-    }
 
     while True:
         response = api.UserMatches(
@@ -137,10 +134,3 @@ async def get_detailed_matches(player_response, season, min_comps, target_games)
 
 def get_season():
     return 7
-
-
-def split(then, name="That"):
-    now = datetime.now()
-    diff = round((now - then).total_seconds() * 1000)
-    print(f"{name} took {diff}ms")
-    return now

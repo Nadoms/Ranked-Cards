@@ -37,12 +37,21 @@ bot = commands.Bot(
 
 class Topics(nextcord.ui.View):
     def __init__(self, interaction, embeds, images):
-        super().__init__()
+        super().__init__(timeout=840)
         self.value = None
         self.interaction = interaction
         self.general_embed = embeds[0]
         self.topic_embeds = embeds[1:]
         self.images = images
+
+    async def on_timeout(self):
+        for item in self.children:
+            if isinstance(item, nextcord.ui.Button):
+                item.style = nextcord.ButtonStyle.grey
+                item.disabled = True
+        await self.interaction.edit_original_message(view=self)
+        for image in self.images:
+            image.close()
 
     def image_to_file(self, embed, image):
         image.save(f"{self.value}.png")
@@ -181,6 +190,7 @@ async def card(
         return
 
     img.save(f"card_{input_name}.png")
+    img.close()
     with open(f"card_{input_name}.png", "rb") as f:
         img = File(f)
     await interaction.followup.send(file=img)
@@ -283,6 +293,7 @@ async def plot(
         return
 
     img.save(f"graph_{input_name}.png")
+    img.close()
     with open(f"graph_{input_name}.png", "rb") as f:
         img = File(f)
     await interaction.followup.send(file=img)
@@ -370,6 +381,7 @@ async def match(
         return
 
     img.save(f"chart_{match_id}.png")
+    img.close()
     with open(f"chart_{match_id}.png", "rb") as f:
         img = File(f)
     await interaction.followup.send(file=img)
@@ -507,7 +519,7 @@ async def analysis(
 
     embed_general.set_thumbnail(url=head)
     embed_general.set_author(
-        name=interaction.user.name, icon_url=interaction.user.display_avatar
+        name=interaction.user.name, icon_url=interaction.user.display_avatar.url
     )
 
     split_polygon.save(f"split_{input_name}.png")
