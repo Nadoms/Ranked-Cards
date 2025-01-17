@@ -264,6 +264,7 @@ class Match(API):
 
     @classmethod
     def save_db(cls):
+        cls._conn.commit()
         cls._conn.close()
         cls._cache = {}
         return cls._additions

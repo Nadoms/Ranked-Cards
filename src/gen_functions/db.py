@@ -105,6 +105,7 @@ INSERT INTO matches (
             match["replayExist"],
         )
     )
+
     for player in match["players"]:
         cursor.execute(
             """
@@ -131,21 +132,40 @@ INSERT INTO match_players (
             )
         )
 
-    for change in match["changes"]:
+    if match["type"] == 2:
+        for change in match["changes"]:
+            cursor.execute(
+                """ 
+INSERT INTO changes (
+    match_id,
+    player_uuid,
+    change,
+    eloRate
+) VALUES (?, ?, ?, ?)
+                """,
+                (
+                    match["id"],
+                    change["uuid"],
+                    change["change"],
+                    change["eloRate"],
+                )
+            )
+
+    for event in match["timelines"]:
         cursor.execute(
             """
-INSERT INTO changes (
-    match_id INTEGER,
-    player_uuid TEXT,
-    change INTEGER,
-    eloRate INTEGER
+INSERT INTO timelines (
+match_id,
+player_uuid,
+time,
+type
 ) VALUES (?, ?, ?, ?)
             """,
             (
                 match["id"],
-                change["uuid"],
-                change["change"],
-                change["eloRate"],
+                event["uuid"],
+                event["time"],
+                event["type"],
             )
         )
 
@@ -204,12 +224,21 @@ CREATE TABLE IF NOT EXISTS timelines (
     """)
 
 
-def main():
+def start() -> sqlite3.Cursor:
     conn = sqlite3.connect((Path("src") / "database" / "ranked.db"))
     cursor = conn.cursor()
-    init_db(cursor)
+    return conn, cursor
+
+
+def finish(conn: sqlite3.Connection):
     conn.commit()
     conn.close()
+
+
+def main():
+    conn, cursor = start()
+    init_db(cursor)
+    finish(conn)
 
 
 if __name__ == "__main__":
