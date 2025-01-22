@@ -8,13 +8,9 @@ sys.path.insert(1, package)
 from gen_functions import api
 
 
-S7_START = 1499237
-
-
-async def spam_redlime():
+async def spam_redlime(start, limit):
     step_size = 200
-    big_step_size = 1000
-    i = S7_START
+    i = start
     new_additions = 0
 
     while True:
@@ -29,8 +25,9 @@ async def spam_redlime():
                 ]
             )
             k += step_size
-            if k > big_step_size:
-                raise api.APIError()
+            if k >= limit:
+                new_additions += api.Match.save_db()
+                return
         except (api.APIRateLimitError, api.APIError):
             new_additions += api.Match.save_db()
             print("Rate limit reached, total loaded:", new_additions)
@@ -44,7 +41,7 @@ async def spam_redlime():
             break
 
 def main():
-    asyncio.run(spam_redlime())
+    asyncio.run(spam_redlime(1499237, 1000))
 
 if __name__ == "__main__":
     main()

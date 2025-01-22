@@ -1,3 +1,4 @@
+import asyncio
 import difflib
 import os
 import nextcord
@@ -17,8 +18,9 @@ from commands import (
     analysis as analysing,
     race as racing,
 )
-from gen_functions import games, api
+from gen_functions import games, api, load_matches
 
+S7_START = 1499237
 TESTING_MODE = True
 CURRENT_SEASON = games.get_season()
 ALL_SEASONS = [str(season) for season in range(1, CURRENT_SEASON + 1)]
@@ -1032,5 +1034,12 @@ def update_records(interaction, command, subject, completed):
         f.write(stats_json)
 
 
+async def fetch_loop():
+    while True:
+        await load_matches.spam_redlime(S7_START, 500)
+        asyncio.sleep(15)
+
+
+fetch_loop()
 load_dotenv()
 bot.run(getenv(token))
