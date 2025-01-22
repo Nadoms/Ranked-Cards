@@ -449,26 +449,8 @@ async def analysis(
     await interaction.response.defer()
 
     input_name = response["nickname"]
-    cooldown = 60 * 30  # 30 min cooldown
-    user_cooldown, last_link = get_cooldown(input_name)
 
-    cd_extra = ""
-    if last_link:
-        last_guild = int(last_link.split("/")[-3])
-        if last_guild == interaction.guild.id:
-            cd_extra = f"\nTheir last analysis is {last_link}"
-
-    delta = int(time()) - user_cooldown
-    if delta < cooldown and not input_name == "Nadoms":
-        next_available = f"<t:{user_cooldown + cooldown}:R>"
-        print("Command on cooldown.")
-        await interaction.followup.send(
-            f"This command is on cooldown for `{input_name}`. (You can use it {next_available}){cd_extra}",
-        )
-        update_records(interaction, "analysis", input_name, False)
-        return
-
-    target_games = 200 if TESTING_MODE else 200
+    target_games = 100 if TESTING_MODE else 300
     num_comps, detailed_matches = await games.get_detailed_matches(
         response, season, 5, target_games
     )
@@ -618,9 +600,6 @@ async def analysis(
             inline=ow_comms[key]["inline"],
         )
 
-    jump_url = f"https://discord.com/channels/{interaction.guild.id}/{interaction.channel.id}/{interaction.id}"
-    if not TESTING_MODE or interaction.guild.id != 1056779246728658984:
-        set_cooldown(jump_url, input_name)
     embeds = [embed_general, embed_split, embed_bastion, embed_ow]
     images = [split_polygon, bastion_polygon, ow_polygon]
     view = Topics(interaction, embeds, images)
@@ -928,34 +907,6 @@ def get_name(interaction_ctx):
             return user["minecraft"]
 
     return ""
-
-
-def get_cooldown(input_name):
-    file = path.join("src", "database", "users.json")
-    with open(file, "r") as f:
-        users = json.load(f)
-
-    for user in users["users"]:
-        if input_name == user["minecraft"]:
-            return user["cooldown"], user["last_link"]
-
-    return False, False
-
-
-def set_cooldown(jump_url, input_name):
-    file = path.join("src", "database", "users.json")
-    with open(file, "r") as f:
-        users = json.load(f)
-
-    for user in users["users"]:
-        if input_name == user["minecraft"]:
-            user["cooldown"] = int(time())
-            user["last_link"] = jump_url
-            break
-
-    with open(file, "w") as f:
-        users_json = json.dumps(users, indent=4)
-        f.write(users_json)
 
 
 def get_close(input_name):
