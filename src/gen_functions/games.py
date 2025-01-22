@@ -103,14 +103,14 @@ async def get_detailed_matches(player_response, season, min_comps, target_games)
         if games_left <= 49 and len(response) > games_left:
             response = response[0:games_left]
 
-        api.Match.load_cache()
+        api.Match.load_db()
         matches = await asyncio.gather(
             *[
                 api.Match(id=match["id"]).get_async()
                 for match in response
             ]
         )
-        api.Match.dump_cache()
+        api.Match.save_db()
 
         detailed_matches += matches
         i += 1

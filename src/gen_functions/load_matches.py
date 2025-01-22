@@ -25,20 +25,19 @@ async def spam_redlime(start, limit):
                 ]
             )
             k += step_size
-            if k >= limit:
+            if new_additions >= limit:
                 new_additions += api.Match.save_db()
-                return
+                print("Limit reached, total loaded:", new_additions)
+                return i
         except (api.APIRateLimitError, api.APIError):
             new_additions += api.Match.save_db()
             print("Rate limit reached, total loaded:", new_additions)
-            await asyncio.sleep(600)
-            k = 0
-            continue
+            return i
 
         new_additions += api.Match.save_db()
         i += step_size
         if matches == []:
-            break
+            return i
 
 def main():
     asyncio.run(spam_redlime(1499237, 1000))

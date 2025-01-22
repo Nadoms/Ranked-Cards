@@ -1035,11 +1035,16 @@ def update_records(interaction, command, subject, completed):
 
 
 async def fetch_loop():
+    latest_load = S7_START
     while True:
-        await load_matches.spam_redlime(S7_START, 500)
-        asyncio.sleep(15)
+        await asyncio.sleep(900)
+        not_latest_load = latest_load
+        latest_load = await load_matches.spam_redlime(latest_load, 500)
+        if not_latest_load == latest_load:
+            print("No new matches found.")
+            break
 
 
-fetch_loop()
+bot.loop.create_task(fetch_loop())
 load_dotenv()
 bot.run(getenv(token))
