@@ -7,7 +7,7 @@ from typing import TextIO, Optional
 import aiohttp
 from dotenv import load_dotenv
 import requests
-from .db import insert_match, query_matches
+from .db import *
 
 
 ROOT = Path(__file__).parent.parent.parent.resolve()
@@ -251,10 +251,76 @@ class Match(API):
         Match._additions += 1
 
     def _check_db(self) -> dict[str, any]:
-        data = query_matches(Match._cursor, id=self.id)
-        if data:
-            return data[0]
-        return None
+        match = query_matches(Match._cursor, id=self.id)
+        if not match:
+            return None
+        uuids = query_match_players(Match._cursor, items="player_uuid", match_id=self.id)
+        players = []
+        changes = []
+        timelines = []
+        for i, uuid in enumerate(uuids):
+            players[i] = query_players(Match._cursor, uuid=uuid)[0]
+            changes[i] = query_changes(Match._cursor, match_id=self.id, player_uuid=uuid)
+            timelines += query_timelines(Match._cursor, match_id=self.id, player_uuid=uuid)
+
+        return self._convert(match, players, changes, timelines)
+
+    def _convert(
+        self,
+        match: list[any],
+        players: list[any],
+        changes: list[any],
+        timelines: list[any],
+    ) -> dict[str, any]:
+        players = [
+            {
+                "uuid": player[0],
+                "nickname": player[1],
+            }
+            for player in players
+        ]
+
+        changes = [
+            {
+                "uuid": change[1],
+                "change": change[2],
+                "eloRate": change[3],
+            }
+            for change in changes
+        ]
+
+        timelines = [
+            {
+                "uuid": timeline[1],
+                "time": timeline[2],
+                "type": timeline[3],
+            }
+            for timeline in timelines
+        ]
+        timelines.sort(key=lambda x: x["time"], reverse=True)
+
+        return {
+            "id": match[0],
+            "type": match[1],
+            "category": match[2],
+            "gameMode": match[3],
+            "players": players,
+            "result": {
+                "uuid": match[4],
+                "time": match[5],
+            },
+            "forfeited": bool(match[6]),
+            "decayed": bool(match[7]),
+            "changes": changes,
+            "timelines": timelines,
+            "season": match[8],
+            "date": match[9],
+            "change": match[10],
+            "seedType": match[11],
+            "bastionType": match[12],
+            "tag": match[13],
+            "replayExist": match[14],
+        }
 
     @classmethod
     def load_db(cls):

@@ -5,6 +5,7 @@ from typing import Optional
 
 def query_matches(
     cursor: sqlite3.Cursor,
+    items: str = "*",
     id: Optional[int] = None,
     type: Optional[int] = None,
     season: Optional[int] = None,
@@ -21,8 +22,8 @@ def query_matches(
     tag: Optional[str] = None,
     replayExist: Optional[bool] = None,
 ) -> list[any]:
-    query = """
-SELECT * FROM matches
+    query = f"""
+SELECT {items} FROM matches
 WHERE
     (:id IS NULL OR id = :id) AND
     (:type IS NULL OR type = :type) AND
@@ -57,6 +58,106 @@ WHERE
         "bastionType": bastionType,
         "tag": tag,
         "replayExist": replayExist,
+    }
+
+    cursor.execute(query, params)
+    return cursor.fetchall()
+
+
+def query_players(
+    cursor: sqlite3.Cursor,
+    items: str = "*",
+    uuid: Optional[str] = None,
+    nickname: Optional[str] = None,
+) -> list[any]:
+    query = f"""
+SELECT {items} FROM players
+WHERE
+    (:uuid IS NULL OR uuid = :uuid) AND
+    (:nickname IS NULL OR nickname = :nickname)
+    """
+
+    params = {
+        "uuid": uuid,
+        "nickname": nickname,
+    }
+
+    cursor.execute(query, params)
+    return cursor.fetchall()
+
+
+def query_match_players(
+    cursor: sqlite3.Cursor,
+    items: str = "*",
+    match_id: Optional[int] = None,
+    player_uuid: Optional[str] = None,
+) -> list[any]:
+    query = f"""
+SELECT {items} FROM match_players
+WHERE
+    (:match_id IS NULL OR match_id = :match_id) AND
+    (:player_uuid IS NULL OR player_uuid = :player_uuid)
+    """
+
+    params = {
+        "match_id": match_id,
+        "player_uuid": player_uuid,
+    }
+
+    cursor.execute(query, params)
+    return cursor.fetchall()
+
+
+def query_changes(
+    cursor: sqlite3.Cursor,
+    items: str = "*",
+    match_id: Optional[int] = None,
+    player_uuid: Optional[str] = None,
+    change: Optional[int] = None,
+    eloRate: Optional[int] = None,
+) -> list[any]:
+    query = f"""
+SELECT {items} FROM changes
+WHERE
+    (:match_id IS NULL OR match_id = :match_id) AND
+    (:player_uuid IS NULL OR player_uuid = :player_uuid) AND
+    (:change IS NULL OR change = :change) AND
+    (:eloRate IS NULL OR eloRate = :eloRate)
+    """
+
+    params = {
+        "match_id": match_id,
+        "player_uuid": player_uuid,
+        "change": change,
+        "eloRate": eloRate,
+    }
+
+    cursor.execute(query, params)
+    return cursor.fetchall()
+
+
+def query_timelines(
+    cursor: sqlite3.Cursor,
+    items: str = "*",
+    match_id: Optional[int] = None,
+    player_uuid: Optional[str] = None,
+    time: Optional[int] = None,
+    type: Optional[str] = None,
+) -> list[any]:
+    query = f"""
+SELECT {items} FROM timelines
+WHERE
+    (:match_id IS NULL OR match_id = :match_id) AND
+    (:player_uuid IS NULL OR player_uuid = :player_uuid) AND
+    (:time IS NULL OR time = :time) AND
+    (:type IS NULL OR type = :type)
+    """
+
+    params = {
+        "match_id": match_id,
+        "player_uuid": player_uuid,
+        "time": time,
+        "type": type,
     }
 
     cursor.execute(query, params)
@@ -181,7 +282,6 @@ CREATE TABLE IF NOT EXISTS matches (
     time INTEGER,
     forfeited BOOLEAN,
     decayed BOOLEAN,
-    change INTEGER,
     season INTEGER,
     date INTEGER,
     seedType TEXT,
