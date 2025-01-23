@@ -16,7 +16,6 @@ def query_matches(
     time: Optional[int] = None,
     forfeited: Optional[bool] = None,
     decayed: Optional[bool] = None,
-    change: Optional[int] = None,
     seedType: Optional[str] = None,
     bastionType: Optional[str] = None,
     tag: Optional[str] = None,
@@ -35,7 +34,6 @@ WHERE
     (:time IS NULL OR time = :time) AND
     (:forfeited IS NULL OR forfeited = :forfeited) AND
     (:decayed IS NULL OR decayed = :decayed) AND
-    (:change IS NULL OR change = :change) AND
     (:seedType IS NULL OR seedType = :seedType) AND
     (:bastionType IS NULL OR bastionType = :bastionType) AND
     (:tag IS NULL OR tag = :tag) AND
@@ -53,7 +51,6 @@ WHERE
         "time": time,
         "forfeited": forfeited,
         "decayed": decayed,
-        "change": change,
         "seedType": seedType,
         "bastionType": bastionType,
         "tag": tag,

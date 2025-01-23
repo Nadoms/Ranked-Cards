@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 import json
 from os import getenv
 from pathlib import Path
@@ -8,6 +9,7 @@ import aiohttp
 from dotenv import load_dotenv
 import requests
 from .db import *
+from gen_functions.word import process_split
 
 
 ROOT = Path(__file__).parent.parent.parent.resolve()
@@ -251,19 +253,25 @@ class Match(API):
         Match._additions += 1
 
     def _check_db(self) -> dict[str, any]:
+        now = datetime.now()
         match = query_matches(Match._cursor, id=self.id)
+        now = process_split(now, "Matches")
         if not match:
             return None
         uuids = query_match_players(Match._cursor, items="player_uuid", match_id=self.id)
-        players = []
-        changes = []
+        now = process_split(now, "Match players")
+        players = [None, None]
+        changes = [None, None]
         timelines = []
         for i, uuid in enumerate(uuids):
-            players[i] = query_players(Match._cursor, uuid=uuid)[0]
-            changes[i] = query_changes(Match._cursor, match_id=self.id, player_uuid=uuid)
-            timelines += query_timelines(Match._cursor, match_id=self.id, player_uuid=uuid)
+            players[i] = query_players(Match._cursor, uuid=uuid[0])[0]
+            now = process_split(now, "Players")
+            changes[i] = query_changes(Match._cursor, match_id=self.id, player_uuid=uuid[0])[0]
+            now = process_split(now, "Changes")
+            timelines += query_timelines(Match._cursor, match_id=self.id, player_uuid=uuid[0])
+            now = process_split(now, "Timelines")
 
-        return self._convert(match, players, changes, timelines)
+        return self._convert(match[0], players, changes, timelines)
 
     def _convert(
         self,
@@ -315,11 +323,10 @@ class Match(API):
             "timelines": timelines,
             "season": match[8],
             "date": match[9],
-            "change": match[10],
-            "seedType": match[11],
-            "bastionType": match[12],
-            "tag": match[13],
-            "replayExist": match[14],
+            "seedType": match[10],
+            "bastionType": match[11],
+            "tag": match[12],
+            "replayExist": match[13],
         }
 
     @classmethod
