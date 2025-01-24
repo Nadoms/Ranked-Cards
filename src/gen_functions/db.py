@@ -1,163 +1,31 @@
+import json
 from pathlib import Path
 import sqlite3
 from typing import Optional
 
 
-def query_matches(
+def query_db(
     cursor: sqlite3.Cursor,
+    table: str = "matches",
     items: str = "*",
-    id: Optional[int] = None,
-    type: Optional[int] = None,
-    season: Optional[int] = None,
-    category: Optional[str] = None,
-    gameMode: Optional[str] = None,
-    date: Optional[int] = None,
-    result_uuid: Optional[str] = None,
-    time: Optional[int] = None,
-    forfeited: Optional[bool] = None,
-    decayed: Optional[bool] = None,
-    seedType: Optional[str] = None,
-    bastionType: Optional[str] = None,
-    tag: Optional[str] = None,
-    replayExist: Optional[bool] = None,
+    debug: bool = False,
+    **kwargs: any,
 ) -> list[any]:
+    conditions = []
+
+    for key in kwargs:
+        conditions.append(f"{key} = :{key}")
+
     query = f"""
-SELECT {items} FROM matches
-WHERE
-    (:id IS NULL OR id = :id) AND
-    (:type IS NULL OR type = :type) AND
-    (:season IS NULL OR season = :season) AND
-    (:category IS NULL OR category = :category) AND
-    (:gameMode IS NULL OR gameMode = :gameMode) AND
-    (:date IS NULL OR date = :date) AND
-    (:result_uuid IS NULL OR result_uuid = :result_uuid) AND
-    (:time IS NULL OR time = :time) AND
-    (:forfeited IS NULL OR forfeited = :forfeited) AND
-    (:decayed IS NULL OR decayed = :decayed) AND
-    (:seedType IS NULL OR seedType = :seedType) AND
-    (:bastionType IS NULL OR bastionType = :bastionType) AND
-    (:tag IS NULL OR tag = :tag) AND
-    (:replayExist IS NULL OR replayExist = :replayExist)
+SELECT {items} FROM {table}
+WHERE {" AND ".join(conditions) if conditions else "1=1"}
     """
 
-    params = {
-        "id": id,
-        "type": type,
-        "season": season,
-        "category": category,
-        "gameMode": gameMode,
-        "date": date,
-        "result_uuid": result_uuid,
-        "time": time,
-        "forfeited": forfeited,
-        "decayed": decayed,
-        "seedType": seedType,
-        "bastionType": bastionType,
-        "tag": tag,
-        "replayExist": replayExist,
-    }
+    if debug:
+        cursor.execute(f"EXPLAIN QUERY PLAN {query}", kwargs)
+        print(cursor.fetchone())
 
-    cursor.execute(query, params)
-    return cursor.fetchall()
-
-
-def query_players(
-    cursor: sqlite3.Cursor,
-    items: str = "*",
-    uuid: Optional[str] = None,
-    nickname: Optional[str] = None,
-) -> list[any]:
-    query = f"""
-SELECT {items} FROM players
-WHERE
-    (:uuid IS NULL OR uuid = :uuid) AND
-    (:nickname IS NULL OR nickname = :nickname)
-    """
-
-    params = {
-        "uuid": uuid,
-        "nickname": nickname,
-    }
-
-    cursor.execute(query, params)
-    return cursor.fetchall()
-
-
-def query_match_players(
-    cursor: sqlite3.Cursor,
-    items: str = "*",
-    match_id: Optional[int] = None,
-    player_uuid: Optional[str] = None,
-) -> list[any]:
-    query = f"""
-SELECT {items} FROM match_players
-WHERE
-    (:match_id IS NULL OR match_id = :match_id) AND
-    (:player_uuid IS NULL OR player_uuid = :player_uuid)
-    """
-
-    params = {
-        "match_id": match_id,
-        "player_uuid": player_uuid,
-    }
-
-    cursor.execute(query, params)
-    return cursor.fetchall()
-
-
-def query_changes(
-    cursor: sqlite3.Cursor,
-    items: str = "*",
-    match_id: Optional[int] = None,
-    player_uuid: Optional[str] = None,
-    change: Optional[int] = None,
-    eloRate: Optional[int] = None,
-) -> list[any]:
-    query = f"""
-SELECT {items} FROM changes
-WHERE
-    (:match_id IS NULL OR match_id = :match_id) AND
-    (:player_uuid IS NULL OR player_uuid = :player_uuid) AND
-    (:change IS NULL OR change = :change) AND
-    (:eloRate IS NULL OR eloRate = :eloRate)
-    """
-
-    params = {
-        "match_id": match_id,
-        "player_uuid": player_uuid,
-        "change": change,
-        "eloRate": eloRate,
-    }
-
-    cursor.execute(query, params)
-    return cursor.fetchall()
-
-
-def query_timelines(
-    cursor: sqlite3.Cursor,
-    items: str = "*",
-    match_id: Optional[int] = None,
-    player_uuid: Optional[str] = None,
-    time: Optional[int] = None,
-    type: Optional[str] = None,
-) -> list[any]:
-    query = f"""
-SELECT {items} FROM timelines
-WHERE
-    (:match_id IS NULL OR match_id = :match_id) AND
-    (:player_uuid IS NULL OR player_uuid = :player_uuid) AND
-    (:time IS NULL OR time = :time) AND
-    (:type IS NULL OR type = :type)
-    """
-
-    params = {
-        "match_id": match_id,
-        "player_uuid": player_uuid,
-        "time": time,
-        "type": type,
-    }
-
-    cursor.execute(query, params)
+    cursor.execute(query, kwargs)
     return cursor.fetchall()
 
 
@@ -165,6 +33,9 @@ def insert_match(
     cursor: sqlite3.Cursor,
     match: dict[str, any],
 ):
+    if not cursor:
+        return
+
     cursor.execute(
         """
 INSERT INTO matches (
@@ -217,53 +88,33 @@ INSERT OR IGNORE INTO players (
                 player["nickname"],
             )
         )
+
+    for change in match["changes"]:
+        timeline = [
+            {
+                "time": event["time"],
+                "type": event["type"],
+            }
+            for event in match["timelines"]
+            if event["uuid"] == change["uuid"]
+        ]
+        timeline_json = json.dumps(timeline)
         cursor.execute(
             """
-INSERT INTO match_players (
-    match_id,
-    player_uuid
-) VALUES (?, ?)
-            """,
-            (
-                match["id"],
-                player["uuid"],
-            )
-        )
-
-    if match["type"] == 2:
-        for change in match["changes"]:
-            cursor.execute(
-                """ 
-INSERT INTO changes (
+INSERT INTO runs (
     match_id,
     player_uuid,
     change,
-    eloRate
-) VALUES (?, ?, ?, ?)
-                """,
-                (
-                    match["id"],
-                    change["uuid"],
-                    change["change"],
-                    change["eloRate"],
-                )
-            )
-
-    for event in match["timelines"]:
-        cursor.execute(
-            """
-INSERT INTO timelines (
-match_id,
-player_uuid,
-time,
-type
-) VALUES (?, ?, ?, ?)
+    eloRate,
+    timeline
+) VALUES (?, ?, ?, ?, ?)
             """,
             (
                 match["id"],
-                event["uuid"],
-                event["time"],
-                event["type"],
+                change["uuid"],
+                change["change"],
+                change["eloRate"],
+                timeline_json,
             )
         )
 
@@ -287,38 +138,27 @@ CREATE TABLE IF NOT EXISTS matches (
     replayExist BOOLEAN
 )
     """)
+
     cursor.execute("""
 CREATE TABLE IF NOT EXISTS players (
     uuid TEXT PRIMARY KEY,
     nickname TEXT
 )
     """)
+
     cursor.execute("""
-CREATE TABLE IF NOT EXISTS match_players (
-    match_id INTEGER,
-    player_uuid TEXT,
-    FOREIGN KEY (match_id) REFERENCES matches(id),
-    FOREIGN KEY (player_uuid) REFERENCES players(uuid)
-)
-    """)
-    cursor.execute("""
-CREATE TABLE IF NOT EXISTS changes (
+CREATE TABLE IF NOT EXISTS runs (
     match_id INTEGER,
     player_uuid TEXT,
     change INTEGER,
-    eloRate INTEGER
-)
-    """)
-    cursor.execute("""
-CREATE TABLE IF NOT EXISTS timelines (
-    match_id INTEGER,
-    player_uuid TEXT,
-    time INTEGER,
-    type TEXT,
+    eloRate INTEGER,
+    timeline TEXT,
     FOREIGN KEY (match_id) REFERENCES matches(id),
     FOREIGN KEY (player_uuid) REFERENCES players(uuid)
 )
     """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_match_id ON runs (match_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_player_uuid ON runs (player_uuid)")
 
 
 def start() -> sqlite3.Cursor:

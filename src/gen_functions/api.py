@@ -9,7 +9,6 @@ import aiohttp
 from dotenv import load_dotenv
 import requests
 from .db import *
-from gen_functions.word import process_split
 
 
 ROOT = Path(__file__).parent.parent.parent.resolve()
@@ -239,7 +238,7 @@ class VersusMatches(Matches):
 class Match(API):
     _additions: int = 0
     _conn: sqlite3.Connection
-    _cursor: sqlite3.Cursor
+    _cursor: sqlite3.Cursor = None
 
     def __init__(
         self,
@@ -253,32 +252,35 @@ class Match(API):
         Match._additions += 1
 
     def _check_db(self) -> dict[str, any]:
-        now = datetime.now()
-        match = query_matches(Match._cursor, id=self.id)
-        now = process_split(now, "Matches")
+        if not Match._cursor:
+            return None
+
+        match = query_db(Match._cursor, id=self.id)
         if not match:
             return None
-        uuids = query_match_players(Match._cursor, items="player_uuid", match_id=self.id)
-        now = process_split(now, "Match players")
-        players = [None, None]
-        changes = [None, None]
-        timelines = []
-        for i, uuid in enumerate(uuids):
-            players[i] = query_players(Match._cursor, uuid=uuid[0])[0]
-            now = process_split(now, "Players")
-            changes[i] = query_changes(Match._cursor, match_id=self.id, player_uuid=uuid[0])[0]
-            now = process_split(now, "Changes")
-            timelines += query_timelines(Match._cursor, match_id=self.id, player_uuid=uuid[0])
-            now = process_split(now, "Timelines")
 
-        return self._convert(match[0], players, changes, timelines)
+        runs = query_db(
+            Match._cursor,
+            table="runs",
+            match_id=self.id
+        )
+
+        uuids = [run[1] for run in runs]
+        players = []
+        for uuid in uuids:
+            players += query_db(
+                Match._cursor,
+                table="players",
+                uuid=uuid
+            )
+
+        return self._convert(match[0], players, runs)
 
     def _convert(
         self,
         match: list[any],
         players: list[any],
-        changes: list[any],
-        timelines: list[any],
+        runs: list[any],
     ) -> dict[str, any]:
         players = [
             {
@@ -290,20 +292,22 @@ class Match(API):
 
         changes = [
             {
-                "uuid": change[1],
-                "change": change[2],
-                "eloRate": change[3],
+                "uuid": run[1],
+                "change": run[2],
+                "eloRate": run[3],
             }
-            for change in changes
+            for run in runs
         ]
 
-        timelines = [
+        timelines = []
+        for run in runs:
+            timelines += [
             {
-                "uuid": timeline[1],
-                "time": timeline[2],
-                "type": timeline[3],
+                "uuid": run[1],
+                "time": event["time"],
+                "type": event["type"],
             }
-            for timeline in timelines
+            for event in json.loads(run[4])
         ]
         timelines.sort(key=lambda x: x["time"], reverse=True)
 

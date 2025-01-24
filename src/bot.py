@@ -450,7 +450,7 @@ async def analysis(
 
     input_name = response["nickname"]
 
-    target_games = 100 if TESTING_MODE else 300
+    target_games = 400 if TESTING_MODE else 300
     num_comps, detailed_matches = await games.get_detailed_matches(
         response, season, 5, target_games
     )
