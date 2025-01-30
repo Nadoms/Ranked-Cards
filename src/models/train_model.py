@@ -1,30 +1,22 @@
 import json
 from os import path
+from pathlib import Path
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
 
-def main(data_oi):
-    # Getting the data into two arrays
-    data = [[], []]
-    data_path = path.join("src", "models", f"{data_oi}_vs_elo.txt")
-    with open(data_path, "r") as f:
-        while True:
-            line = f.readline().strip().split(" ")
-            if not line[0]:
-                break
+PROJECT_DIR = Path(__file__).resolve().parent.parent
 
-            data[0].append(int(line[0]))
-            data[1].append(int(float(line[1])))
 
+def train(data_oi, X_data, Y_data):
     # Casting and plotting the data.
-    order = np.argsort(data[0])
-    X_raw = torch.FloatTensor(data[0])[order]
-    Y_raw = torch.FloatTensor(data[1])[order]
-    X = X_raw.apply_(lambda x: x * 1e-6)
+    order = np.argsort(X_data)
+    X = torch.FloatTensor(X_data)[order]
+    Y_raw = torch.FloatTensor(Y_data)[order]
     Y = Y_raw.apply_(lambda x: x * 1e-3)
+    print(X, Y)
 
     W = [
         torch.tensor(0.0, requires_grad=True),
@@ -46,7 +38,8 @@ def main(data_oi):
             W[j].data = W[j].data - step_sizes[j] * W[j].grad.data
             W[j].grad.data.zero_()
 
-        print(f"{i},\t{loss.item()},\t{[w.item() for w in W]}")
+        if i % 1000 == 0:
+            print(f"{i},\t{loss.item()},\t{[w.item() for w in W]}")
 
     plt.plot(X.numpy(), Y.numpy(), "b.", label="Y")
     plt.plot(X.numpy(), Y_pred.detach().numpy(), "y", label="pred", linewidth=3)
@@ -54,10 +47,11 @@ def main(data_oi):
     plt.ylabel("y")
     plt.legend()
     plt.grid("True", color="y")
-    plt.savefig(path.join("src", "models", f"model_{data_oi}.png"))
+    plt.savefig(PROJECT_DIR / "models" / f"model_{data_oi}.png")
     plt.show()
+    plt.close()
 
-    update_weights(data_oi, W)
+    update_weights(data_oi, W, y=True)
 
 
 # Defining the functions for forward pass for prediction
@@ -77,7 +71,7 @@ def criterion(y_pred, y):
     return torch.mean((y_pred - y) ** 2)
 
 
-def update_weights(data_oi, W):
+def update_weights(data_oi, W, y=False):
     weight_mapping = "abcdefghijklmnopqrstuvwxyz"
 
     file = path.join("src", "models", "models.json")
@@ -91,7 +85,7 @@ def update_weights(data_oi, W):
     for w in W:
         print(f"{w.item()}\t", end="")
 
-    if input("\n(Y) or (Any key) :: ") == "Y":
+    if y or input("\n(Y) or (Any key) :: ") == "Y":
         for i in range(len(W)):
             models[data_oi][weight_mapping[i]] = W[i].item()
         with open(file, "w") as f:
@@ -100,6 +94,21 @@ def update_weights(data_oi, W):
         print("Updated!")
     else:
         print("Okay...")
+
+
+def main(data_oi):
+    data = [[], []]
+    data_path = path.join(PROJECT_DIR / "models" / f"{data_oi}_vs_elo.txt")
+    with open(data_path, "r") as f:
+        while True:
+            line = f.readline().strip().split(" ")
+            if not line[0]:
+                break
+
+            data[0].append(int(line[0]))
+            data[1].append(int(float(line[1])))
+
+    train(data_oi, *data)
 
 
 if __name__ == "__main__":

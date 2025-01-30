@@ -6,6 +6,7 @@ import sys
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(1, str(PROJECT_DIR))
 from gen_functions import db, games
+from models import train_model
 
 SPLIT_MAPPING = {
     "story.enter_the_nether": "nether",
@@ -27,6 +28,9 @@ OW_MAPPING = {
 def main():
     print("\n***\nAnalysing database\n***\n")
     season = games.get_season()
+    completion_times = {}
+    completion_nums = {}
+    avg_elo = {}
     split_times = {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}}
     split_nums = {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}}
     split_ranked = {"ow": [], "nether": [], "bastion": [], "fortress": [], "blind": [], "stronghold": [], "end": []}
@@ -74,7 +78,6 @@ def main():
                         ow_nums[OW_MAPPING[seed_type]][uuid] = 0
                     ow_times[OW_MAPPING[seed_type]][uuid] += ow_length
                     ow_nums[OW_MAPPING[seed_type]][uuid] += 1
-                    print(ow_times[OW_MAPPING[seed_type]][uuid], ow_length)
 
                 if event["type"] == "nether.find_bastion":
                     bastion_entry = event["time"]
@@ -106,10 +109,19 @@ def main():
                     prev_time = event["time"]
                     curr_split = SPLIT_MAPPING[event["type"]]
 
-            if result_uuid == uuid and forfeited is False:
+            if result_uuid == uuid and not forfeited:
                 split_length = result_time - prev_time
+                if uuid not in split_times[curr_split]:
+                    split_times[curr_split][uuid] = 0
+                    split_nums[curr_split][uuid] = 0
                 split_times[curr_split][uuid] += split_length
                 split_nums[curr_split][uuid] += 1
+
+                if uuid not in completion_times:
+                    completion_times[uuid] = 0
+                    completion_nums[uuid] = 0
+                completion_times[uuid] += result_time
+                completion_nums[uuid] += 1
 
     for split in split_times:
         for uuid in split_times[split]:
@@ -118,6 +130,7 @@ def main():
                     round(split_times[split][uuid] / split_nums[split][uuid])
                 )
         split_ranked[split].sort()
+        print(f"{split} count: {len(split_ranked[split])}")
 
     for bastion in bastion_times:
         for uuid in bastion_times[bastion]:
@@ -126,6 +139,7 @@ def main():
                     round(bastion_times[bastion][uuid] / bastion_nums[bastion][uuid])
                 )
         bastion_ranked[bastion].sort()
+        print(f"{bastion} count: {len(bastion_ranked[bastion])}")
 
     for ow in ow_times:
         for uuid in ow_times[ow]:
@@ -134,6 +148,7 @@ def main():
                     round(ow_times[ow][uuid] / ow_nums[ow][uuid])
                 )
         ow_ranked[ow].sort()
+        print(f"{ow} count: {len(ow_ranked[ow])}")
 
     playerbase_data = {
         "split": split_ranked,
@@ -144,6 +159,21 @@ def main():
     playerbase_file = PROJECT_DIR / "database" / "playerbase.json"
     with open(playerbase_file, "w") as f:
         json.dump(playerbase_data, f, indent=4)
+
+    for uuid in completion_times:
+        if completion_nums[uuid] >= 5:
+            avg_elo[uuid] = {
+                "avg": round(completion_times[uuid] / completion_nums[uuid]),
+                "elo": db.get_elo(cursor, uuid),
+                "sb": db.get_sb(cursor, uuid),
+            }
+
+    avgs = [avg_elo[uuid]["avg"] * 1e-6 for uuid in avg_elo]
+    elos = [avg_elo[uuid]["elo"] for uuid in avg_elo]
+    sbs = [avg_elo[uuid]["sb"] * 1e-6 for uuid in avg_elo]
+
+    train_model.train("avg", avgs, elos)
+    train_model.train("sb", sbs, elos)
 
 
 if __name__ == "__main__":

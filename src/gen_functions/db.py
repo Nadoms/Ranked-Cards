@@ -11,6 +11,8 @@ def query_db(
     cursor: sqlite3.Cursor,
     table: str = "matches",
     items: str = "*",
+    order: Optional[str] = None,
+    limit: Optional[int] = None,
     debug: bool = False,
     **kwargs: any,
 ) -> list[any]:
@@ -19,9 +21,15 @@ def query_db(
     for key in kwargs:
         conditions.append(f"{key} = :{key}")
 
+    where_clause = "WHERE " + " AND ".join(conditions) if conditions else "1=1"
+    order_clause = f"ORDER BY {order}" if order else ""
+    limit_clause = f"LIMIT {limit}" if limit else ""
+
     query = f"""
 SELECT {items} FROM {table}
-WHERE {" AND ".join(conditions) if conditions else "1=1"}
+{where_clause}
+{order_clause}
+{limit_clause}
     """
 
     if debug:
@@ -30,6 +38,42 @@ WHERE {" AND ".join(conditions) if conditions else "1=1"}
 
     cursor.execute(query, kwargs)
     return cursor.fetchall()
+
+
+def get_elo(
+    cursor: sqlite3.Cursor,
+    uuid: str,
+) -> Optional[int]:
+    run = query_db(
+        cursor,
+        "runs",
+        items="eloRate, change",
+        order="match_id DESC",
+        limit=1,
+        player_uuid=uuid
+    )
+    if not run:
+        return None
+    run = run[0]
+    current_elo = run[0] + run[1]
+    return current_elo
+
+
+def get_sb(
+    cursor: sqlite3.Cursor,
+    uuid: str,
+) -> Optional[int]:
+    match = query_db(
+        cursor,
+        "matches",
+        items="time",
+        order="time ASC",
+        limit=1,
+        result_uuid=uuid,
+        forfeited=False,
+    )
+    if match:
+        return match[0][0]
 
 
 def insert_match(
