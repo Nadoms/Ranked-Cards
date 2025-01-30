@@ -1,6 +1,7 @@
 import json
 from os import path
 import math
+from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -136,18 +137,10 @@ def get_avg_bastions(uuid, detailed_matches):
 
 def get_ranked_bastions(average_bastions):
     ranked_bastions = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
-    bastions_final_boss = {"bridge": [], "housing": [], "stables": [], "treasure": []}
 
-    file = path.join("src", "database", "mcsrstats", "bastion_splits.csv")
-
-    with open(file, "r", encoding="UTF-8") as f:
-        while True:
-            bastions = f.readline().strip().split(",")
-            if not bastions[0]:
-                break
-            for i in range(4):
-                if bastions[i] != "FALSE":
-                    bastions_final_boss[BASTION_TYPES[i]].append(int(bastions[i]))
+    playerbase_file = Path("src") / "database" / "playerbase.json"
+    with open(playerbase_file, "r") as f:
+        bastions_final_boss = json.load(f)["bastion"]
 
     for key in bastions_final_boss:
         ranked_bastions[key] = np.searchsorted(

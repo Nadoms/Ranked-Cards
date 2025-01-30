@@ -4,6 +4,9 @@ import sqlite3
 from typing import Optional
 
 
+DEFAULT_DB = (Path("src") / "database" / "ranked.db")
+
+
 def query_db(
     cursor: sqlite3.Cursor,
     table: str = "matches",
@@ -161,8 +164,8 @@ CREATE TABLE IF NOT EXISTS runs (
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_player_uuid ON runs (player_uuid)")
 
 
-def start() -> tuple[sqlite3.Connection, sqlite3.Cursor]:
-    conn = sqlite3.connect((Path("src") / "database" / "ranked.db"))
+def start(db_path: Path = DEFAULT_DB) -> tuple[sqlite3.Connection, sqlite3.Cursor]:
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     return conn, cursor
 

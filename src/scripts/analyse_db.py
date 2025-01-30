@@ -1,106 +1,149 @@
-from os import path
+import json
 
-package = path.join("src")
+from pathlib import Path
 import sys
-sys.path.insert(1, package)
+
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(1, str(PROJECT_DIR))
 from gen_functions import db, games
 
-def main():
-    season = games.get_season()
-    split_times = {}
-    split_nums = {}
-    bastion_times = {}
-    bastion_nums = {}
-    ow_times = {}
-    ow_nums = {}
+SPLIT_MAPPING = {
+    "story.enter_the_nether": "nether",
+    "nether.find_bastion": "bastion",
+    "nether.find_fortress": "fortress",
+    "projectelo.timeline.blind_travel": "blind",
+    "story.follow_ender_eye": "stronghold",
+    "story.enter_the_end": "end",
+}
+OW_MAPPING = {
+    "BURIED_TREASURE": "bt",
+    "DESERT_TEMPLE": "dt",
+    "RUINED_PORTAL": "rp",
+    "SHIPWRECK": "ship",
+    "VILLAGE": "village",
+}
 
-    conn, cursor = db.start()
-    match_ids = db.query_db(items="id", season=season)
-    for match_id in match_ids:
+
+def main():
+    print("\n***\nAnalysing database\n***\n")
+    season = games.get_season()
+    split_times = {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}}
+    split_nums = {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}}
+    split_ranked = {"ow": [], "nether": [], "bastion": [], "fortress": [], "blind": [], "stronghold": [], "end": []}
+    bastion_times = {"bridge": {}, "housing": {}, "stables": {}, "treasure": {}}
+    bastion_nums = {"bridge": {}, "housing": {}, "stables": {}, "treasure": {}}
+    bastion_ranked = {"bridge": [], "housing": [], "stables": [], "treasure": []}
+    ow_times = {"bt": {}, "dt": {}, "rp": {}, "ship": {}, "village": {}}
+    ow_nums = {"bt": {}, "dt": {}, "rp": {}, "ship": {}, "village": {}}
+    ow_ranked = {"bt": [], "dt": [], "rp": [], "ship": [], "village": []}
+
+    conn, cursor = db.start(PROJECT_DIR / "database" / "ranked.db")
+    matches_info = db.query_db(
+        cursor=cursor,
+        items="id, seedType, bastionType, result_uuid, forfeited, time",
+        season=season,
+        type=2,
+        decayed=False
+    )
+    for match_info in matches_info:
+        match_id, seed_type, bastion_type, result_uuid, forfeited, result_time = match_info
         runs = db.query_db(
+            cursor=cursor,
             table="runs",
-            items="uuid, timeline",
+            items="player_uuid, timeline",
             match_id=match_id,
         )
 
-    for run in runs:
-        uuid, timeline = run
-        for event in timeline:
-            pass
-
-    file = path.join("src", "database", "mcsrstats", "cleaner_splits.txt")
-    with open(file, "r") as f:
-        while True:
-            timeline = f.readline().strip().split(";")
-            if not timeline[0]:
-                break
-
-            current_split = "ow"
+        for run in runs:
+            uuid, timeline = run
+            timeline = json.loads(timeline)
+            curr_split = "ow"
             prev_time = 0
+            bastion_entry = bastion_exit = 0
 
-            for event in timeline:
-                event = event.split(",")
+            for event in reversed(timeline):
+                if event["type"] == "projectelo.timeline.reset":
+                    prev_time = event["time"]
+                    curr_split = "ow"
+                    bastion_entry = bastion_exit = 0
 
-                if event[2] not in player_times.keys():
-                    player_times[event[2]] = {
-                        "ow": 0,
-                        "nether": 0,
-                        "bastion": 0,
-                        "fortress": 0,
-                        "blind": 0,
-                        "stronghold": 0,
-                        "end": 0,
-                    }
-                    player_nums[event[2]] = {
-                        "ow": 0,
-                        "nether": 0,
-                        "bastion": 0,
-                        "fortress": 0,
-                        "blind": 0,
-                        "stronghold": 0,
-                        "end": 0,
-                    }
+                if event["type"] == "story.enter_the_nether":
+                    ow_length = event["time"] - prev_time
+                    if uuid not in ow_times[OW_MAPPING[seed_type]]:
+                        ow_times[OW_MAPPING[seed_type]][uuid] = 0
+                        ow_nums[OW_MAPPING[seed_type]][uuid] = 0
+                    ow_times[OW_MAPPING[seed_type]][uuid] += ow_length
+                    ow_nums[OW_MAPPING[seed_type]][uuid] += 1
+                    print(ow_times[OW_MAPPING[seed_type]][uuid], ow_length)
 
-                if event[1] not in split_mapping.keys():
-                    continue
+                if event["type"] == "nether.find_bastion":
+                    bastion_entry = event["time"]
 
-                if split_mapping[event[1]] != current_split:
-                    continue
+                elif bastion_entry and not bastion_exit:
+                    if event["type"] in [
+                        "nether.find_fortress",
+                        "projectelo.timeline.blind_travel",
+                        "story.follow_ender_eye",
+                        "story.enter_the_end",
+                    ]:
+                        bastion_exit = event["time"]
+                        bastion_length = bastion_exit - bastion_entry
+                        if uuid not in bastion_times[bastion_type.lower()]:
+                            bastion_times[bastion_type.lower()][uuid] = 0
+                            bastion_nums[bastion_type.lower()][uuid] = 0
+                        bastion_times[bastion_type.lower()][uuid] += bastion_length
+                        bastion_nums[bastion_type.lower()][uuid] += 1
 
-                time = int(event[0]) - prev_time
-                current_split = event_mapping[event[1]]
-                prev_time = int(event[0])
+                if event["type"] in SPLIT_MAPPING:
+                    split_length = event["time"] - prev_time
+                    if uuid not in split_times[curr_split]:
+                        split_times[curr_split][uuid] = 0
+                        split_nums[curr_split][uuid] = 0
 
-                player_times[event[2]][split_mapping[event[1]]] += time
-                player_nums[event[2]][split_mapping[event[1]]] += 1
+                    split_times[curr_split][uuid] += split_length
+                    split_nums[curr_split][uuid] += 1
 
-    for player_key in player_times:
-        for split_key in player_times[player_key]:
-            if player_nums[player_key][split_key]:
-                player_times[player_key][split_key] /= player_nums[player_key][
-                    split_key
-                ]
-                if player_nums[player_key][split_key] >= 5:
-                    ordered_times[split_key].append(player_times[player_key][split_key])
+                    prev_time = event["time"]
+                    curr_split = SPLIT_MAPPING[event["type"]]
 
-    for split_key in ordered_times:
-        ordered_times[split_key].sort()
+            if result_uuid == uuid and forfeited is False:
+                split_length = result_time - prev_time
+                split_times[curr_split][uuid] += split_length
+                split_nums[curr_split][uuid] += 1
 
-    file = path.join("src", "database", "mcsrstats", "player_splits.csv")
-    with open(file, "w") as f:
-        for i in range(len(ordered_times["ow"])):
-            line = ""
-            for split_key in ordered_times:
-                if i >= len(ordered_times[split_key]):
-                    line += "FALSE"
-                else:
-                    line += str(int(ordered_times[split_key][i]))
+    for split in split_times:
+        for uuid in split_times[split]:
+            if split_nums[split][uuid] >= 5:
+                split_ranked[split].append(
+                    round(split_times[split][uuid] / split_nums[split][uuid])
+                )
+        split_ranked[split].sort()
 
-                if split_key != "end":
-                    line += ","
-                else:
-                    line += "\n"
-            f.write(line)
+    for bastion in bastion_times:
+        for uuid in bastion_times[bastion]:
+            if bastion_nums[bastion][uuid] >= 5:
+                bastion_ranked[bastion].append(
+                    round(bastion_times[bastion][uuid] / bastion_nums[bastion][uuid])
+                )
+        bastion_ranked[bastion].sort()
+
+    for ow in ow_times:
+        for uuid in ow_times[ow]:
+            if ow_nums[ow][uuid] >= 5:
+                ow_ranked[ow].append(
+                    round(ow_times[ow][uuid] / ow_nums[ow][uuid])
+                )
+        ow_ranked[ow].sort()
+
+    playerbase_data = {
+        "split": split_ranked,
+        "bastion": bastion_ranked,
+        "ow": ow_ranked,
+    }
+
+    playerbase_file = PROJECT_DIR / "database" / "playerbase.json"
+    with open(playerbase_file, "w") as f:
+        json.dump(playerbase_data, f, indent=4)
 
 
 if __name__ == "__main__":

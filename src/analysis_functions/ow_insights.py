@@ -1,5 +1,7 @@
+import json
 from os import path
 import math
+from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -77,17 +79,9 @@ def get_ranked_ows(average_ows):
     ranked_ows = {"bt": 0, "dt": 0, "rp": 0, "ship": 0, "village": 0}
     ows_final_boss = {"bt": [], "dt": [], "rp": [], "ship": [], "village": []}
 
-    file = path.join("src", "database", "mcsrstats", "ow_splits.csv")
-    ows_index = ["bt", "dt", "rp", "ship", "village"]
-
-    with open(file, "r", encoding="UTF-8") as f:
-        while True:
-            ows = f.readline().strip().split(",")
-            if not ows[0]:
-                break
-            for i in range(5):
-                if ows[i] != "FALSE":
-                    ows_final_boss[ows_index[i]].append(int(ows[i]))
+    playerbase_file = Path("src") / "database" / "playerbase.json"
+    with open(playerbase_file, "r") as f:
+        ows_final_boss = json.load(f)["ow"]
 
     for ow_key in ows_final_boss:
         ranked_ows[ow_key] = np.searchsorted(

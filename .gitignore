@@ -10,3 +10,6 @@ __pycache__/
 
 # Virtual environments
 venv/
+
+# Logs
+/src/logs/*.log
