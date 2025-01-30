@@ -77,6 +77,7 @@ class Topics(nextcord.ui.View):
             embeds=[self.general_embed, self.topic_embeds[0]],
             file=file,
         )
+        self._View__timeout_expiry -= self.timeout
 
     @nextcord.ui.button(label="Bastions", style=nextcord.ButtonStyle.blurple)
     async def show_bastions(
@@ -91,6 +92,7 @@ class Topics(nextcord.ui.View):
             embeds=[self.general_embed, self.topic_embeds[1]],
             file=file,
         )
+        self._View__timeout_expiry -= self.timeout
 
     @nextcord.ui.button(label="Overworlds", style=nextcord.ButtonStyle.green)
     async def show_overworlds(
@@ -105,6 +107,7 @@ class Topics(nextcord.ui.View):
             embeds=[self.general_embed, self.topic_embeds[2]],
             file=file,
         )
+        self._View__timeout_expiry -= self.timeout
 
 
 @bot.event

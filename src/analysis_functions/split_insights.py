@@ -176,7 +176,36 @@ def get_ranked_splits(average_splits):
 
     playerbase_file = Path("src") / "database" / "playerbase.json"
     with open(playerbase_file, "r") as f:
-        splits_final_boss = json.load(f)["split"]
+        unused_splits_final_boss = json.load(f)["split"]
+
+    splits_final_boss = {
+        "ow": [],
+        "nether": [],
+        "bastion": [],
+        "fortress": [],
+        "blind": [],
+        "stronghold": [],
+        "end": [],
+    }
+    file = path.join("src", "database", "mcsrstats", "player_splits.csv")
+    split_mapping = [
+        "ow",
+        "nether",
+        "bastion",
+        "fortress",
+        "blind",
+        "stronghold",
+        "end",
+    ]
+
+    with open(file, "r", encoding="UTF-8") as f:
+        while True:
+            splits = f.readline().strip().split(",")
+            if not splits[0]:
+                break
+            for i in range(7):
+                if splits[i] != "FALSE":
+                    splits_final_boss[split_mapping[i]].append(int(splits[i]))
 
     for key in splits_final_boss:
         ranked_splits[key] = np.searchsorted(
