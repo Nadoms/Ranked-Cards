@@ -1001,14 +1001,14 @@ async def fetch_loop():
 def create_crontab():
     cron = CronTab(user=True)
     analysis_file = path.abspath(path.join("src", "scripts", "analyse_db.py"))
-    log_file = os.path.abspath(os.path.join("src", "logs", "analyse_db.log"))
+    log_file = path.abspath(path.join("src", "logs", "analyse_db.log"))
     cron.remove_all()
     job = cron.new(command=f"{sys.executable} {analysis_file} >> {log_file} 2>&1")
-    job.setall("* * * * *")
+    job.setall("0 0 * * *")
     cron.write()
 
 
-create_crontab()
+# create_crontab()
 bot.loop.create_task(fetch_loop())
 load_dotenv()
 bot.run(getenv(token))
