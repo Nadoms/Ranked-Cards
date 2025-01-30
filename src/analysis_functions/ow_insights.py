@@ -290,7 +290,7 @@ def add_text(polygon, average_ows, ranked_ows):
 
 def get_sample_size(num_games):
     if num_games < 30:
-        return "This is a very low sample size. Take the RP and DT averages with a grain of salt."
+        return "This is a very low sample size. Take these stats with a grain of salt."
     if num_games < 80:
         return "This is an OK sample size."
     else:
