@@ -104,21 +104,21 @@ INSERT INTO matches (
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
-            match["id"],
-            match["type"],
-            match["season"],
-            match["category"],
-            match["gameMode"],
-            match["result"]["uuid"],
-            match["result"]["time"],
-            match["forfeited"],
-            match["decayed"],
-            match["season"],
-            match["date"],
-            match["seedType"],
-            match["bastionType"],
-            match["tag"],
-            match["replayExist"],
+            match.get("id"),
+            match.get("type"),
+            match.get("season"),
+            match.get("category"),
+            match.get("gameMode"),
+            match["result"].get("uuid"),
+            match["result"].get("time"),
+            match.get("forfeited"),
+            match.get("decayed"),
+            match.get("season"),
+            match.get("date"),
+            match.get("seedType"),
+            match.get("bastionType"),
+            match.get("tag"),
+            match.get("replayExist"),
         )
     )
 
@@ -131,19 +131,19 @@ INSERT OR IGNORE INTO players (
 ) VALUES (?, ?)
             """,
             (
-                player["uuid"],
-                player["nickname"],
+                player.get("uuid"),
+                player.get("nickname"),
             )
         )
 
     for change in match["changes"]:
         timeline = [
             {
-                "time": event["time"],
-                "type": event["type"],
+                "time": event.get("time"),
+                "type": event.get("type"),
             }
             for event in match["timelines"]
-            if event["uuid"] == change["uuid"]
+            if event.get("uuid") == change.get("uuid")
         ]
         timeline_json = json.dumps(timeline)
         cursor.execute(
@@ -157,10 +157,10 @@ INSERT INTO runs (
 ) VALUES (?, ?, ?, ?, ?)
             """,
             (
-                match["id"],
-                change["uuid"],
-                change["change"],
-                change["eloRate"],
+                match.get("id"),
+                change.get("uuid"),
+                change.get("change"),
+                change.get("eloRate"),
                 timeline_json,
             )
         )
