@@ -992,13 +992,14 @@ def update_records(interaction, command, subject, completed):
 
 async def fetch_loop():
     latest_load = S7_START
+    repeat = 900
     while True:
-        await asyncio.sleep(900)
+        await asyncio.sleep(repeat)
         not_latest_load = latest_load
         latest_load = await load_matches.spam_redlime(latest_load, 500)
         if not_latest_load == latest_load:
             print("No new matches found.")
-            break
+            repeat = 7200
 
 
 def create_crontab():
