@@ -30,7 +30,7 @@ API_COOLDOWN_MSG = "Too many commands have been issued! The Ranked API is coolin
 token = "TEST_TOKEN" if TESTING_MODE else "DISCORD_TOKEN"
 default_guild_ids = [735859906434957392] if TESTING_MODE else None
 
-intents = intents = nextcord.Intents.all()
+intents = nextcord.Intents.default()
 intents.members = True
 bot = commands.Bot(
     command_prefix="=",
