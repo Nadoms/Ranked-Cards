@@ -343,6 +343,7 @@ class Match(API):
     def save_db(cls):
         cls._conn.commit()
         cls._conn.close()
+        cls._cursor = None
         cls._cache = {}
         return cls._additions
 
