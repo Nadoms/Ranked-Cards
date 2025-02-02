@@ -1003,6 +1003,8 @@ async def fetch_loop():
         if not_latest_load == latest_load:
             print("No new matches found.")
             repeat = 7200
+        else:
+            repeat = 900
 
 
 def create_crontab():
