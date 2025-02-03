@@ -932,11 +932,12 @@ def update_records(interaction, command, subject, completed):
     stats_file = path.join("src", "database", "stats.json")
     caller_id = interaction.user.id
     caller_name = interaction.user.name
-    if not isinstance(interaction.channel, nextcord.PartialMessageable):
-        channel_name = interaction.channel.name
-    else:
+    if isinstance(interaction.channel, nextcord.PartialMessageable) or not interaction.guild:
         channel_name = None
-    guild_name = interaction.guild.name
+        guild_name = None
+    else:
+        channel_name = interaction.channel.name
+        guild_name = interaction.guild.name
 
     with open(calls_file, "a") as f:
         row = f"\n{command},{subject},{caller_id},{caller_name},{channel_name},{guild_name},{int(time())},,{completed}"
