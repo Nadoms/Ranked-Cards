@@ -1,7 +1,6 @@
 import json
 from os import path
 from pathlib import Path
-import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
@@ -13,40 +12,38 @@ PROJECT_DIR = Path(__file__).resolve().parent.parent
 def train(data_oi, X_data, Y_data):
     # Casting and plotting the data.
     order = np.argsort(X_data)
-    X = torch.FloatTensor(X_data)[order]
-    Y_raw = torch.FloatTensor(Y_data)[order]
-    Y = Y_raw.apply_(lambda x: x * 1e-3)
+    X = np.array(X_data)[order]
+    Y_raw = np.array(Y_data)[order]
+    Y = Y_raw * 1e-3
     print(X, Y)
 
-    W = [
-        torch.tensor(0.0, requires_grad=True),
-        torch.tensor(0.0, requires_grad=True),
-        torch.tensor(0.0, requires_grad=True),
-    ]
-
-    step_sizes = [0.1, 0.1, 0.1]
+    W = np.array([0.0, 0.0, 0.0])
+    step_sizes = np.array([0.1, 0.1, 0.1])
     loss_list = []
     iter = 10000
 
     for i in range(iter):
         Y_pred = forward(X, W)
         loss = criterion(Y_pred, Y)
-        loss_list.append(loss.item())
-        loss.backward()
+        loss_list.append(loss)
 
-        for j in range(len(W)):
-            W[j].data = W[j].data - step_sizes[j] * W[j].grad.data
-            W[j].grad.data.zero_()
+        W_grad = np.array([
+            np.mean(2 * (Y_pred - Y) * (1 / (X + W[1]))),
+            np.mean(2 * (Y_pred - Y) * (-W[0] / (X + W[1])**2)),
+            np.mean(2 * (Y_pred - Y))
+        ])
+
+        W = W - step_sizes * W_grad
 
         if i % 1000 == 0:
-            print(f"{i},\t{loss.item()},\t{[w.item() for w in W]}")
+            print(f"{i},\t{loss},\t{W.tolist()}")
 
-    plt.plot(X.numpy(), Y.numpy(), "b.", label="Y")
-    plt.plot(X.numpy(), Y_pred.detach().numpy(), "y", label="pred", linewidth=3)
+    plt.plot(X, Y, "b.", label="Y")
+    plt.plot(X, Y_pred, "y", label="pred", linewidth=3)
     plt.xlabel("x")
     plt.ylabel("y")
     plt.legend()
-    plt.grid("True", color="y")
+    plt.grid(True, color="y")
     plt.savefig(PROJECT_DIR / "models" / f"model_{data_oi}.png")
     plt.show()
     plt.close()
@@ -54,11 +51,8 @@ def train(data_oi, X_data, Y_data):
     update_weights(data_oi, W, y=True)
 
 
-# Defining the functions for forward pass for prediction
-def forward(x, W):
-    sum = 0
-    sum = W[0] / (x + W[1]) + W[2]
-    return sum
+def forward(X, W):
+    return W[0] / (X + W[1]) + W[2]
 
 
 def regular_forward(x, W):
@@ -66,9 +60,8 @@ def regular_forward(x, W):
         sum += W[i] * (x ** (i - 1))
 
 
-# Evaluating data points with MSE
-def criterion(y_pred, y):
-    return torch.mean((y_pred - y) ** 2)
+def criterion(Y_pred, Y):
+    return np.mean((Y_pred - Y) ** 2)
 
 
 def update_weights(data_oi, W, y=False):
@@ -105,7 +98,7 @@ def main(data_oi):
             if not line[0]:
                 break
 
-            data[0].append(int(line[0]))
+            data[0].append(int(line[0]) * 1e-6)
             data[1].append(int(float(line[1])))
 
     train(data_oi, *data)

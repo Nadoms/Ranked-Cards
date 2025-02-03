@@ -237,8 +237,7 @@ class VersusMatches(Matches):
 
 class Match(API):
     _additions: int = 0
-    _conn: sqlite3.Connection
-    _cursor: sqlite3.Cursor = None
+    _conn, _cursor = start()
 
     def __init__(
         self,
@@ -252,9 +251,6 @@ class Match(API):
         Match._additions += 1
 
     def _check_db(self) -> dict[str, any]:
-        if not Match._cursor:
-            return None
-
         match = query_db(Match._cursor, id=self.id)
         if not match:
             return None
@@ -334,18 +330,9 @@ class Match(API):
         }
 
     @classmethod
-    def load_db(cls):
-        cls._conn = sqlite3.connect(Path("src") / "database" / "ranked.db")
-        cls._cursor = cls._conn.cursor()
-        cls._additions = 0
-
-    @classmethod
-    def save_db(cls):
-        cls._conn.commit()
-        cls._conn.close()
-        cls._cursor = None
-        cls._cache = {}
-        return cls._additions
+    def commit(self):
+        Match._conn.commit()
+        return Match._additions
 
 
 class Versus(API):
