@@ -1,6 +1,6 @@
 from PIL import ImageDraw, ImageFont
 
-from gen_functions import word, rank
+from gen_functions import db, word, rank
 
 
 def write(chart, uuids, response, vs_response):
@@ -53,7 +53,11 @@ def write(chart, uuids, response, vs_response):
 
 
 def get_stats(response, scores, uuids, i):
-    current_elo = response["players"][i]["eloRate"]
+    if "eloRate" not in response["players"][i]:
+        _, cursor = db.start()
+        current_elo = db.get_elo(cursor, uuids[i])
+    else:
+        current_elo = response["players"][i]["eloRate"]
     legacy_elo = None
     for score_change in response["changes"]:
         if score_change["uuid"] == uuids[i]:

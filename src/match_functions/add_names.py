@@ -13,14 +13,7 @@ def write(chart, names, response):
     y_values = [210, 390]
 
     for i in range(0, 2):
-        rank = str(response["players"][i]["eloRank"])
-        rank_colour = get_rank_colour(rank)
-        if rank == "None":
-            rank = "-"
-        rank = " #" + rank
-        rank = ""  # FIX: remove rank
-
-        tag = names[i] + rank
+        tag = names[i]
         tag_size = min(word.calc_size(tag, 500), 75)
         tag_font = ImageFont.truetype("minecraft_font.ttf", tag_size)
         text_x = int(x_values[i] - word.calc_length(tag, tag_size) / 2)
@@ -31,9 +24,6 @@ def write(chart, names, response):
             colour = "lightblue"
 
         named_image.text((text_x, text_y), names[i], font=tag_font, fill=colour)
-
-        text_x += word.calc_length(names[i], tag_size) + tag_size / 5
-        named_image.text((text_x, text_y), rank, font=tag_font, fill=rank_colour)
 
         if response["players"][i]["uuid"] == response["result"]["uuid"]:
             icon_name = "8.webp"
