@@ -13,3 +13,6 @@ venv/
 
 # Logs
 /src/logs/*.log
+
+# Database
+/src/database/*.db
