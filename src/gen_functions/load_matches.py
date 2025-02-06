@@ -9,8 +9,9 @@ from gen_functions import api
 
 
 async def spam_redlime(start, limit):
-    step_size = 200
+    step_size = 100
     i = start
+    old_additions = api.Match._additions
     new_additions = 0
 
     while True:
@@ -26,15 +27,15 @@ async def spam_redlime(start, limit):
             )
             k += step_size
             if new_additions >= limit:
-                new_additions += api.Match.commit()
+                new_additions = api.Match.commit() - old_additions
                 print("Limit reached, total loaded:", new_additions)
                 return i
         except (api.APIRateLimitError, api.APIError):
-            new_additions += api.Match.commit()
+            new_additions = api.Match.commit() - old_additions
             print("Rate limit reached, total loaded:", new_additions)
             return i
 
-        new_additions += api.Match.commit()
+        new_additions = api.Match.commit() - old_additions
         i += step_size
         if matches == []:
             return i
