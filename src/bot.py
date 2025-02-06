@@ -1000,7 +1000,7 @@ async def fetch_loop():
     while True:
         await asyncio.sleep(repeat)
         not_latest_load = latest_load
-        latest_load = await load_matches.spam_redlime(latest_load, 500)
+        latest_load = await load_matches.spam_redlime(latest_load, 1000)
         if not_latest_load == latest_load:
             print("No new matches found.")
             repeat = 7200
