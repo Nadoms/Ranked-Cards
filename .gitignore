@@ -16,3 +16,6 @@ venv/
 
 # Database
 /src/database/*.db
+
+# Vscode
+.vscode
