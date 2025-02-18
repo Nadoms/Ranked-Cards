@@ -132,6 +132,7 @@ def main():
                 )
         split_ranked[split].sort()
         print(f"{split} count: {len(split_ranked[split])}")
+    print()
 
     for bastion in bastion_times:
         for uuid in bastion_times[bastion]:
@@ -141,6 +142,7 @@ def main():
                 )
         bastion_ranked[bastion].sort()
         print(f"{bastion} count: {len(bastion_ranked[bastion])}")
+    print()
 
     for ow in ow_times:
         for uuid in ow_times[ow]:
@@ -151,17 +153,10 @@ def main():
         ow_ranked[ow].sort()
         print(f"{ow} count: {len(ow_ranked[ow])}")
 
-    playerbase_data = {
-        "split": split_ranked,
-        "bastion": bastion_ranked,
-        "ow": ow_ranked,
-    }
-
-    playerbase_file = PROJECT_DIR / "database" / "playerbase.json"
-    with open(playerbase_file, "w") as f:
-        json.dump(playerbase_data, f, indent=4)
-
-    for uuid in completion_times:
+    completion_count = len(completion_times)
+    for i, uuid in enumerate(completion_times):
+        if i % (completion_count // 10) == 0:
+            print(f"{i}/{completion_count}")
         if completion_nums[uuid] >= 5:
             avg_elo[uuid] = {
                 "avg": round(completion_times[uuid] / completion_nums[uuid]),
@@ -169,12 +164,25 @@ def main():
                 "sb": db.get_sb(cursor, uuid),
             }
 
-    avgs = [avg_elo[uuid]["avg"] * 1e-6 for uuid in avg_elo]
+    avgs = [avg_elo[uuid]["avg"] for uuid in avg_elo]
     elos = [avg_elo[uuid]["elo"] for uuid in avg_elo]
-    sbs = [avg_elo[uuid]["sb"] * 1e-6 for uuid in avg_elo]
+    sbs = [avg_elo[uuid]["sb"] for uuid in avg_elo]
 
-    train_model.train("avg", avgs, elos)
-    train_model.train("sb", sbs, elos)
+    playerbase_data = {
+        "split": split_ranked,
+        "bastion": bastion_ranked,
+        "ow": ow_ranked,
+        "avg": sorted(avgs),
+        "elo": sorted(elos, reverse=True),
+        "sb": sorted(sbs),
+    }
+
+    playerbase_file = PROJECT_DIR / "database" / "playerbase.json"
+    with open(playerbase_file, "w") as f:
+        json.dump(playerbase_data, f, indent=4)
+
+    train_model.train("avg", [avg * 1e-6 for avg in avgs], elos)
+    train_model.train("sb", [sb * 1e-6 for sb in sbs], elos)
 
 
 if __name__ == "__main__":

@@ -45,7 +45,6 @@ def train(data_oi, X_data, Y_data):
     plt.legend()
     plt.grid(True, color="y")
     plt.savefig(PROJECT_DIR / "models" / f"model_{data_oi}.png")
-    plt.show()
     plt.close()
 
     update_weights(data_oi, W, y=True)
@@ -61,7 +60,7 @@ def regular_forward(x, W):
 
 
 def criterion(Y_pred, Y):
-    elo_weights = Y / np.max(Y)
+    elo_weights = (Y / np.max(Y)) ** 4
     return np.mean(elo_weights * np.abs(Y_pred - Y))
 
 

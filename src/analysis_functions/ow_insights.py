@@ -80,21 +80,7 @@ def get_ranked_ows(average_ows):
 
     playerbase_file = Path("src") / "database" / "playerbase.json"
     with open(playerbase_file, "r") as f:
-        unused_ows_final_boss = json.load(f)["ow"]
-
-    # TO REMOVE #
-    ows_final_boss = {"bt": [], "dt": [], "rp": [], "ship": [], "village": []}
-    file = path.join("src", "database", "mcsrstats", "ow_splits.csv")
-    ows_index = ["bt", "dt", "rp", "ship", "village"]
-
-    with open(file, "r", encoding="UTF-8") as f:
-        while True:
-            ows = f.readline().strip().split(",")
-            if not ows[0]:
-                break
-            for i in range(5):
-                if ows[i] != "FALSE":
-                    ows_final_boss[ows_index[i]].append(int(ows[i]))    # TO REMOVE #
+        ows_final_boss = json.load(f)["ow"]
 
     for ow_key in ows_final_boss:
         ranked_ows[ow_key] = np.searchsorted(

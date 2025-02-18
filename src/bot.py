@@ -1014,7 +1014,7 @@ def create_crontab():
     log_file = path.abspath(path.join("src", "logs", f"analyse_db_{datetime.now().strftime("%H-%M-%S")}.log"))
     cron.remove_all()
     job = cron.new(command=f"{sys.executable} {analysis_file} >> {log_file} 2>&1")
-    job.setall("* * * * *")
+    job.setall("0 0 * * *")
     cron.write()
 
 

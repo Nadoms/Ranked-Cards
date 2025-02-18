@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 from pathlib import Path
 import sqlite3
@@ -70,9 +71,9 @@ def get_sb(
         items="time",
         order="time ASC",
         limit=1,
+        type=2,
         result_uuid=uuid,
         forfeited=False,
-        type=2,
     )
     if match:
         return match[0][0]

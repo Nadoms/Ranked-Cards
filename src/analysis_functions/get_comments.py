@@ -1,6 +1,7 @@
 import json
 import math
 from os import path
+from pathlib import Path
 
 import numpy as np
 
@@ -50,20 +51,9 @@ def main(response, elo, season):
 
 
 def get_attr_ranked(value, attr_type):
-    attr_mapping = {
-        "avg": "avg_vs_elo",
-        "sb": "sb_vs_elo",
-        "elo": "elo",
-    }
-
-    fp = path.join("src", "database", "mcsrstats", f"{attr_mapping[attr_type]}.txt")
-    attrs = []
-    with open(fp, "r", encoding="UTF-8") as f:
-        while True:
-            attr = f.readline().strip().split()
-            if not attr:
-                break
-            attrs.append(int(attr[0]))
+    playerbase_file = Path("src") / "database" / "playerbase.json"
+    with open(playerbase_file, "r") as f:
+        attrs = json.load(f)[attr_type]
 
     ranked_attr = round(np.searchsorted(attrs, value) / len(attrs), 3)
     if attr_type != "elo":
