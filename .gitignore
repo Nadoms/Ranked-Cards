@@ -16,6 +16,8 @@ venv/
 
 # Database
 /src/database/*.db
+/src/database/playerbase.json
+/src/models/models.json
 
 # Vscode
 .vscode

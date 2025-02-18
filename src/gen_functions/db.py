@@ -4,7 +4,8 @@ import sqlite3
 from typing import Optional
 
 
-DEFAULT_DB = (Path("src") / "database" / "ranked.db")
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+DEFAULT_DB = PROJECT_DIR / "database" / "ranked.db"
 
 
 def query_db(
@@ -71,6 +72,7 @@ def get_sb(
         limit=1,
         result_uuid=uuid,
         forfeited=False,
+        type=2,
     )
     if match:
         return match[0][0]

@@ -1,5 +1,6 @@
 import json
 
+from datetime import datetime
 from pathlib import Path
 import sys
 
@@ -26,7 +27,7 @@ OW_MAPPING = {
 
 
 def main():
-    print("\n***\nAnalysing database\n***\n")
+    print(f"\n***\nAnalysing database - {datetime.now()}\n***\n")
     season = games.get_season()
     completion_times = {}
     completion_nums = {}

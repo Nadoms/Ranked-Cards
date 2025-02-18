@@ -61,13 +61,14 @@ def regular_forward(x, W):
 
 
 def criterion(Y_pred, Y):
-    return np.mean((Y_pred - Y) ** 2)
+    elo_weights = Y / np.max(Y)
+    return np.mean(elo_weights * np.abs(Y_pred - Y))
 
 
 def update_weights(data_oi, W, y=False):
     weight_mapping = "abcdefghijklmnopqrstuvwxyz"
 
-    file = path.join("src", "models", "models.json")
+    file = path.join(PROJECT_DIR / "models", "models.json")
     with open(file, "r") as f:
         models = json.load(f)
 
