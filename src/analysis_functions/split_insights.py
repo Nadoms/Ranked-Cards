@@ -180,7 +180,7 @@ def get_ranked_splits(average_splits):
 
     for key in splits_final_boss:
         ranked_splits[key] = np.searchsorted(
-            splits_final_boss[key], average_splits[key]
+            list(splits_final_boss[key].values()), average_splits[key]
         )
         if len(splits_final_boss[key]) == 0:
             ranked_splits[key] = 0

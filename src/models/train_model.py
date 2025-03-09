@@ -9,28 +9,35 @@ import sys
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 
 
-def train(data_oi, X_data, Y_data):
+def train(data_oi, data):
     # Casting and plotting the data.
+
+    X_data = []
+    Y_data = []
+    for item in data:
+        if item[1] >= 0.75:
+            X_data.append(item[0])
+            Y_data.append(item[1])
     order = np.argsort(X_data)
     X = np.array(X_data)[order]
-    Y_raw = np.array(Y_data)[order]
-    Y = Y_raw * 1e-3
+    Y = np.array(Y_data)[order]
     print(X, Y)
 
-    W = np.array([0.0, 0.0, 0.0])
+    W = np.array([0.2, -0.25, 0.75])
     step_sizes = np.array([0.1, 0.1, 0.1])
     loss_list = []
     iter = 10000
 
     for i in range(iter):
         Y_pred = forward(X, W)
-        loss = criterion(Y_pred, Y)
+        elo_weights = 2
+        loss = np.mean(elo_weights * np.abs(Y_pred - Y))
         loss_list.append(loss)
 
         W_grad = np.array([
-            np.mean(2 * (Y_pred - Y) * (1 / (X + W[1]))),
-            np.mean(2 * (Y_pred - Y) * (-W[0] / (X + W[1])**2)),
-            np.mean(2 * (Y_pred - Y))
+            np.mean(elo_weights * (Y_pred - Y)),
+            np.mean(elo_weights * (Y_pred - Y)),
+            np.mean(elo_weights * (Y_pred - Y))
         ])
 
         W = W - step_sizes * W_grad
@@ -60,8 +67,7 @@ def regular_forward(x, W):
 
 
 def criterion(Y_pred, Y):
-    elo_weights = (Y / np.max(Y)) ** 4
-    return np.mean(elo_weights * np.abs(Y_pred - Y))
+    return np.mean(np.abs(Y_pred - Y))
 
 
 def update_weights(data_oi, W, y=False):
@@ -90,18 +96,17 @@ def update_weights(data_oi, W, y=False):
 
 
 def main(data_oi):
-    data = [[], []]
-    data_path = path.join(PROJECT_DIR / "models" / f"{data_oi}_vs_elo.txt")
-    with open(data_path, "r") as f:
-        while True:
-            line = f.readline().strip().split(" ")
-            if not line[0]:
-                break
+    playerbase_file = PROJECT_DIR / "database" / "playerbase.json"
+    with open(playerbase_file, "r") as f:
+        playerbase_data = json.load(f)
 
-            data[0].append(int(line[0]) * 1e-6)
-            data[1].append(int(float(line[1])))
+    data_ois = playerbase_data[data_oi]
+    elos = playerbase_data["elo"]
 
-    train(data_oi, *data)
+    train(
+        data_oi,
+        [(data_ois[uuid] * 1e-6, elos[uuid] * 1e-3) for uuid in data_ois]
+    )
 
 
 if __name__ == "__main__":

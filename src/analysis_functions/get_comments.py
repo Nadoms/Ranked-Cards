@@ -54,7 +54,9 @@ def main(response, elo, season):
 def get_attr_ranked(value, attr_type):
     playerbase_file = Path("src") / "database" / "playerbase.json"
     with open(playerbase_file, "r") as f:
-        attrs = json.load(f)[attr_type]
+        attrs = list(json.load(f)[attr_type].values())
+    if attr_type == "elo":
+        attrs = list(reversed(attrs))
 
     ranked_attr = round(np.searchsorted(attrs, value) / len(attrs), 3)
     if attr_type != "elo":

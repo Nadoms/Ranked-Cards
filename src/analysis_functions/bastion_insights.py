@@ -144,7 +144,7 @@ def get_ranked_bastions(average_bastions):
 
     for key in bastions_final_boss:
         ranked_bastions[key] = np.searchsorted(
-            bastions_final_boss[key], average_bastions[key]
+            list(bastions_final_boss[key].values()), average_bastions[key]
         )
         if len(bastions_final_boss[key]) == 0:
             ranked_bastions[key] = 0

@@ -84,7 +84,7 @@ def get_ranked_ows(average_ows):
 
     for ow_key in ows_final_boss:
         ranked_ows[ow_key] = np.searchsorted(
-            ows_final_boss[ow_key], average_ows[ow_key]
+            list(ows_final_boss[ow_key].values()), average_ows[ow_key]
         )
         if len(ows_final_boss[ow_key]) == 0:
             ranked_ows[ow_key] = 0

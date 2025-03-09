@@ -34,13 +34,13 @@ def main():
     avg_elo = {}
     split_times = {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}}
     split_nums = {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}}
-    split_ranked = {"ow": [], "nether": [], "bastion": [], "fortress": [], "blind": [], "stronghold": [], "end": []}
+    split_ranked = {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}}
     bastion_times = {"bridge": {}, "housing": {}, "stables": {}, "treasure": {}}
     bastion_nums = {"bridge": {}, "housing": {}, "stables": {}, "treasure": {}}
-    bastion_ranked = {"bridge": [], "housing": [], "stables": [], "treasure": []}
+    bastion_ranked = {"bridge": {}, "housing": {}, "stables": {}, "treasure": {}}
     ow_times = {"bt": {}, "dt": {}, "rp": {}, "ship": {}, "village": {}}
     ow_nums = {"bt": {}, "dt": {}, "rp": {}, "ship": {}, "village": {}}
-    ow_ranked = {"bt": [], "dt": [], "rp": [], "ship": [], "village": []}
+    ow_ranked = {"bt": {}, "dt": {}, "rp": {}, "ship": {}, "village": {}}
 
     conn, cursor = db.start(PROJECT_DIR / "database" / "ranked.db")
     matches_info = db.query_db(
@@ -127,30 +127,24 @@ def main():
     for split in split_times:
         for uuid in split_times[split]:
             if split_nums[split][uuid] >= 5:
-                split_ranked[split].append(
-                    round(split_times[split][uuid] / split_nums[split][uuid])
-                )
-        split_ranked[split].sort()
+                split_ranked[split][uuid] = round(split_times[split][uuid] / split_nums[split][uuid])
+        split_ranked[split] = dict(sorted(split_ranked[split].items(), key=lambda item: item[1]))
         print(f"{split} count: {len(split_ranked[split])}")
     print()
 
     for bastion in bastion_times:
         for uuid in bastion_times[bastion]:
             if bastion_nums[bastion][uuid] >= 5:
-                bastion_ranked[bastion].append(
-                    round(bastion_times[bastion][uuid] / bastion_nums[bastion][uuid])
-                )
-        bastion_ranked[bastion].sort()
+                bastion_ranked[bastion][uuid] = round(bastion_times[bastion][uuid] / bastion_nums[bastion][uuid])
+        bastion_ranked[bastion] = dict(sorted(bastion_ranked[bastion].items(), key=lambda item: item[1]))
         print(f"{bastion} count: {len(bastion_ranked[bastion])}")
     print()
 
     for ow in ow_times:
         for uuid in ow_times[ow]:
             if ow_nums[ow][uuid] >= 5:
-                ow_ranked[ow].append(
-                    round(ow_times[ow][uuid] / ow_nums[ow][uuid])
-                )
-        ow_ranked[ow].sort()
+                ow_ranked[ow][uuid] = round(ow_times[ow][uuid] / ow_nums[ow][uuid])
+        ow_ranked[ow] = dict(sorted(ow_ranked[ow].items(), key=lambda item: item[1]))
         print(f"{ow} count: {len(ow_ranked[ow])}")
 
     completion_count = len(completion_times)
@@ -164,25 +158,34 @@ def main():
                 "sb": db.get_sb(cursor, uuid),
             }
 
-    avgs = [avg_elo[uuid]["avg"] for uuid in avg_elo]
-    elos = [avg_elo[uuid]["elo"] for uuid in avg_elo]
-    sbs = [avg_elo[uuid]["sb"] for uuid in avg_elo]
+    avgs = {uuid: avg_elo[uuid]["avg"] for uuid in avg_elo}
+    elos = {uuid: avg_elo[uuid]["elo"] for uuid in avg_elo}
+    sbs = {uuid: avg_elo[uuid]["sb"] for uuid in avg_elo}
+    avgs = dict(sorted(avgs.items(), key=lambda item: item[1]))
+    elos = dict(sorted(elos.items(), key=lambda item: item[1], reverse=True))
+    sbs = dict(sorted(sbs.items(), key=lambda item: item[1]))
 
     playerbase_data = {
         "split": split_ranked,
         "bastion": bastion_ranked,
         "ow": ow_ranked,
-        "avg": sorted(avgs),
-        "elo": sorted(elos, reverse=True),
-        "sb": sorted(sbs),
+        "avg": avgs,
+        "elo": elos,
+        "sb": sbs,
     }
 
     playerbase_file = PROJECT_DIR / "database" / "playerbase.json"
     with open(playerbase_file, "w") as f:
         json.dump(playerbase_data, f, indent=4)
 
-    train_model.train("avg", [avg * 1e-6 for avg in avgs], elos)
-    train_model.train("sb", [sb * 1e-6 for sb in sbs], elos)
+    train_model.train(
+        "avg",
+        [(avgs[uuid] * 1e-6, elos[uuid] * 1e-3) for uuid in avgs]
+    )
+    train_model.train(
+        "sb",
+        [(sbs[uuid] * 1e-6, elos[uuid] * 1e-3) for uuid in sbs]
+    )
 
 
 if __name__ == "__main__":

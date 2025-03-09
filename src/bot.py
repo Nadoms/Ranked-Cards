@@ -488,24 +488,16 @@ async def analysis(
         description=comments["general"]["description"],
         colour=nextcord.Colour.yellow(),
     )
-    embed_split = nextcord.Embed(
-        title=comments["splits"]["title"],
-        description=comments["splits"]["description"],
-        colour=nextcord.Colour.yellow(),
-        timestamp=datetime.now(timezone.utc),
-    )
-    embed_bastion = nextcord.Embed(
-        title=comments["bastion"]["title"],
-        description=comments["bastion"]["description"],
-        colour=nextcord.Colour.yellow(),
-        timestamp=datetime.now(timezone.utc),
-    )
-    embed_ow = nextcord.Embed(
-        title=comments["ow"]["title"],
-        description=comments["ow"]["description"],
-        colour=nextcord.Colour.yellow(),
-        timestamp=datetime.now(timezone.utc),
-    )
+
+    embed_types = ["splits", "bastion", "ow"]
+
+    embed_split, embed_bastion, embed_ow = [
+        nextcord.Embed(
+            title=comments[type]["title"],
+            description=comments[type]["description"],
+            colour=nextcord.Colour.yellow(),
+        ) for type in embed_types
+    ]
 
     embed_general.set_thumbnail(url=head)
     embed_general.set_author(
@@ -515,20 +507,6 @@ async def analysis(
     split_polygon.save(f"split_{input_name}.png")
     split_file = File(f"split_{input_name}.png", filename=f"split_{input_name}.png")
     embed_split.set_image(url=f"attachment://split_{input_name}.png")
-    embed_split.set_footer(
-        text="Bot made by @Nadoms | [cool stats](https://www.youtube.com/@nqdoms)",
-        icon_url="https://cdn.discordapp.com/avatars/298936021557706754/a_60fb14a1dbfb0d33f3b02cc33579dacf?size=256",
-    )
-
-    embed_bastion.set_footer(
-        text="Bot made by @Nadoms | [cool stats](https://www.youtube.com/@nqdoms",
-        icon_url="https://cdn.discordapp.com/avatars/298936021557706754/a_60fb14a1dbfb0d33f3b02cc33579dacf?size=256",
-    )
-
-    embed_ow.set_footer(
-        text="Bot made by @Nadoms | [cool stats](https://www.youtube.com/@nqdoms",
-        icon_url="https://cdn.discordapp.com/avatars/298936021557706754/a_60fb14a1dbfb0d33f3b02cc33579dacf?size=256",
-    )
 
     gen_comms = comments["general"]
     for key in gen_comms:
@@ -607,6 +585,12 @@ async def analysis(
         )
 
     embeds = [embed_general, embed_split, embed_bastion, embed_ow]
+    for embed in embeds[1:]:
+        embed.set_footer(
+            text="By @nadoms • Send bugs & feedback! • youtube.com/@nqdoms",
+            icon_url="https://cdn.discordapp.com/avatars/298936021557706754/a_60fb14a1dbfb0d33f3b02cc33579dacf?size=256",
+        )
+
     images = [split_polygon, bastion_polygon, ow_polygon]
     view = Topics(interaction, embeds, images)
 
@@ -1010,7 +994,7 @@ async def fetch_loop():
 
 
 def create_crontab():
-    cron = CronTab(user=True)
+    cron = CronTab(tabfile=path.abspath(path.join("src", "crontibulousbobulous")))
     analysis_file = path.abspath(path.join("src", "scripts", "analyse_db.py"))
     log_file = path.abspath(path.join("src", "logs", f"analyse_db_{datetime.now().strftime('%H-%M-%S')}.log"))
     command = f"{sys.executable} {analysis_file} >> {log_file} 2>&1"
@@ -1018,10 +1002,11 @@ def create_crontab():
     job = cron.new(command=command)
     job.setall("0 0 * * *")
     cron.write()
-    subprocess.run(command, shell=True)
+    subprocess.Popen(command, shell=True)
 
 
-create_crontab()
-bot.loop.create_task(fetch_loop())
+if not TESTING_MODE:
+    create_crontab()
+    bot.loop.create_task(fetch_loop())
 load_dotenv()
 bot.run(getenv(token))
