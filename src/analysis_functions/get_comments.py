@@ -16,8 +16,9 @@ def main(response, elo, season):
     )
     general_comments["description"] = (
         "This is how you stack up against the playerbase. "
-        f"This section has been updated to use your stats from the specified season, S{season}."
-        "\nComparisons of any statistic are made against players who have at least 5 counts of the statistic in season 6."
+        f"\nBETA: All playerbase comparisons will update daily using all season {season} matches."
+        "The elo equivalence models are kinda messed up for top players atm."
+        "\nBastion deathrate data coming soon..."
     )
 
     if not elo:

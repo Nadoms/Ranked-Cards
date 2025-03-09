@@ -9,6 +9,7 @@ from os import getenv, path
 from dotenv import load_dotenv
 from time import time
 from datetime import datetime, timezone
+import subprocess
 import traceback
 from crontab import CronTab
 import sys
@@ -22,7 +23,7 @@ from commands import (
 )
 from gen_functions import games, api, load_matches
 
-S7_START = 1499237
+START_ID = 1790000
 TESTING_MODE = True
 CURRENT_SEASON = games.get_season()
 ALL_SEASONS = [str(season) for season in range(1, CURRENT_SEASON + 1)]
@@ -515,17 +516,17 @@ async def analysis(
     split_file = File(f"split_{input_name}.png", filename=f"split_{input_name}.png")
     embed_split.set_image(url=f"attachment://split_{input_name}.png")
     embed_split.set_footer(
-        text="Bot made by @Nadoms // Feedback appreciated :3",
+        text="Bot made by @Nadoms | [cool stats](https://www.youtube.com/@nqdoms)",
         icon_url="https://cdn.discordapp.com/avatars/298936021557706754/a_60fb14a1dbfb0d33f3b02cc33579dacf?size=256",
     )
 
     embed_bastion.set_footer(
-        text="Bot made by @Nadoms // Feedback appreciated :3",
+        text="Bot made by @Nadoms | [cool stats](https://www.youtube.com/@nqdoms",
         icon_url="https://cdn.discordapp.com/avatars/298936021557706754/a_60fb14a1dbfb0d33f3b02cc33579dacf?size=256",
     )
 
     embed_ow.set_footer(
-        text="Bot made by @Nadoms // Feedback appreciated :3",
+        text="Bot made by @Nadoms | [cool stats](https://www.youtube.com/@nqdoms",
         icon_url="https://cdn.discordapp.com/avatars/298936021557706754/a_60fb14a1dbfb0d33f3b02cc33579dacf?size=256",
     )
 
@@ -995,12 +996,12 @@ def update_records(interaction, command, subject, completed):
 
 
 async def fetch_loop():
-    latest_load = S7_START
+    latest_load = START_ID
     repeat = 900
     while True:
-        await asyncio.sleep(repeat)
         not_latest_load = latest_load
         latest_load = await load_matches.spam_redlime(latest_load, 1000)
+        await asyncio.sleep(repeat)
         if not_latest_load == latest_load:
             print("No new matches found.")
             repeat = 7200
@@ -1011,11 +1012,13 @@ async def fetch_loop():
 def create_crontab():
     cron = CronTab(user=True)
     analysis_file = path.abspath(path.join("src", "scripts", "analyse_db.py"))
-    log_file = path.abspath(path.join("src", "logs", f"analyse_db_{datetime.now().strftime("%H-%M-%S")}.log"))
+    log_file = path.abspath(path.join("src", "logs", f"analyse_db_{datetime.now().strftime('%H-%M-%S')}.log"))
+    command = f"{sys.executable} {analysis_file} >> {log_file} 2>&1"
     cron.remove_all()
-    job = cron.new(command=f"{sys.executable} {analysis_file} >> {log_file} 2>&1")
+    job = cron.new(command=command)
     job.setall("0 0 * * *")
     cron.write()
+    subprocess.run(command, shell=True)
 
 
 create_crontab()
