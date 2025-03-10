@@ -57,6 +57,8 @@ def get_elo(
     if not run:
         return None
     run = run[0]
+    if not run[0]:
+        return None
     current_elo = run[0] + run[1]
     return current_elo
 

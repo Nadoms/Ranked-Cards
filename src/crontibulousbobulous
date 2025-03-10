@@ -1,1 +1,1 @@
-@daily /home/nadoms/projects/Ranked-Cards/venv/bin/python /home/nadoms/projects/Ranked-Cards/src/scripts/analyse_db.py >> /home/nadoms/projects/Ranked-Cards/src/logs/analyse_db_22-26-06.log 2>&1
+@daily /home/nadoms/projects/Ranked-Cards/venv/bin/python /home/nadoms/projects/Ranked-Cards/src/scripts/analyse_db.py >> /home/nadoms/projects/Ranked-Cards/src/logs/analyse_db_00-05-32.log 2>&1

@@ -147,16 +147,24 @@ def main():
         ow_ranked[ow] = dict(sorted(ow_ranked[ow].items(), key=lambda item: item[1]))
         print(f"{ow} count: {len(ow_ranked[ow])}")
 
+    full_elos = {}
+    full_sbs = {}
+
     completion_count = len(completion_times)
     for i, uuid in enumerate(completion_times):
         if i % (completion_count // 10) == 0:
             print(f"{i}/{completion_count}")
+        elo = db.get_elo(cursor, uuid)
+        sb = db.get_sb(cursor, uuid)
         if completion_nums[uuid] >= 5:
             avg_elo[uuid] = {
                 "avg": round(completion_times[uuid] / completion_nums[uuid]),
-                "elo": db.get_elo(cursor, uuid),
-                "sb": db.get_sb(cursor, uuid),
+                "elo": elo,
+                "sb": sb,
             }
+        if elo:
+            full_elos[uuid] = elo
+        full_sbs[uuid] = sb
 
     avgs = {uuid: avg_elo[uuid]["avg"] for uuid in avg_elo}
     elos = {uuid: avg_elo[uuid]["elo"] for uuid in avg_elo}
@@ -164,14 +172,16 @@ def main():
     avgs = dict(sorted(avgs.items(), key=lambda item: item[1]))
     elos = dict(sorted(elos.items(), key=lambda item: item[1], reverse=True))
     sbs = dict(sorted(sbs.items(), key=lambda item: item[1]))
+    full_elos = dict(sorted(full_elos.items(), key=lambda item: item[1], reverse=True))
+    full_sbs = dict(sorted(full_sbs.items(), key=lambda item: item[1]))
 
     playerbase_data = {
         "split": split_ranked,
         "bastion": bastion_ranked,
         "ow": ow_ranked,
         "avg": avgs,
-        "elo": elos,
-        "sb": sbs,
+        "elo": full_elos,
+        "sb": full_sbs,
     }
 
     playerbase_file = PROJECT_DIR / "database" / "playerbase.json"

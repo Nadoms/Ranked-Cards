@@ -10,8 +10,6 @@ PROJECT_DIR = Path(__file__).resolve().parent.parent
 
 
 def train(data_oi, data):
-    # Casting and plotting the data.
-
     X_data = []
     Y_data = []
     for item in data:
@@ -24,19 +22,20 @@ def train(data_oi, data):
     print(X, Y)
 
     W = np.array([0.2, -0.25, 0.75])
-    step_sizes = np.array([0.1, 0.1, 0.1])
+    step_sizes = np.array([0.01, 0.1, 0.1])
     loss_list = []
-    iter = 10000
+    iter = 30000
 
+    max_y = max(Y)
     for i in range(iter):
         Y_pred = forward(X, W)
-        elo_weights = 2
+        elo_weights = 2 * (Y / max_y) ** 4
         loss = np.mean(elo_weights * np.abs(Y_pred - Y))
         loss_list.append(loss)
 
         W_grad = np.array([
-            np.mean(elo_weights * (Y_pred - Y)),
-            np.mean(elo_weights * (Y_pred - Y)),
+            np.mean(elo_weights * (Y_pred - Y) * (1 / (X + W[1]))),
+            np.mean(elo_weights * (Y_pred - Y) * (-W[0] / (X + W[1])**2)),
             np.mean(elo_weights * (Y_pred - Y))
         ])
 
@@ -102,10 +101,11 @@ def main(data_oi):
 
     data_ois = playerbase_data[data_oi]
     elos = playerbase_data["elo"]
+    uuids = list(data_ois.keys()) if data_oi == "avg" else list(elos.keys())
 
     train(
         data_oi,
-        [(data_ois[uuid] * 1e-6, elos[uuid] * 1e-3) for uuid in data_ois]
+        [(data_ois[uuid] * 1e-6, elos[uuid] * 1e-3) for uuid in uuids]
     )
 
 
