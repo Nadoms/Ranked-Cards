@@ -56,15 +56,18 @@ def get_avg_ows(uuid, detailed_matches):
             continue
 
         seed_type = match["seedType"]
+        ow_entry = 0
 
         for event in reversed(match["timelines"]):
             if event["uuid"] != uuid:
                 continue
 
             if event["type"] == "story.enter_the_nether":
-                time_ows[ow_mapping[seed_type]] += event["time"]
+                time_ows[ow_mapping[seed_type]] += event["time"] - ow_entry
                 number_ows[ow_mapping[seed_type]] += 1
-                break
+
+            elif event["type"] == "projectelo.timeline.reset":
+                ow_entry = event["time"]
 
     for ow_key in average_ows:
         if number_ows[ow_key] == 0:

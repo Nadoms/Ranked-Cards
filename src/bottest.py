@@ -28,7 +28,7 @@ async def main(command, name, type, season, match_id):
             "data"
         ]
         num_comps, detailed_matches = await games.get_detailed_matches(
-            response, season, 5, 30
+            response, season, 5, 300
         )
         img1, img2, img3 = analysing.main(
             response, num_comps, detailed_matches, season
@@ -50,7 +50,7 @@ async def main(command, name, type, season, match_id):
 if __name__ == "__main__":
     command = "analysis"
     name = "Nadoms"
-    season = 6
+    season = 7
     type = "Completion time"
     match_id = 853645
     if len(sys.argv) >= 3:

@@ -15,10 +15,8 @@ def main(response, elo, season):
         f"Analysis of `{response['nickname']}` in Season {season}"
     )
     general_comments["description"] = (
-        "This is how you stack up against the playerbase. "
-        f"\nBETA: All playerbase comparisons will update daily using all season {season} matches."
-        "The elo equivalence models are kinda messed up for top players atm."
-        "\nBastion deathrate data coming soon..."
+        "This is how you stack up against the playerbase."
+        f"\nAll playerbase comparisons will update daily using all season {season} matches."
     )
 
     if not elo:
