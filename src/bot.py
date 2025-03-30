@@ -11,6 +11,7 @@ from time import time
 from datetime import datetime, timezone
 import subprocess
 import traceback
+import re
 from crontab import CronTab
 import sys
 
@@ -144,6 +145,12 @@ async def card(
             update_records(interaction, "card", "Unknown", False)
             return
         connected = True
+
+    else:
+        match = re.match("^<?@?(\d{17}\d?\d?)>?$", input_name)
+        if match:
+            discord_uid = match.group(0)
+            input_name = f"discord.{discord_uid}"
 
     async def fail_get(msg):
         await interaction.response.send_message(msg)
@@ -896,7 +903,7 @@ def get_name(interaction_ctx):
         if uid == user["discord"]:
             return user["minecraft"]
 
-    return ""
+    return f"discord.{uid}"
 
 
 def get_close(input_name):
