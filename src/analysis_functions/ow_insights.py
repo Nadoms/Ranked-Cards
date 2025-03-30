@@ -78,7 +78,7 @@ def get_avg_ows(uuid, detailed_matches):
     return number_ows, average_ows
 
 
-def get_ranked_ows(average_ows):
+def get_ranked_ows(average_ows, rank_filter):
     ranked_ows = {"bt": 0, "dt": 0, "rp": 0, "ship": 0, "village": 0}
 
     playerbase_file = Path("src") / "database" / "playerbase.json"

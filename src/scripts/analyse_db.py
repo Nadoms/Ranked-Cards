@@ -34,13 +34,13 @@ def main():
     avg_elo = {}
     split_times = {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}}
     split_nums = {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}}
-    split_ranked = {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}}
+    split_ranked = {"ow": [], "nether": [], "bastion": [], "fortress": [], "blind": [], "stronghold": [], "end": []}
     bastion_times = {"bridge": {}, "housing": {}, "stables": {}, "treasure": {}}
     bastion_nums = {"bridge": {}, "housing": {}, "stables": {}, "treasure": {}}
-    bastion_ranked = {"bridge": {}, "housing": {}, "stables": {}, "treasure": {}}
+    bastion_ranked = {"bridge": [], "housing": [], "stables": [], "treasure": []}
     ow_times = {"bt": {}, "dt": {}, "rp": {}, "ship": {}, "village": {}}
     ow_nums = {"bt": {}, "dt": {}, "rp": {}, "ship": {}, "village": {}}
-    ow_ranked = {"bt": {}, "dt": {}, "rp": {}, "ship": {}, "village": {}}
+    ow_ranked = {"bt": [], "dt": [], "rp": [], "ship": [], "village": []}
 
     conn, cursor = db.start(PROJECT_DIR / "database" / "ranked.db")
     matches_info = db.query_db(
@@ -124,29 +124,6 @@ def main():
                 completion_times[uuid] += result_time
                 completion_nums[uuid] += 1
 
-    for split in split_times:
-        for uuid in split_times[split]:
-            if split_nums[split][uuid] >= 5:
-                split_ranked[split][uuid] = round(split_times[split][uuid] / split_nums[split][uuid])
-        split_ranked[split] = dict(sorted(split_ranked[split].items(), key=lambda item: item[1]))
-        print(f"{split} count: {len(split_ranked[split])}")
-    print()
-
-    for bastion in bastion_times:
-        for uuid in bastion_times[bastion]:
-            if bastion_nums[bastion][uuid] >= 5:
-                bastion_ranked[bastion][uuid] = round(bastion_times[bastion][uuid] / bastion_nums[bastion][uuid])
-        bastion_ranked[bastion] = dict(sorted(bastion_ranked[bastion].items(), key=lambda item: item[1]))
-        print(f"{bastion} count: {len(bastion_ranked[bastion])}")
-    print()
-
-    for ow in ow_times:
-        for uuid in ow_times[ow]:
-            if ow_nums[ow][uuid] >= 5:
-                ow_ranked[ow][uuid] = round(ow_times[ow][uuid] / ow_nums[ow][uuid])
-        ow_ranked[ow] = dict(sorted(ow_ranked[ow].items(), key=lambda item: item[1]))
-        print(f"{ow} count: {len(ow_ranked[ow])}")
-
     full_elos = {}
     full_sbs = {}
 
@@ -166,14 +143,46 @@ def main():
             full_elos[uuid] = elo
         full_sbs[uuid] = sb
 
-    avgs = {uuid: avg_elo[uuid]["avg"] for uuid in avg_elo}
-    elos = {uuid: avg_elo[uuid]["elo"] for uuid in avg_elo}
-    sbs = {uuid: avg_elo[uuid]["sb"] for uuid in avg_elo}
-    avgs = dict(sorted(avgs.items(), key=lambda item: item[1]))
-    elos = dict(sorted(elos.items(), key=lambda item: item[1], reverse=True))
-    sbs = dict(sorted(sbs.items(), key=lambda item: item[1]))
+    avgs = {(avg_elo[uuid]["avg"], avg_elo[uuid]["elo"]) for uuid in avg_elo}
+    elos = {avg_elo[uuid]["elo"] for uuid in avg_elo}
+    sbs = {(avg_elo[uuid]["sb"], avg_elo[uuid]["elo"]) for uuid in avg_elo}
+    avgs = list(sorted(avgs, key=lambda item: item[0]))
+    elos = list(sorted(elos, reverse=True))
+    sbs = list(sorted(sbs, key=lambda item: item[0]))
     full_elos = dict(sorted(full_elos.items(), key=lambda item: item[1], reverse=True))
     full_sbs = dict(sorted(full_sbs.items(), key=lambda item: item[1]))
+
+    for split in split_times:
+        for uuid in split_times[split]:
+            if split_nums[split][uuid] >= 5:
+                split_ranked[split].append((
+                    round(split_times[split][uuid] / split_nums[split][uuid]),
+                    full_elos[uuid],
+                ))
+        split_ranked[split] = list(sorted(split_ranked[split], key=lambda item: item[0]))
+        print(f"{split} count: {len(split_ranked[split])}")
+    print()
+
+    for bastion in bastion_times:
+        for uuid in bastion_times[bastion]:
+            if bastion_nums[bastion][uuid] >= 5:
+                bastion_ranked[bastion].append((
+                    round(bastion_times[bastion][uuid] / bastion_nums[bastion][uuid]),
+                    full_elos[uuid],
+                ))
+        bastion_ranked[bastion] = list(sorted(bastion_ranked[bastion], key=lambda item: item[0]))
+        print(f"{bastion} count: {len(bastion_ranked[bastion])}")
+    print()
+
+    for ow in ow_times:
+        for uuid in ow_times[ow]:
+            if ow_nums[ow][uuid] >= 5:
+                ow_ranked[ow].append((
+                    round(ow_times[ow][uuid] / ow_nums[ow][uuid]),
+                    full_elos[uuid],
+                ))
+        ow_ranked[ow] = list(sorted(ow_ranked[ow], key=lambda item: item[0]))
+        print(f"{ow} count: {len(ow_ranked[ow])}")
 
     playerbase_data = {
         "split": split_ranked,

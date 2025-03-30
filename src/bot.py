@@ -21,7 +21,7 @@ from commands import (
     analysis as analysing,
     race as racing,
 )
-from gen_functions import games, api, load_matches
+from gen_functions import games, api, load_matches, rank
 
 START_ID = 1790000
 TESTING_MODE = True
@@ -425,6 +425,13 @@ async def analysis(
             "Last 50",
         ],
     ),
+    rank_filter: str = SlashOption(
+        "rank_filter",
+        required=False,
+        description="What caliber of player to compare your stats to.",
+        default="All",
+        choices=["All"] + rank.RANKS[:-1]
+    ),
 ):
     connected = False
     if not input_name:
@@ -481,8 +488,10 @@ async def analysis(
         update_records(interaction, "analysis", input_name, False)
         return
 
+    rank_filter = rank.str_to_rank(rank_filter)
+
     try:
-        anal = analysing.main(response, num_comps, detailed_matches, season)
+        anal = analysing.main(response, num_comps, detailed_matches, season, rank_filter)
     except Exception:
         print("Error caught!")
         traceback.print_exc()
