@@ -413,6 +413,18 @@ async def analysis(
         default=str(CURRENT_SEASON),
         choices=ALL_SEASONS,
     ),
+    selection: str = SlashOption(
+        "selection",
+        required=False,
+        description="How many matches to select for analysis. Lower sample size means lower confidence.",
+        default="Last 300",
+        choices=[
+            "Last 1000",
+            "Last 300",
+            "Last 100",
+            "Last 50",
+        ],
+    ),
 ):
     connected = False
     if not input_name:
@@ -456,7 +468,7 @@ async def analysis(
 
     input_name = response["nickname"]
 
-    target_games = 400 if TESTING_MODE else 300
+    target_games = int(selection[5:])
     num_comps, detailed_matches = await games.get_detailed_matches(
         response, season, 5, target_games
     )
