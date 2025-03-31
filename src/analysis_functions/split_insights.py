@@ -22,11 +22,11 @@ ANGLES = [
 ANGLES.insert(0, ANGLES.pop())
 
 
-def main(uuid, detailed_matches, elo, season, num_comps):
+def main(uuid, detailed_matches, elo, season, num_comps, rank_filter):
     number_splits, average_splits, average_deaths = get_avg_splits(
         uuid, detailed_matches
     )
-    ranked_splits = get_ranked_splits(average_splits)
+    ranked_splits = get_ranked_splits(average_splits, rank_filter)
     polygon = get_polygon(ranked_splits)
     polygon = add_text(polygon, average_splits, ranked_splits)
 
@@ -154,7 +154,7 @@ def get_avg_splits(uuid, detailed_matches):
     return number_splits, average_splits, average_deaths
 
 
-def get_ranked_splits(average_splits):
+def get_ranked_splits(average_splits, rank_filter):
     ranked_splits = {
         "ow": 0,
         "nether": 0,
@@ -178,9 +178,13 @@ def get_ranked_splits(average_splits):
     with open(playerbase_file, "r") as f:
         splits_final_boss = json.load(f)["split"]
 
+    if rank_filter:
+        lower, upper = rank.get_boundaries(rank_filter)
+
     for key in splits_final_boss:
         ranked_splits[key] = np.searchsorted(
-            list(splits_final_boss[key].values()), average_splits[key]
+            [attr[0] for attr in splits_final_boss[key] if lower <= attr[1] < upper],
+            average_splits[key],
         )
         if len(splits_final_boss[key]) == 0:
             ranked_splits[key] = 0

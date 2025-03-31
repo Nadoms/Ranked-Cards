@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-from gen_functions import numb, word
+from gen_functions import numb, rank, word
 
 SIDES = 5
 INIT_PROP = 1.8
@@ -22,9 +22,9 @@ ANGLES = [
 ANGLES.insert(0, ANGLES.pop())
 
 
-def main(uuid, detailed_matches, season):
+def main(uuid, detailed_matches, season, rank_filter):
     number_ows, average_ows = get_avg_ows(uuid, detailed_matches)
-    ranked_ows = get_ranked_ows(average_ows)
+    ranked_ows = get_ranked_ows(average_ows, rank_filter)
     polygon = get_polygon(ranked_ows)
     polygon = add_text(polygon, average_ows, ranked_ows)
 
@@ -85,15 +85,19 @@ def get_ranked_ows(average_ows, rank_filter):
     with open(playerbase_file, "r") as f:
         ows_final_boss = json.load(f)["ow"]
 
-    for ow_key in ows_final_boss:
-        ranked_ows[ow_key] = np.searchsorted(
-            list(ows_final_boss[ow_key].values()), average_ows[ow_key]
+    if rank_filter:
+        lower, upper = rank.get_boundaries(rank_filter)
+
+    for key in ows_final_boss:
+        ranked_ows[key] = np.searchsorted(
+            [attr[0] for attr in ows_final_boss[key] if lower <= attr[1] < upper],
+            average_ows[key],
         )
-        if len(ows_final_boss[ow_key]) == 0:
-            ranked_ows[ow_key] = 0
+        if len(ows_final_boss[key]) == 0:
+            ranked_ows[key] = 0
         else:
-            ranked_ows[ow_key] = round(
-                1 - ranked_ows[ow_key] / len(ows_final_boss[ow_key]), 3
+            ranked_ows[key] = round(
+                1 - ranked_ows[key] / len(ows_final_boss[key]), 3
             )
 
     return ranked_ows

@@ -29,11 +29,11 @@ BASTION_MAPPING = {
 }
 
 
-def main(uuid, detailed_matches, elo, season):
+def main(uuid, detailed_matches, elo, season, rank_filter):
     completed_bastions, average_bastions, average_deaths = get_avg_bastions(
         uuid, detailed_matches
     )
-    ranked_bastions = get_ranked_bastions(average_bastions)
+    ranked_bastions = get_ranked_bastions(average_bastions, rank_filter)
     polygon = get_polygon(ranked_bastions)
     polygon = add_text(polygon, average_bastions, ranked_bastions)
     sum_bastions = sum(completed_bastions.values())
@@ -135,16 +135,20 @@ def get_avg_bastions(uuid, detailed_matches):
     return completed_bastions, average_bastions, average_deaths
 
 
-def get_ranked_bastions(average_bastions):
+def get_ranked_bastions(average_bastions, rank_filter):
     ranked_bastions = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
 
     playerbase_file = Path("src") / "database" / "playerbase.json"
     with open(playerbase_file, "r") as f:
         bastions_final_boss = json.load(f)["bastion"]
 
+    if rank_filter:
+        lower, upper = rank.get_boundaries(rank_filter)
+
     for key in bastions_final_boss:
         ranked_bastions[key] = np.searchsorted(
-            list(bastions_final_boss[key].values()), average_bastions[key]
+            [attr[0] for attr in bastions_final_boss[key] if lower <= attr[1] < upper],
+            average_bastions[key],
         )
         if len(bastions_final_boss[key]) == 0:
             ranked_bastions[key] = 0
