@@ -18,7 +18,7 @@ class Rank(Enum):
 
 def str_to_rank(rank_str):
     if rank_str.lower() == "unranked":
-        return None, None
+        return None
     if rank_str.lower() == "coal":
         return Rank.COAL
     if rank_str.lower() == "iron":
