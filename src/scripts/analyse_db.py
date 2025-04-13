@@ -133,7 +133,7 @@ def main():
             print(f"{i}/{completion_count}")
         elo = db.get_elo(cursor, uuid)
         sb = db.get_sb(cursor, uuid)
-        if completion_nums[uuid] >= 5:
+        if completion_nums[uuid] >= 3:
             avg_sb_elo[uuid] = {
                 "avg": round(completion_times[uuid] / completion_nums[uuid]),
                 "elo": elo,
@@ -155,7 +155,7 @@ def main():
 
     for split in split_times:
         for uuid in split_times[split]:
-            if split_nums[split][uuid] >= 5:
+            if split_nums[split][uuid] >= 3:
                 split_ranked[split].append((
                     round(split_times[split][uuid] / split_nums[split][uuid]),
                     full_elos.get(uuid),
@@ -166,7 +166,7 @@ def main():
 
     for bastion in bastion_times:
         for uuid in bastion_times[bastion]:
-            if bastion_nums[bastion][uuid] >= 5:
+            if bastion_nums[bastion][uuid] >= 3:
                 bastion_ranked[bastion].append((
                     round(bastion_times[bastion][uuid] / bastion_nums[bastion][uuid]),
                     full_elos.get(uuid),
@@ -177,7 +177,7 @@ def main():
 
     for ow in ow_times:
         for uuid in ow_times[ow]:
-            if ow_nums[ow][uuid] >= 5:
+            if ow_nums[ow][uuid] >= 3:
                 ow_ranked[ow].append((
                     round(ow_times[ow][uuid] / ow_nums[ow][uuid]),
                     full_elos.get(uuid),
