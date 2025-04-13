@@ -258,7 +258,7 @@ COUNTRY_MAPPING = {
 }
 
 
-def main(response, input_name, type, country, season):
+def main(response, input_name, type, country, season, page):
     title = f"{type} Leaderboard"
     if season:
         title += f" for Season {season}"
@@ -266,6 +266,7 @@ def main(response, input_name, type, country, season):
         title += f" - {country}"
     if not season and type == "Completion Time":
         title = "Lifetime " + title
+    title += f" - Page {page + 1}"
 
     if type == "Phase Points":
         ends_at = response["phase"]["endsAt"]
@@ -294,23 +295,23 @@ def main(response, input_name, type, country, season):
     if type != "Completion Time":
         leaderboard = leaderboard["users"]
     now = datetime.now(timezone.utc)
+    start = page * 20
+    end = (page + 1) * 20
 
     for rank, item in enumerate(leaderboard):
         if type != "Completion Time":
             name = item["nickname"]
         else:
             name = item["user"]["nickname"]
-        if rank >= 20:
-            if found or not input_name:
-                break
-            elif name.lower() == input_name.lower():
-                value += f" ... | ...             | ...      \n"
+        if rank < start or rank >= end:
+            if name.lower() == input_name.lower():
+                value += f" ... | ................ | ....     \n"
             else:
                 continue
         if name.lower() == input_name.lower():
-            value += ">"
+            highlight = ">"
         else:
-            value += " "
+            highlight = " "
 
         ago = ""
         if type == "Completion Time":
@@ -327,7 +328,10 @@ def main(response, input_name, type, country, season):
             attribute = str(item["seasonResult"]["phasePoint"]) + " pts"
         spacing_1 = " " * (2 - len(str(rank + 1)))
         spacing_2 = " " * (16 - len(name))
-        value += f"{spacing_1}#{rank + 1} | {name}{spacing_2} | {attribute}{ago}\n"
+        if rank < start:
+            value = f"{highlight}{spacing_1}#{rank + 1} | {name}{spacing_2} | {attribute}{ago}\n" + value
+        else:
+            value += f"{highlight}{spacing_1}#{rank + 1} | {name}{spacing_2} | {attribute}{ago}\n"
 
     if not value:
         value = "Nothing to see here."

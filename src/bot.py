@@ -1,5 +1,6 @@
 import asyncio
 import difflib
+import math
 import os
 import nextcord
 import json
@@ -110,6 +111,51 @@ class Topics(nextcord.ui.View):
             embeds=[self.general_embed, self.topic_embeds[2]],
             file=file,
         )
+        self._View__timeout_expiry -= self.timeout
+
+
+class LBPage(nextcord.ui.View):
+    def __init__(self, interaction: Interaction, embeds: list):
+        super().__init__(timeout=840)
+        self.value = None
+        self.interaction = interaction
+        self.embeds = embeds
+        self.size = len(embeds)
+        self.page = 0
+
+    async def on_timeout(self):
+        for item in self.children:
+            if isinstance(item, nextcord.ui.Button):
+                item.style = nextcord.ButtonStyle.grey
+                item.disabled = True
+        await self.interaction.edit_original_message(view=self)
+        for image in self.images:
+            image.close()
+
+    @nextcord.ui.button(label="Previous", style=nextcord.ButtonStyle.blurple)
+    async def previous(
+        self,
+        button: nextcord.ui.Button,
+        interaction: Interaction,
+    ):
+        self.page = (self.page - 1) % self.size
+        await self.update(interaction)
+
+    @nextcord.ui.button(label="Next", style=nextcord.ButtonStyle.blurple)
+    async def next(
+        self,
+        button: nextcord.ui.Button,
+        interaction: Interaction,
+    ):
+        self.page = (self.page + 1) % self.size
+        await self.update(interaction)
+
+    async def update(
+        self,
+        interaction: Interaction,
+    ):
+        print(f"Flipping to page {self.page} for {interaction.user.name}")
+        await self.interaction.edit_original_message(embeds=[self.embeds[self.page]])
         self._View__timeout_expiry -= self.timeout
 
 
@@ -725,8 +771,16 @@ async def leaderboard(
         update_records(interaction, "leaderboard", type, False)
         return
 
+    leaderboard_size = math.ceil(len(response) / 20)
+    if type != "Completion Time":
+        leaderboard_size = math.ceil(len(response["users"]) / 20)
+    else:
+        leaderboard_size = math.ceil(len(response) / 20)
+    leaderboard_embeds = []
+
     try:
-        leaderboard_embed = leading.main(response, input_name, type, country, season)
+        for page in range(0, leaderboard_size):
+            leaderboard_embeds.append(leading.main(response, input_name, type, country, season, page))
     except Exception:
         print("Error caught!")
         traceback.print_exc()
@@ -737,7 +791,9 @@ async def leaderboard(
         update_records(interaction, "leaderboard", type, False)
         return
 
-    await interaction.followup.send(embed=leaderboard_embed)
+    view = LBPage(interaction, leaderboard_embeds)
+
+    await interaction.followup.send(embed=leaderboard_embeds[0], view=view)
     update_records(interaction, "leaderboard", type, True)
 
 
