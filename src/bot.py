@@ -1,5 +1,6 @@
 import asyncio
 import difflib
+import math
 import os
 import nextcord
 import json
@@ -20,6 +21,7 @@ from commands import (
     match as matching,
     analysis as analysing,
     race as racing,
+    leaderboard as leading,
 )
 from gen_functions import games, api, load_matches
 
@@ -27,6 +29,7 @@ START_ID = 1790000
 TESTING_MODE = True
 CURRENT_SEASON = games.get_season()
 ALL_SEASONS = [str(season) for season in range(1, CURRENT_SEASON + 1)]
+ALL_COUNTRIES = [country for country in leading.COUNTRY_MAPPING]
 API_COOLDOWN_MSG = "Too many commands have been issued! The Ranked API is cooling down... (~10 mins)"
 token = "TEST_TOKEN" if TESTING_MODE else "DISCORD_TOKEN"
 default_guild_ids = [735859906434957392] if TESTING_MODE else None
@@ -108,6 +111,51 @@ class Topics(nextcord.ui.View):
             embeds=[self.general_embed, self.topic_embeds[2]],
             file=file,
         )
+        self._View__timeout_expiry -= self.timeout
+
+
+class LBPage(nextcord.ui.View):
+    def __init__(self, interaction: Interaction, embeds: list):
+        super().__init__(timeout=840)
+        self.value = None
+        self.interaction = interaction
+        self.embeds = embeds
+        self.size = len(embeds)
+        self.page = 0
+
+    async def on_timeout(self):
+        for item in self.children:
+            if isinstance(item, nextcord.ui.Button):
+                item.style = nextcord.ButtonStyle.grey
+                item.disabled = True
+        await self.interaction.edit_original_message(view=self)
+        for image in self.images:
+            image.close()
+
+    @nextcord.ui.button(label="Previous", style=nextcord.ButtonStyle.blurple)
+    async def previous(
+        self,
+        button: nextcord.ui.Button,
+        interaction: Interaction,
+    ):
+        self.page = (self.page - 1) % self.size
+        await self.update(interaction)
+
+    @nextcord.ui.button(label="Next", style=nextcord.ButtonStyle.blurple)
+    async def next(
+        self,
+        button: nextcord.ui.Button,
+        interaction: Interaction,
+    ):
+        self.page = (self.page + 1) % self.size
+        await self.update(interaction)
+
+    async def update(
+        self,
+        interaction: Interaction,
+    ):
+        print(f"Flipping to page {self.page} for {interaction.user.name}")
+        await self.interaction.edit_original_message(embeds=[self.embeds[self.page]])
         self._View__timeout_expiry -= self.timeout
 
 
@@ -668,6 +716,106 @@ async def race(
 
     await interaction.followup.send(embed=race_embed)
     update_records(interaction, "race", race_no, True)
+
+
+@bot.slash_command(
+    name="leaderboard",
+    description="Returns the top 150 leaderboard for the specified season and country.",
+)
+async def leaderboard(
+    interaction: Interaction,
+    type: str = SlashOption(
+        "type",
+        required=False,
+        description="The type of leaderboard to fetch.",
+        default="Elo",
+        choices=[
+            "Elo",
+            "Completion Time",
+            "Phase Points"
+        ],
+    ),
+    season: str = SlashOption(
+        "season",
+        required=False,
+        description="The season to display the leaderboard for.",
+        default=str(CURRENT_SEASON),
+        choices=ALL_SEASONS + ["Lifetime"],
+    ),
+    country: str = SlashOption(
+        "country",
+        required=False,
+        description="The country to filter the leaderboard by (FOR ELO / PHASE PTS ONLY).",
+        default="",
+        autocomplete=True
+    ),
+):
+    input_name = get_name(interaction)
+
+    await interaction.response.defer()
+
+    country_code = leading.COUNTRY_MAPPING.get(country)
+
+    print(f"---\nFetching {type} Leaderboard for season {season} in {country} / {country_code}")
+    if season == "Lifetime":
+        season = None
+        if type != "Completion Time":
+            season = str(CURRENT_SEASON)
+    try:
+        if type == "Elo":
+            response = api.EloLeaderboard(season=season, country=country_code).get()
+        elif type == "Completion Time":
+            response = api.RecordLeaderboard(season=season).get()
+        elif type == "Phase Points":
+            response = api.PhaseLeaderboard(season=season, country=country_code).get()
+
+    except api.APINotFoundError as e:
+        print(e)
+        await interaction.response.send_message(
+            f"Error with finding leaderboard for season {season} in country {country}"
+        )
+        update_records(interaction, "leaderboard", type, False)
+        return
+
+    except api.APIRateLimitError as e:
+        print(e)
+        await interaction.response.send_message(API_COOLDOWN_MSG)
+        update_records(interaction, "leaderboard", type, False)
+        return
+
+    leaderboard_size = math.ceil(len(response) / 20)
+    if type != "Completion Time":
+        leaderboard_size = math.ceil(len(response["users"]) / 20)
+    else:
+        leaderboard_size = math.ceil(len(response) / 20)
+    leaderboard_embeds = []
+
+    try:
+        for page in range(0, leaderboard_size):
+            leaderboard_embeds.append(leading.main(response, input_name, type, country, season, page))
+    except Exception:
+        print("Error caught!")
+        traceback.print_exc()
+        await interaction.followup.send(
+            "An error has occurred. <@298936021557706754> fix it pls:\n"
+            f"```{traceback.format_exc()}```"
+        )
+        update_records(interaction, "leaderboard", type, False)
+        return
+
+    view = LBPage(interaction, leaderboard_embeds)
+
+    await interaction.followup.send(embed=leaderboard_embeds[0], view=view)
+    update_records(interaction, "leaderboard", type, True)
+
+
+@leaderboard.on_autocomplete("country")
+async def country_autocomplete(interaction: Interaction, current: str):
+    if not current:
+        await interaction.response.send_autocomplete(ALL_COUNTRIES[:25])
+        return
+    near = [country for country in ALL_COUNTRIES if current.lower() in country.lower()][:25]
+    await interaction.response.send_autocomplete(near)
 
 
 @bot.slash_command(

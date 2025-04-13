@@ -359,3 +359,63 @@ class WeeklyRace(API):
     ):
         self.id = id
         super().__init__(f"weekly-race/{self.id}")
+
+
+class Leaderboard(API):
+
+    def __init__(
+        self,
+        directory: str,
+        season: Optional[int],
+    ):
+        self.season = season
+        super().__init__(directory)
+        self.append(season=self.season)
+
+
+class EloLeaderboard(Leaderboard):
+
+    def __init__(
+        self,
+        *,
+        season: Optional[int],
+        country: Optional[str],
+    ):
+        self.country = country
+        super().__init__(
+            directory="leaderboard",
+            season=season,
+        )
+        self.append(country=self.country)
+
+
+class PhaseLeaderboard(Leaderboard):
+
+    def __init__(
+        self,
+        *,
+        season: Optional[int],
+        country: Optional[str],
+    ):
+        self.country = country
+        super().__init__(
+            directory="phase-leaderboard",
+            season=season,
+        )
+        self.append(country=self.country)
+
+
+class RecordLeaderboard(Leaderboard):
+
+    def __init__(
+        self,
+        *,
+        season: Optional[int],
+        distinct: bool = True,
+    ):
+        self.distinct = distinct
+        super().__init__(
+            directory="record-leaderboard",
+            season=season,
+        )
+        self.append(distinct=self.distinct)
