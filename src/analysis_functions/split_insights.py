@@ -7,6 +7,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 from gen_functions import word, numb, rank
+from analysis_functions.bastion_insights import add_rank_img
 
 SIDES = 7
 INIT_PROP = 1.8
@@ -28,7 +29,7 @@ def main(uuid, detailed_matches, elo, season, num_comps, rank_filter):
     )
     ranked_splits = get_ranked_splits(average_splits, rank_filter)
     polygon = get_polygon(ranked_splits)
-    polygon = add_text(polygon, average_splits, ranked_splits)
+    polygon = add_text(polygon, average_splits, ranked_splits, rank_filter)
 
     comments = {}
     comments["title"] = f"Split Performance"
@@ -272,7 +273,7 @@ def get_polygon(ranked_splits):
     return polygon
 
 
-def add_text(polygon, average_splits, ranked_splits):
+def add_text(polygon, average_splits, ranked_splits, rank_filter):
     text_prop = INIT_PROP * 0.95
     xy = []
     percentiles = [0.3, 0.5, 0.7, 0.9, 0.95, 1.0]
@@ -287,7 +288,6 @@ def add_text(polygon, average_splits, ranked_splits):
     titles = ["Overworld", "Nether", "Bastion", "Fortress", "Blind", "Stronghold", "The End"]
     split_mapping = ["ow", "nether", "bastion", "fortress", "blind", "stronghold", "end"]
 
-    text_draw = ImageDraw.Draw(polygon)
     big_size = 50
     big_font = ImageFont.truetype("minecraft_font.ttf", big_size)
     title_size = 30
@@ -296,8 +296,13 @@ def add_text(polygon, average_splits, ranked_splits):
     stat_font = ImageFont.truetype("minecraft_font.ttf", stat_size)
 
     big_title = "Split Performance"
-    big_x = (IMG_SIZE_X - word.calc_length(big_title, big_size)) / 2
+    big_x = int((IMG_SIZE_X - word.calc_length(big_title, big_size)) / 2)
     big_y = OFFSET_Y
+
+    if rank_filter is not None:
+        polygon = add_rank_img(polygon, rank_filter, (big_x, big_y), big_size)
+
+    text_draw = ImageDraw.Draw(polygon)
     text_draw.text(
         (big_x, big_y),
         big_title,

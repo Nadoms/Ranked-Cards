@@ -7,6 +7,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 from gen_functions import word, numb, rank
+from card_functions import add_badge
 
 SIDES = 4
 INIT_PROP = 1.8
@@ -35,7 +36,7 @@ def main(uuid, detailed_matches, elo, season, rank_filter):
     )
     ranked_bastions = get_ranked_bastions(average_bastions, rank_filter)
     polygon = get_polygon(ranked_bastions)
-    polygon = add_text(polygon, average_bastions, ranked_bastions)
+    polygon = add_text(polygon, average_bastions, ranked_bastions, rank_filter)
     sum_bastions = sum(completed_bastions.values())
 
     comments = {}
@@ -234,7 +235,7 @@ def get_polygon(ranked_bastions):
     return polygon
 
 
-def add_text(polygon, average_bastions, ranked_bastions):
+def add_text(polygon, average_bastions, ranked_bastions, rank_filter):
     text_prop = INIT_PROP * 0.95
     xy = []
     percentiles = [0.3, 0.5, 0.7, 0.9, 0.95, 1.0]
@@ -248,7 +249,6 @@ def add_text(polygon, average_bastions, ranked_bastions):
     ]
     titles = ["Bridge", "Housing", "Stables", "Treasure"]
 
-    text_draw = ImageDraw.Draw(polygon)
     big_size = 50
     big_font = ImageFont.truetype("minecraft_font.ttf", big_size)
     title_size = 30
@@ -257,8 +257,13 @@ def add_text(polygon, average_bastions, ranked_bastions):
     stat_font = ImageFont.truetype("minecraft_font.ttf", stat_size)
 
     big_title = "Bastion Performance"
-    big_x = (IMG_SIZE_X - word.calc_length(big_title, big_size)) / 2
+    big_x = int((IMG_SIZE_X - word.calc_length(big_title, big_size)) / 2)
     big_y = OFFSET_Y
+
+    if rank_filter is not None:
+        polygon = add_rank_img(polygon, rank_filter, (big_x, big_y), big_size)
+
+    text_draw = ImageDraw.Draw(polygon)
     text_draw.text(
         (big_x, big_y),
         big_title,
@@ -336,6 +341,18 @@ def add_text(polygon, average_bastions, ranked_bastions):
             stroke_width=2,
         )
 
+    return polygon
+
+
+def add_rank_img(polygon, rank_filter, coords, title_size):
+    badge = add_badge.get_badge(rank_filter, 7)
+    dim = badge.size[0]
+    badge_x1 = coords[0] - dim - 20
+    badge_x2 = IMG_SIZE_X - coords[0] + 20
+    badge_y = int(coords[1] + word.horiz_to_vert(title_size) / 2 - dim / 2)
+
+    polygon.paste(badge, (badge_x1, badge_y), badge)
+    polygon.paste(badge, (badge_x2, badge_y), badge)
     return polygon
 
 

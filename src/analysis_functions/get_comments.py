@@ -22,7 +22,7 @@ def main(response, elo, season, rank_filter):
     playerbase_str = "the entire playerbase" if rank_filter is None else f"{rank_filter} players"
     general_comments["description"] = (
         f"This is how you stack up against {playerbase_str}. Each comparison references at most {get_player_count(rank_filter)} players."
-        f"\nReference data/ will update daily-ish using season {season} matches."
+        f"\nReference data will update daily-ish using season {season} matches."
     )
 
     if not elo:

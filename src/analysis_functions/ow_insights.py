@@ -7,6 +7,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 from gen_functions import numb, rank, word
+from analysis_functions.bastion_insights import add_rank_img
 
 SIDES = 5
 INIT_PROP = 1.8
@@ -26,7 +27,7 @@ def main(uuid, detailed_matches, season, rank_filter):
     number_ows, average_ows = get_avg_ows(uuid, detailed_matches)
     ranked_ows = get_ranked_ows(average_ows, rank_filter)
     polygon = get_polygon(ranked_ows)
-    polygon = add_text(polygon, average_ows, ranked_ows)
+    polygon = add_text(polygon, average_ows, ranked_ows, rank_filter)
 
     comments = {}
     comments["title"] = f"Overworld Performance"
@@ -179,7 +180,7 @@ def get_polygon(ranked_ows):
     return polygon
 
 
-def add_text(polygon, average_ows, ranked_ows):
+def add_text(polygon, average_ows, ranked_ows, rank_filter):
     text_prop = INIT_PROP * 0.95
     xy = []
     percentiles = [0.3, 0.5, 0.7, 0.9, 0.95, 1.0]
@@ -194,7 +195,6 @@ def add_text(polygon, average_ows, ranked_ows):
     titles = ["Buried Treasure", "Temple", "Ruined Portal", "Shipwreck", "Village"]
     ow_mapping = ["bt", "dt", "rp", "ship", "village"]
 
-    text_draw = ImageDraw.Draw(polygon)
     big_size = 50
     big_font = ImageFont.truetype("minecraft_font.ttf", big_size)
     title_size = 30
@@ -203,8 +203,13 @@ def add_text(polygon, average_ows, ranked_ows):
     stat_font = ImageFont.truetype("minecraft_font.ttf", stat_size)
 
     big_title = "Overworld Performance"
-    big_x = (IMG_SIZE_X - word.calc_length(big_title, big_size)) / 2
-    big_y = OFFSET_Y - 20
+    big_x = int((IMG_SIZE_X - word.calc_length(big_title, big_size)) / 2)
+    big_y = OFFSET_Y
+
+    if rank_filter is not None:
+        polygon = add_rank_img(polygon, rank_filter, (big_x, big_y), big_size)
+
+    text_draw = ImageDraw.Draw(polygon)
     text_draw.text(
         (big_x, big_y),
         big_title,
