@@ -64,7 +64,7 @@ def get_attr_ranked(value, attr_type, rank_filter):
         attrs = [
             attr[0]
             for attr in attrs
-            if not rank_filter or (attr[1] and lower <= attr[1] < upper)
+            if rank_filter is None or (attr[1] and lower <= attr[1] < upper)
         ]
 
     ranked_attr = round(np.searchsorted(attrs, value) / len(attrs), 3)

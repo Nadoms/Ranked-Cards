@@ -91,7 +91,7 @@ def get_ranked_ows(average_ows, rank_filter):
         ows_sample = [
             attr[0]
             for attr in ows_final_boss[key]
-            if not rank_filter or (attr[1] and lower <= attr[1] < upper)
+            if rank_filter is None or (attr[1] and lower <= attr[1] < upper)
         ]
         ranked_ows[key] = np.searchsorted(
             ows_sample,

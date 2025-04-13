@@ -148,7 +148,7 @@ def get_ranked_bastions(average_bastions, rank_filter):
         bastions_sample = [
             attr[0]
             for attr in bastions_final_boss[key]
-            if not rank_filter or (attr[1] and lower <= attr[1] < upper)
+            if rank_filter is None or (attr[1] and lower <= attr[1] < upper)
         ]
         ranked_bastions[key] = np.searchsorted(
             bastions_sample,

@@ -184,7 +184,7 @@ def get_ranked_splits(average_splits, rank_filter):
         splits_sample = [
             attr[0]
             for attr in splits_final_boss[key]
-            if not rank_filter or (attr[1] and lower <= attr[1] < upper)
+            if rank_filter is None or (attr[1] and lower <= attr[1] < upper)
         ]
         ranked_splits[key] = np.searchsorted(
             splits_sample,
