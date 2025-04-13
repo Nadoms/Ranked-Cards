@@ -39,7 +39,7 @@ def main(uuid, detailed_matches, elo, season, num_comps, rank_filter):
     comments["best"], comments["worst"] = get_best_worst(ranked_splits)
     if season != 1:
         comments["player_deaths"], comments["rank_deaths"] = get_death_comments(
-            average_deaths, elo
+            average_deaths, elo, rank_filter
         )
 
     return comments, polygon
@@ -466,7 +466,7 @@ def get_best_worst(ranked_splits):
     return [best, worst]
 
 
-def get_death_comments(average_deaths, elo):
+def get_death_comments(average_deaths, elo, rank_filter):
     split_mapping = {
         "ow": "Overworld",
         "nether": "Nether Terrain",
@@ -485,14 +485,16 @@ def get_death_comments(average_deaths, elo):
         "stronghold": 0,
         "end": 0,
     }
-    ranks = ["Coal", "Iron", "Gold", "Emerald", "Diamond", "Netherite"]
 
-    rank_no = rank.get_rank(elo)
-    if rank_no == -1:
-        rank_no = 2
+    if rank_filter is None:
+        player_rank = rank.get_rank(elo)
+        if player_rank == rank.Rank.UNRANKED:
+            player_rank = rank.Rank.GOLD
+    else:
+        player_rank = rank_filter
     file = path.join("src", "database", "mcsrstats", "deaths", "deaths.json")
     with open(file, "r", encoding="UTF-8") as f:
-        overall_deaths = json.load(f)["splits"][str(rank_no)]
+        overall_deaths = json.load(f)["splits"][str(player_rank.value)]
 
     max_diff = 0
     max_split = None
@@ -514,7 +516,7 @@ def get_death_comments(average_deaths, elo):
         "inline": True,
     }
     rank_comment = {
-        "name": f"{ranks[rank_no]} Death Rates",
+        "name": f"{player_rank} Death Rates",
         "value": [
             (
                 f"`{' ' if overall_deaths[split] < 0.1 else ''}"

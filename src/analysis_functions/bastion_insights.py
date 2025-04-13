@@ -47,7 +47,7 @@ def main(uuid, detailed_matches, elo, season, rank_filter):
     comments["best"], comments["worst"] = get_best_worst(ranked_bastions)
     if season != 1:
         comments["player_deaths"], comments["rank_deaths"] = get_death_comments(
-            average_deaths, elo
+            average_deaths, elo, rank_filter
         )
 
     return comments, polygon
@@ -409,16 +409,18 @@ def get_best_worst(ranked_bastions):
     return [best, worst]
 
 
-def get_death_comments(average_deaths, elo):
+def get_death_comments(average_deaths, elo, rank_filter):
     differences = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
-    ranks = ["Coal", "Iron", "Gold", "Emerald", "Diamond", "Netherite"]
 
-    rank_no = rank.get_rank(elo)
-    if rank_no == -1:
-        rank_no = 2
+    if rank_filter is None:
+        player_rank = rank.get_rank(elo)
+        if player_rank == rank.Rank.UNRANKED:
+            player_rank = rank.Rank.GOLD
+    else:
+        player_rank = rank_filter
     file = path.join("src", "database", "mcsrstats", "deaths", "deaths.json")
     with open(file, "r", encoding="UTF-8") as f:
-        overall_deaths = json.load(f)["bastions"][str(rank_no)]
+        overall_deaths = json.load(f)["bastions"][str(player_rank.value)]
 
     max_diff = 0
     max_bastion = None
@@ -439,7 +441,7 @@ def get_death_comments(average_deaths, elo):
         "inline": True,
     }
     rank_comment = {
-        "name": f"{ranks[rank_no]} Death Rates",
+        "name": f"{player_rank} Death Rates",
         "value": [
             f"`{' ' if overall_deaths[bastion] < 0.1 else ''}{numb.round_sf(overall_deaths[bastion] * 100, 3)}%` - {BASTION_MAPPING[bastion]}"
             for bastion in overall_deaths

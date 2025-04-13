@@ -10,14 +10,19 @@ from gen_functions.word import percentify
 from gen_functions.rank import Rank
 
 
+PLAYERBASE_FILE = Path("src") / "database" / "playerbase.json"
+
+
 def main(response, elo, season, rank_filter):
     general_comments = {}
+    comparison_str = "" if rank_filter is None else f" - {rank_filter} Comparison"
     general_comments["title"] = (
-        f"Analysis of `{response['nickname']}` in Season {season}"
+        f"Analysis of `{response['nickname']}` in S{season}{comparison_str}"
     )
+    playerbase_str = "the entire playerbase" if rank_filter is None else f"{rank_filter} players"
     general_comments["description"] = (
-        "This is how you stack up against the playerbase."
-        f"\nAll playerbase comparisons will update daily using all season {season} matches."
+        f"This is how you stack up against {playerbase_str}. Each comparison references at most {get_player_count(rank_filter)} players."
+        f"\nReference data/ will update daily-ish using season {season} matches."
     )
 
     if not elo:
@@ -50,9 +55,16 @@ def main(response, elo, season, rank_filter):
     return general_comments
 
 
+def get_player_count(rank_filter):
+    with open(PLAYERBASE_FILE, "r") as f:
+        elos = json.load(f)["elo"]
+    lower, upper = rank.get_boundaries(rank_filter)
+    player_count = sum(1 for elo in elos if lower <= elo < upper)
+    return player_count
+
+
 def get_attr_ranked(value, attr_type, rank_filter):
-    playerbase_file = Path("src") / "database" / "playerbase.json"
-    with open(playerbase_file, "r") as f:
+    with open(PLAYERBASE_FILE, "r") as f:
         attrs = json.load(f)[attr_type]
     if attr_type == "elo":
         attrs = list(reversed(attrs))

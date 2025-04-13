@@ -15,6 +15,9 @@ class Rank(IntEnum):
     DIAMOND = 4
     NETHERITE = 5
 
+    def __str__(self):
+        return RANKS[self]
+
 
 def str_to_rank(rank_str):
     if rank_str.lower() == "unranked":
