@@ -293,13 +293,14 @@ def main(response, input_name, type, country, season):
     leaderboard = response
     if type != "Completion Time":
         leaderboard = leaderboard["users"]
+    now = datetime.now(timezone.utc)
 
     for rank, item in enumerate(leaderboard):
         if type != "Completion Time":
             name = item["nickname"]
         else:
             name = item["user"]["nickname"]
-        if rank >= 25:
+        if rank >= 20:
             if found or not input_name:
                 break
             elif name.lower() == input_name.lower():
@@ -311,19 +312,22 @@ def main(response, input_name, type, country, season):
         else:
             value += " "
 
+        ago = ""
         if type == "Completion Time":
-            attribute = str(timedelta(milliseconds=item["time"]))[2:11]
+            attribute = str(timedelta(seconds=item["time"] // 1000))[2:]
             if attribute[0] == "0":
                 attribute = attribute[1:]
-            if len(attribute) == 4:
-                attribute += ".000"
+            then = datetime.fromtimestamp(item["date"], tz=timezone.utc)
+            days = str((now - then).days)
+            spacing_0 = " " * (3 - len(days))
+            ago = f" | {spacing_0}{days}d ago"
         elif type == "Elo":
             attribute = item["seasonResult"]["eloRate"]
         elif type == "Phase Points":
             attribute = str(item["seasonResult"]["phasePoint"]) + " pts"
         spacing_1 = " " * (2 - len(str(rank + 1)))
         spacing_2 = " " * (16 - len(name))
-        value += f"{spacing_1}#{rank + 1} | {name}{spacing_2} | {attribute} \n"
+        value += f"{spacing_1}#{rank + 1} | {name}{spacing_2} | {attribute}{ago}\n"
 
     if not value:
         value = "Nothing to see here."
