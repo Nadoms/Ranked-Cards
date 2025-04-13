@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import IntEnum
 import json
 from os import path
 
@@ -6,7 +6,7 @@ from os import path
 RANKS = ["Coal", "Iron", "Gold", "Emerald", "Diamond", "Netherite", "Unranked"]
 
 
-class Rank(Enum):
+class Rank(IntEnum):
     UNRANKED = -1
     COAL = 0
     IRON = 1

@@ -21,21 +21,18 @@ DEFAULT_PFP = "https://cdn.discordapp.com/avatars/343108228890099713/1b4bf25c894
 async def card_command(args):
     response = api.User(args.name).get()
     history = api.UserMatches(name=args.name, type=2).get()
-    img = carding.main(args.name, response, DEFAULT_DISCORD, DEFAULT_PFP, "grass.jpg", history)
-    img.save("test.png")
+    return [carding.main(args.name, response, DEFAULT_DISCORD, DEFAULT_PFP, "grass.jpg", history)]
 
 
 async def plot_command(args):
     response = api.User(args.name).get()
     matches = await games.get_matches(args.name, args.season, True)
-    img = graphing.main(args.name, response, args.type, args.season, matches)
-    img.save("test.png")
+    return [graphing.main(args.name, response, args.type, args.season, matches)]
 
 
 async def match_command(args):
     response = api.Match(args.id).get()
-    img = matching.main(response)
-    img.save("test.png")
+    return [matching.main(response)]
 
 
 async def analysis_command(args):
@@ -43,12 +40,9 @@ async def analysis_command(args):
     num_comps, detailed_matches = await games.get_detailed_matches(
         response, args.season, 5, 300
     )
-    img1, img2, img3 = analysing.main(
+    return analysing.main(
         response, num_comps, detailed_matches, args.season, args.rank_filter
     )[2:5]
-    img1.save("test1.png")
-    img2.save("test2.png")
-    img3.save("test3.png")
 
 
 def main():
@@ -80,7 +74,9 @@ def main():
         "analysis": analysis_command,
     }
 
-    asyncio.run(command_map[args.command](args))
+    for i, image in enumerate(asyncio.run(command_map[args.command](args))):
+        image.save(f"test{i}.png")
+        image.show()
 
 
 if __name__ == "__main__":
