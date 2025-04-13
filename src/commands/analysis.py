@@ -15,7 +15,7 @@ from gen_functions import games
 from gen_functions.word import process_split
 
 
-def main(response, num_comps, detailed_matches, season):
+def main(response, num_comps, detailed_matches, season, rank_filter=None):
     uuid = response["uuid"]
     elo = response["seasonResult"]["last"]["eloRate"]
     if elo:
@@ -24,16 +24,18 @@ def main(response, num_comps, detailed_matches, season):
     then = datetime.now()
     skin = get_skin.main(uuid)
     then = process_split(then, "Finding skin")
-    general_comments = get_comments.main(response, elo, season)
+    general_comments = get_comments.main(response, elo, season, rank_filter)
     then = process_split(then, "Generating insights")
     split_comm, split_polygon = split_insights.main(
-        uuid, detailed_matches, elo, season, num_comps
+        uuid, detailed_matches, elo, season, num_comps, rank_filter
     )
     then = process_split(then, "Recognising split performance")
-    ow_comm, ow_polygon = ow_insights.main(uuid, detailed_matches, season)
+    ow_comm, ow_polygon = ow_insights.main(
+        uuid, detailed_matches, season, rank_filter
+    )
     then = process_split(then, "Recognising OW performance")
     bastion_comm, bastion_polygon = bastion_insights.main(
-        uuid, detailed_matches, elo, season
+        uuid, detailed_matches, elo, season, rank_filter
     )
     then = process_split(then, "Recognising bastion performance")
     # polygons = combine.main(split_polygon, ow_polygon)

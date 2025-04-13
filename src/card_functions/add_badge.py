@@ -6,7 +6,9 @@ from gen_functions import rank, word
 
 
 def write(card, response):
-    badge = get_badge(response)
+    elo = response["eloRate"]
+    player_rank = rank.get_rank(elo)
+    badge = get_badge(player_rank, 14)
     dim = badge.size[0]
 
     x = 190
@@ -73,7 +75,7 @@ def write(card, response):
 
     card.paste(badge, (round(x - dim / 2), round(y - dim / 2)), badge)
 
-    tier = get_tier(response)
+    tier = [str(rank.get_rank(elo)), rank.get_division(elo)]
     x = 555
     y = 475
     rank_size = 80
@@ -122,22 +124,10 @@ def write(card, response):
     return card
 
 
-def get_badge(response):
-    elo = response["eloRate"]
-    tier = rank.get_rank(elo)
-
-    file = path.join("src", "pics", "ranks", f"rank_{tier}.png")
+def get_badge(player_rank, size):
+    file = path.join("src", "pics", "ranks", f"rank_{player_rank.value}.png")
     badge = Image.open(file)
     badge = badge.resize(
-        (round(badge.size[0] * 14), round(badge.size[1] * 14)), resample=Image.NEAREST
+        (round(badge.size[0] * size), round(badge.size[1] * size)), resample=Image.NEAREST
     )
     return badge
-
-
-def get_tier(response):
-    elo = response["eloRate"]
-    ranks = ["Coal", "Iron", "Gold", "Emerald", "Diamond", "Netherite", "Unranked"]
-
-    tier = [ranks[rank.get_rank(elo)], rank.get_division(elo)]
-
-    return tier

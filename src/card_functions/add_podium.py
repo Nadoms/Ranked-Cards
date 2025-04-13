@@ -25,7 +25,7 @@ def get_podium(response):
     elo = response["eloRate"]
     tier = rank.get_rank(elo)
 
-    file = path.join("src", "pics", "podiums", f"podium_{tier}.webp")
+    file = path.join("src", "pics", "podiums", f"podium_{tier.value}.webp")
     podium = Image.open(file)
     podium = podium.resize((round(podium.size[0] * 1.3), round(podium.size[1] * 1.3)))
     return podium

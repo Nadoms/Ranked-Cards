@@ -7,6 +7,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 from gen_functions import word, numb, rank
+from card_functions import add_badge
 
 SIDES = 4
 INIT_PROP = 1.8
@@ -29,13 +30,13 @@ BASTION_MAPPING = {
 }
 
 
-def main(uuid, detailed_matches, elo, season):
+def main(uuid, detailed_matches, elo, season, rank_filter):
     completed_bastions, average_bastions, average_deaths = get_avg_bastions(
         uuid, detailed_matches
     )
-    ranked_bastions = get_ranked_bastions(average_bastions)
+    ranked_bastions = get_ranked_bastions(average_bastions, rank_filter)
     polygon = get_polygon(ranked_bastions)
-    polygon = add_text(polygon, average_bastions, ranked_bastions)
+    polygon = add_text(polygon, average_bastions, ranked_bastions, rank_filter)
     sum_bastions = sum(completed_bastions.values())
 
     comments = {}
@@ -47,7 +48,7 @@ def main(uuid, detailed_matches, elo, season):
     comments["best"], comments["worst"] = get_best_worst(ranked_bastions)
     if season != 1:
         comments["player_deaths"], comments["rank_deaths"] = get_death_comments(
-            average_deaths, elo
+            average_deaths, elo, rank_filter
         )
 
     return comments, polygon
@@ -135,22 +136,30 @@ def get_avg_bastions(uuid, detailed_matches):
     return completed_bastions, average_bastions, average_deaths
 
 
-def get_ranked_bastions(average_bastions):
+def get_ranked_bastions(average_bastions, rank_filter):
     ranked_bastions = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
 
     playerbase_file = Path("src") / "database" / "playerbase.json"
     with open(playerbase_file, "r") as f:
         bastions_final_boss = json.load(f)["bastion"]
 
+    lower, upper = rank.get_boundaries(rank_filter)
+
     for key in bastions_final_boss:
+        bastions_sample = [
+            attr[0]
+            for attr in bastions_final_boss[key]
+            if rank_filter is None or (attr[1] and lower <= attr[1] < upper)
+        ]
         ranked_bastions[key] = np.searchsorted(
-            list(bastions_final_boss[key].values()), average_bastions[key]
+            bastions_sample,
+            average_bastions[key],
         )
-        if len(bastions_final_boss[key]) == 0:
+        if len(bastions_sample) == 0:
             ranked_bastions[key] = 0
         else:
             ranked_bastions[key] = round(
-                1 - ranked_bastions[key] / len(bastions_final_boss[key]), 3
+                1 - ranked_bastions[key] / len(bastions_sample), 3
             )
 
     return ranked_bastions
@@ -226,7 +235,7 @@ def get_polygon(ranked_bastions):
     return polygon
 
 
-def add_text(polygon, average_bastions, ranked_bastions):
+def add_text(polygon, average_bastions, ranked_bastions, rank_filter):
     text_prop = INIT_PROP * 0.95
     xy = []
     percentiles = [0.3, 0.5, 0.7, 0.9, 0.95, 1.0]
@@ -240,7 +249,6 @@ def add_text(polygon, average_bastions, ranked_bastions):
     ]
     titles = ["Bridge", "Housing", "Stables", "Treasure"]
 
-    text_draw = ImageDraw.Draw(polygon)
     big_size = 50
     big_font = ImageFont.truetype("minecraft_font.ttf", big_size)
     title_size = 30
@@ -249,8 +257,13 @@ def add_text(polygon, average_bastions, ranked_bastions):
     stat_font = ImageFont.truetype("minecraft_font.ttf", stat_size)
 
     big_title = "Bastion Performance"
-    big_x = (IMG_SIZE_X - word.calc_length(big_title, big_size)) / 2
+    big_x = int((IMG_SIZE_X - word.calc_length(big_title, big_size)) / 2)
     big_y = OFFSET_Y
+
+    if rank_filter is not None:
+        polygon = add_rank_img(polygon, rank_filter, (big_x, big_y), big_size)
+
+    text_draw = ImageDraw.Draw(polygon)
     text_draw.text(
         (big_x, big_y),
         big_title,
@@ -331,6 +344,18 @@ def add_text(polygon, average_bastions, ranked_bastions):
     return polygon
 
 
+def add_rank_img(polygon, rank_filter, coords, title_size):
+    badge = add_badge.get_badge(rank_filter, 7)
+    dim = badge.size[0]
+    badge_x1 = coords[0] - dim - 20
+    badge_x2 = IMG_SIZE_X - coords[0] + 20
+    badge_y = int(coords[1] + word.horiz_to_vert(title_size) / 2 - dim / 2)
+
+    polygon.paste(badge, (badge_x1, badge_y), badge)
+    polygon.paste(badge, (badge_x2, badge_y), badge)
+    return polygon
+
+
 def get_sample_size(sum_bastions):
     if sum_bastions < 24:
         return "This is a very low sample size. Take these stats with a grain of salt."
@@ -401,16 +426,18 @@ def get_best_worst(ranked_bastions):
     return [best, worst]
 
 
-def get_death_comments(average_deaths, elo):
+def get_death_comments(average_deaths, elo, rank_filter):
     differences = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
-    ranks = ["Coal", "Iron", "Gold", "Emerald", "Diamond", "Netherite"]
 
-    rank_no = rank.get_rank(elo)
-    if rank_no == -1:
-        rank_no = 2
+    if rank_filter is None:
+        player_rank = rank.get_rank(elo)
+        if player_rank == rank.Rank.UNRANKED:
+            player_rank = rank.Rank.GOLD
+    else:
+        player_rank = rank_filter
     file = path.join("src", "database", "mcsrstats", "deaths", "deaths.json")
     with open(file, "r", encoding="UTF-8") as f:
-        overall_deaths = json.load(f)["bastions"][str(rank_no)]
+        overall_deaths = json.load(f)["bastions"][str(player_rank.value)]
 
     max_diff = 0
     max_bastion = None
@@ -431,7 +458,7 @@ def get_death_comments(average_deaths, elo):
         "inline": True,
     }
     rank_comment = {
-        "name": f"{ranks[rank_no]} Death Rates",
+        "name": f"{player_rank} Death Rates",
         "value": [
             f"`{' ' if overall_deaths[bastion] < 0.1 else ''}{numb.round_sf(overall_deaths[bastion] * 100, 3)}%` - {BASTION_MAPPING[bastion]}"
             for bastion in overall_deaths

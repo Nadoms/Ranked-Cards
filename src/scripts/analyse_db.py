@@ -31,16 +31,16 @@ def main():
     season = games.get_season()
     completion_times = {}
     completion_nums = {}
-    avg_elo = {}
+    avg_sb_elo = {}
     split_times = {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}}
     split_nums = {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}}
-    split_ranked = {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}}
+    split_ranked = {"ow": [], "nether": [], "bastion": [], "fortress": [], "blind": [], "stronghold": [], "end": []}
     bastion_times = {"bridge": {}, "housing": {}, "stables": {}, "treasure": {}}
     bastion_nums = {"bridge": {}, "housing": {}, "stables": {}, "treasure": {}}
-    bastion_ranked = {"bridge": {}, "housing": {}, "stables": {}, "treasure": {}}
+    bastion_ranked = {"bridge": [], "housing": [], "stables": [], "treasure": []}
     ow_times = {"bt": {}, "dt": {}, "rp": {}, "ship": {}, "village": {}}
     ow_nums = {"bt": {}, "dt": {}, "rp": {}, "ship": {}, "village": {}}
-    ow_ranked = {"bt": {}, "dt": {}, "rp": {}, "ship": {}, "village": {}}
+    ow_ranked = {"bt": [], "dt": [], "rp": [], "ship": [], "village": []}
 
     conn, cursor = db.start(PROJECT_DIR / "database" / "ranked.db")
     matches_info = db.query_db(
@@ -124,31 +124,8 @@ def main():
                 completion_times[uuid] += result_time
                 completion_nums[uuid] += 1
 
-    for split in split_times:
-        for uuid in split_times[split]:
-            if split_nums[split][uuid] >= 5:
-                split_ranked[split][uuid] = round(split_times[split][uuid] / split_nums[split][uuid])
-        split_ranked[split] = dict(sorted(split_ranked[split].items(), key=lambda item: item[1]))
-        print(f"{split} count: {len(split_ranked[split])}")
-    print()
-
-    for bastion in bastion_times:
-        for uuid in bastion_times[bastion]:
-            if bastion_nums[bastion][uuid] >= 5:
-                bastion_ranked[bastion][uuid] = round(bastion_times[bastion][uuid] / bastion_nums[bastion][uuid])
-        bastion_ranked[bastion] = dict(sorted(bastion_ranked[bastion].items(), key=lambda item: item[1]))
-        print(f"{bastion} count: {len(bastion_ranked[bastion])}")
-    print()
-
-    for ow in ow_times:
-        for uuid in ow_times[ow]:
-            if ow_nums[ow][uuid] >= 5:
-                ow_ranked[ow][uuid] = round(ow_times[ow][uuid] / ow_nums[ow][uuid])
-        ow_ranked[ow] = dict(sorted(ow_ranked[ow].items(), key=lambda item: item[1]))
-        print(f"{ow} count: {len(ow_ranked[ow])}")
-
     full_elos = {}
-    full_sbs = {}
+    full_sbs = []
 
     completion_count = len(completion_times)
     for i, uuid in enumerate(completion_times):
@@ -156,31 +133,64 @@ def main():
             print(f"{i}/{completion_count}")
         elo = db.get_elo(cursor, uuid)
         sb = db.get_sb(cursor, uuid)
-        if completion_nums[uuid] >= 5:
-            avg_elo[uuid] = {
+        if completion_nums[uuid] >= 3:
+            avg_sb_elo[uuid] = {
                 "avg": round(completion_times[uuid] / completion_nums[uuid]),
                 "elo": elo,
                 "sb": sb,
             }
+        full_sbs.append((sb, elo))
         if elo:
             full_elos[uuid] = elo
-        full_sbs[uuid] = sb
 
-    avgs = {uuid: avg_elo[uuid]["avg"] for uuid in avg_elo}
-    elos = {uuid: avg_elo[uuid]["elo"] for uuid in avg_elo}
-    sbs = {uuid: avg_elo[uuid]["sb"] for uuid in avg_elo}
-    avgs = dict(sorted(avgs.items(), key=lambda item: item[1]))
-    elos = dict(sorted(elos.items(), key=lambda item: item[1], reverse=True))
-    sbs = dict(sorted(sbs.items(), key=lambda item: item[1]))
+    avgs = [(avg_sb_elo[uuid]["avg"], avg_sb_elo[uuid]["elo"]) for uuid in avg_sb_elo]
+    elos = [avg_sb_elo[uuid]["elo"] for uuid in avg_sb_elo]
+    sbs = [(avg_sb_elo[uuid]["sb"], avg_sb_elo[uuid]["elo"]) for uuid in avg_sb_elo]
+    avgs = list(sorted(avgs, key=lambda item: item[0]))
+    elos = list(sorted(elos, reverse=True))
+    sbs = list(sorted(sbs, key=lambda item: item[0]))
+    full_sbs = list(sorted(full_sbs, key=lambda item: item[0]))
     full_elos = dict(sorted(full_elos.items(), key=lambda item: item[1], reverse=True))
-    full_sbs = dict(sorted(full_sbs.items(), key=lambda item: item[1]))
+    full_elos_list = list(full_elos.values())
+
+    for split in split_times:
+        for uuid in split_times[split]:
+            if split_nums[split][uuid] >= 3:
+                split_ranked[split].append((
+                    round(split_times[split][uuid] / split_nums[split][uuid]),
+                    full_elos.get(uuid),
+                ))
+        split_ranked[split] = list(sorted(split_ranked[split], key=lambda item: item[0]))
+        print(f"{split} count: {len(split_ranked[split])}")
+    print()
+
+    for bastion in bastion_times:
+        for uuid in bastion_times[bastion]:
+            if bastion_nums[bastion][uuid] >= 3:
+                bastion_ranked[bastion].append((
+                    round(bastion_times[bastion][uuid] / bastion_nums[bastion][uuid]),
+                    full_elos.get(uuid),
+                ))
+        bastion_ranked[bastion] = list(sorted(bastion_ranked[bastion], key=lambda item: item[0]))
+        print(f"{bastion} count: {len(bastion_ranked[bastion])}")
+    print()
+
+    for ow in ow_times:
+        for uuid in ow_times[ow]:
+            if ow_nums[ow][uuid] >= 3:
+                ow_ranked[ow].append((
+                    round(ow_times[ow][uuid] / ow_nums[ow][uuid]),
+                    full_elos.get(uuid),
+                ))
+        ow_ranked[ow] = list(sorted(ow_ranked[ow], key=lambda item: item[0]))
+        print(f"{ow} count: {len(ow_ranked[ow])}")
 
     playerbase_data = {
         "split": split_ranked,
         "bastion": bastion_ranked,
         "ow": ow_ranked,
         "avg": avgs,
-        "elo": full_elos,
+        "elo": full_elos_list,
         "sb": full_sbs,
     }
 
@@ -190,11 +200,11 @@ def main():
 
     train_model.train(
         "avg",
-        [(avgs[uuid] * 1e-6, elos[uuid] * 1e-3) for uuid in avgs]
+        [(avg_elo[0] * 1e-6, avg_elo[1] * 1e-3) for avg_elo in avgs]
     )
     train_model.train(
         "sb",
-        [(sbs[uuid] * 1e-6, elos[uuid] * 1e-3) for uuid in sbs]
+        [(sb_elo[0] * 1e-6, sb_elo[1] * 1e-3) for sb_elo in sbs]
     )
 
 
