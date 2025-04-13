@@ -66,6 +66,7 @@ def get_boundaries(rank: Rank):
         return 1500, 2000
     if rank == Rank.NETHERITE:
         return 2000, 3000
+    return 0, 3000
 
 
 def get_colour(elo):

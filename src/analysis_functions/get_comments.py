@@ -26,7 +26,7 @@ def main(response, elo, season, rank_filter):
         general_comments["elo"] = [
             f"ELO: `{elo}`",
             percentify(get_attr_ranked(elo, "elo", rank_filter)),
-            get_elo_info(elo, "elo"),
+            get_elo_info(elo),
         ]
     avg = games.get_avg_completion(response, "season")
     if avg == 0:
@@ -57,12 +57,14 @@ def get_attr_ranked(value, attr_type, rank_filter):
     if attr_type == "elo":
         attrs = list(reversed(attrs))
 
-    if rank_filter:
-        lower, upper = rank.get_boundaries(rank_filter)
+    lower, upper = rank.get_boundaries(rank_filter)
+    if attr_type == "elo":
+        attrs = [attr for attr in attrs if lower <= attr < upper]
+    else:
         attrs = [
             attr[0]
             for attr in attrs
-            if lower <= attr[1] < upper
+            if not rank_filter or (attr[1] and lower <= attr[1] < upper)
         ]
 
     ranked_attr = round(np.searchsorted(attrs, value) / len(attrs), 3)

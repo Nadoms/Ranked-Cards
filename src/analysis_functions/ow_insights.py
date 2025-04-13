@@ -85,19 +85,23 @@ def get_ranked_ows(average_ows, rank_filter):
     with open(playerbase_file, "r") as f:
         ows_final_boss = json.load(f)["ow"]
 
-    if rank_filter:
-        lower, upper = rank.get_boundaries(rank_filter)
+    lower, upper = rank.get_boundaries(rank_filter)
 
     for key in ows_final_boss:
+        ows_sample = [
+            attr[0]
+            for attr in ows_final_boss[key]
+            if not rank_filter or (attr[1] and lower <= attr[1] < upper)
+        ]
         ranked_ows[key] = np.searchsorted(
-            [attr[0] for attr in ows_final_boss[key] if lower <= attr[1] < upper],
+            ows_sample,
             average_ows[key],
         )
-        if len(ows_final_boss[key]) == 0:
+        if len(ows_sample) == 0:
             ranked_ows[key] = 0
         else:
             ranked_ows[key] = round(
-                1 - ranked_ows[key] / len(ows_final_boss[key]), 3
+                1 - ranked_ows[key] / len(ows_sample), 3
             )
 
     return ranked_ows

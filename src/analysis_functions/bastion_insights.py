@@ -142,19 +142,23 @@ def get_ranked_bastions(average_bastions, rank_filter):
     with open(playerbase_file, "r") as f:
         bastions_final_boss = json.load(f)["bastion"]
 
-    if rank_filter:
-        lower, upper = rank.get_boundaries(rank_filter)
+    lower, upper = rank.get_boundaries(rank_filter)
 
     for key in bastions_final_boss:
+        bastions_sample = [
+            attr[0]
+            for attr in bastions_final_boss[key]
+            if not rank_filter or (attr[1] and lower <= attr[1] < upper)
+        ]
         ranked_bastions[key] = np.searchsorted(
-            [attr[0] for attr in bastions_final_boss[key] if lower <= attr[1] < upper],
+            bastions_sample,
             average_bastions[key],
         )
-        if len(bastions_final_boss[key]) == 0:
+        if len(bastions_sample) == 0:
             ranked_bastions[key] = 0
         else:
             ranked_bastions[key] = round(
-                1 - ranked_bastions[key] / len(bastions_final_boss[key]), 3
+                1 - ranked_bastions[key] / len(bastions_sample), 3
             )
 
     return ranked_bastions

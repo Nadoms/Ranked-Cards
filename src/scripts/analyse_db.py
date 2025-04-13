@@ -31,7 +31,7 @@ def main():
     season = games.get_season()
     completion_times = {}
     completion_nums = {}
-    avg_elo = {}
+    avg_sb_elo = {}
     split_times = {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}}
     split_nums = {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}}
     split_ranked = {"ow": [], "nether": [], "bastion": [], "fortress": [], "blind": [], "stronghold": [], "end": []}
@@ -125,7 +125,7 @@ def main():
                 completion_nums[uuid] += 1
 
     full_elos = {}
-    full_sbs = {}
+    full_sbs = []
 
     completion_count = len(completion_times)
     for i, uuid in enumerate(completion_times):
@@ -134,30 +134,31 @@ def main():
         elo = db.get_elo(cursor, uuid)
         sb = db.get_sb(cursor, uuid)
         if completion_nums[uuid] >= 5:
-            avg_elo[uuid] = {
+            avg_sb_elo[uuid] = {
                 "avg": round(completion_times[uuid] / completion_nums[uuid]),
                 "elo": elo,
                 "sb": sb,
             }
+        full_sbs.append((sb, elo))
         if elo:
             full_elos[uuid] = elo
-        full_sbs[uuid] = sb
 
-    avgs = {(avg_elo[uuid]["avg"], avg_elo[uuid]["elo"]) for uuid in avg_elo}
-    elos = {avg_elo[uuid]["elo"] for uuid in avg_elo}
-    sbs = {(avg_elo[uuid]["sb"], avg_elo[uuid]["elo"]) for uuid in avg_elo}
+    avgs = [(avg_sb_elo[uuid]["avg"], avg_sb_elo[uuid]["elo"]) for uuid in avg_sb_elo]
+    elos = [avg_sb_elo[uuid]["elo"] for uuid in avg_sb_elo]
+    sbs = [(avg_sb_elo[uuid]["sb"], avg_sb_elo[uuid]["elo"]) for uuid in avg_sb_elo]
     avgs = list(sorted(avgs, key=lambda item: item[0]))
     elos = list(sorted(elos, reverse=True))
     sbs = list(sorted(sbs, key=lambda item: item[0]))
+    full_sbs = list(sorted(full_sbs, key=lambda item: item[0]))
     full_elos = dict(sorted(full_elos.items(), key=lambda item: item[1], reverse=True))
-    full_sbs = dict(sorted(full_sbs.items(), key=lambda item: item[1]))
+    full_elos_list = list(full_elos.values())
 
     for split in split_times:
         for uuid in split_times[split]:
             if split_nums[split][uuid] >= 5:
                 split_ranked[split].append((
                     round(split_times[split][uuid] / split_nums[split][uuid]),
-                    full_elos[uuid],
+                    full_elos.get(uuid),
                 ))
         split_ranked[split] = list(sorted(split_ranked[split], key=lambda item: item[0]))
         print(f"{split} count: {len(split_ranked[split])}")
@@ -168,7 +169,7 @@ def main():
             if bastion_nums[bastion][uuid] >= 5:
                 bastion_ranked[bastion].append((
                     round(bastion_times[bastion][uuid] / bastion_nums[bastion][uuid]),
-                    full_elos[uuid],
+                    full_elos.get(uuid),
                 ))
         bastion_ranked[bastion] = list(sorted(bastion_ranked[bastion], key=lambda item: item[0]))
         print(f"{bastion} count: {len(bastion_ranked[bastion])}")
@@ -179,7 +180,7 @@ def main():
             if ow_nums[ow][uuid] >= 5:
                 ow_ranked[ow].append((
                     round(ow_times[ow][uuid] / ow_nums[ow][uuid]),
-                    full_elos[uuid],
+                    full_elos.get(uuid),
                 ))
         ow_ranked[ow] = list(sorted(ow_ranked[ow], key=lambda item: item[0]))
         print(f"{ow} count: {len(ow_ranked[ow])}")
@@ -189,7 +190,7 @@ def main():
         "bastion": bastion_ranked,
         "ow": ow_ranked,
         "avg": avgs,
-        "elo": full_elos,
+        "elo": full_elos_list,
         "sb": full_sbs,
     }
 
@@ -199,11 +200,11 @@ def main():
 
     train_model.train(
         "avg",
-        [(avgs[uuid] * 1e-6, elos[uuid] * 1e-3) for uuid in avgs]
+        [(avg_elo[0] * 1e-6, avg_elo[1] * 1e-3) for avg_elo in avgs]
     )
     train_model.train(
         "sb",
-        [(sbs[uuid] * 1e-6, elos[uuid] * 1e-3) for uuid in sbs]
+        [(sb_elo[0] * 1e-6, sb_elo[1] * 1e-3) for sb_elo in sbs]
     )
 
 

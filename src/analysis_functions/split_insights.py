@@ -178,19 +178,23 @@ def get_ranked_splits(average_splits, rank_filter):
     with open(playerbase_file, "r") as f:
         splits_final_boss = json.load(f)["split"]
 
-    if rank_filter:
-        lower, upper = rank.get_boundaries(rank_filter)
+    lower, upper = rank.get_boundaries(rank_filter)
 
     for key in splits_final_boss:
+        splits_sample = [
+            attr[0]
+            for attr in splits_final_boss[key]
+            if not rank_filter or (attr[1] and lower <= attr[1] < upper)
+        ]
         ranked_splits[key] = np.searchsorted(
-            [attr[0] for attr in splits_final_boss[key] if lower <= attr[1] < upper],
+            splits_sample,
             average_splits[key],
         )
-        if len(splits_final_boss[key]) == 0:
+        if len(splits_sample) == 0:
             ranked_splits[key] = 0
         else:
             ranked_splits[key] = round(
-                1 - ranked_splits[key] / len(splits_final_boss[key]), 3
+                1 - ranked_splits[key] / len(splits_sample), 3
             )
 
     return ranked_splits
