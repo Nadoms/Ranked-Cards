@@ -133,7 +133,7 @@ def main():
             print(f"{i}/{completion_count}")
         elo = db.get_elo(cursor, uuid)
         sb = db.get_sb(cursor, uuid)
-        if completion_nums[uuid] >= 3:
+        if completion_nums[uuid] >= 5:
             avg_sb_elo[uuid] = {
                 "avg": round(completion_times[uuid] / completion_nums[uuid]),
                 "elo": elo,
