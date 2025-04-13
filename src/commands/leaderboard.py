@@ -305,7 +305,7 @@ def main(response, input_name, type, country, season, page):
             name = item["user"]["nickname"]
         if rank < start or rank >= end:
             if name.lower() == input_name.lower():
-                value += f" ... | ................ | ....     \n"
+                value += f" ... | ................ | ....\n"
             else:
                 continue
         if name.lower() == input_name.lower():
