@@ -65,7 +65,7 @@ class Topics(nextcord.ui.View):
         os.remove(f"{self.value}.png")
         return file
 
-    @nextcord.ui.button(label="Splits", style=nextcord.ButtonStyle.red)
+    @nextcord.ui.button(label="Splits", style=nextcord.ButtonStyle.blurple)
     async def show_splits(
         self,
         button: nextcord.ui.Button,
@@ -80,7 +80,7 @@ class Topics(nextcord.ui.View):
         )
         self._View__timeout_expiry -= self.timeout
 
-    @nextcord.ui.button(label="Bastions", style=nextcord.ButtonStyle.blurple)
+    @nextcord.ui.button(label="Bastions", style=nextcord.ButtonStyle.gray)
     async def show_bastions(
         self,
         button: nextcord.ui.Button,
