@@ -1121,6 +1121,11 @@ def update_records(interaction, command, subject, completed):
         stats["stats"]["races"]["success"] += completed
         stats["stats"]["races"]["fail"] += 1 - completed
 
+    elif command == "leaderboard":
+        stats["stats"]["totalGenerated"] += 1
+        stats["stats"]["leaderboards"]["success"] += completed
+        stats["stats"]["leaderboards"]["fail"] += 1 - completed
+
     elif command == "connect":
         stats["stats"]["connectedUsers"] += 1
         stats["stats"]["connects"]["success"] += completed
