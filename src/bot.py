@@ -23,7 +23,8 @@ from commands import (
     race as racing,
     leaderboard as leading,
 )
-from gen_functions import games, api, load_matches, rank
+from gen_functions import games, api, rank
+from scripts import construct_players, load_matches
 
 START_ID = 1790000
 TESTING_MODE = True
@@ -33,6 +34,7 @@ ALL_COUNTRIES = [country for country in leading.COUNTRY_MAPPING]
 API_COOLDOWN_MSG = "Too many commands have been issued! The Ranked API is cooling down... (~10 mins)"
 token = "TEST_TOKEN" if TESTING_MODE else "DISCORD_TOKEN"
 default_guild_ids = [735859906434957392] if TESTING_MODE else None
+player_list = []
 
 intents = nextcord.Intents.default()
 intents.members = True
@@ -207,10 +209,6 @@ async def card(
         if connected:
             await fail_get(f"{not_found} Connect to your new Minecraft username with </connect:1149442234513637448>.")
             return
-        close_names = get_close(input_name)
-        if close_names:
-            await fail_get(f"{not_found} Similar usernames include:\n{', '.join(close_names)}")
-            return
         await fail_get(not_found)
         return
 
@@ -305,10 +303,6 @@ async def plot(
         not_found = f"Player not found (`{input_name}`)."
         if connected:
             await fail_get(f"{not_found} Connect to your new Minecraft username with </connect:1149442234513637448>.")
-            return
-        close_names = get_close(input_name)
-        if close_names:
-            await fail_get(f"{not_found} Similar usernames include:\n{', '.join(close_names)}")
             return
         await fail_get(not_found)
         return
@@ -452,7 +446,11 @@ async def match(
 async def analysis(
     interaction: Interaction,
     input_name: str = SlashOption(
-        "name", required=False, description="The player to analyse.", default=""
+        "name",
+        required=False,
+        description="The player to analyse.",
+        default="",
+        autocomplete=True,
     ),
     season: str = SlashOption(
         "season",
@@ -506,10 +504,6 @@ async def analysis(
         not_found = f"Player not found (`{input_name}`)."
         if connected:
             await fail_get(f"{not_found} Connect to your new Minecraft username with </connect:1149442234513637448>.")
-            return
-        close_names = get_close(input_name)
-        if close_names:
-            await fail_get(f"{not_found} Similar usernames include:\n{', '.join(close_names)}")
             return
         await fail_get(not_found)
         return
@@ -670,6 +664,17 @@ async def analysis(
     )
     update_records(interaction, "analysis", input_name, True)
     os.remove(f"split_{input_name}.png")
+
+
+@card.on_autocomplete("input_name")
+@plot.on_autocomplete("input_name")
+@analysis.on_autocomplete("input_name")
+async def name_autocomplete(interaction: Interaction, current: str):
+    if not current:
+        await interaction.response.send_autocomplete(player_list[:25])
+        return
+    near = [player for player in player_list if current.lower() in player.lower()][:25]
+    await interaction.response.send_autocomplete(near)
 
 
 @bot.slash_command(
@@ -1068,17 +1073,6 @@ def get_name(interaction_ctx):
     return ""
 
 
-def get_close(input_name):
-    file = path.join("src", "database", "players.txt")
-    with open(file, "r") as f:
-        players = f.readlines()
-    close_names = [
-        f"`{name.strip()}`"
-        for name in difflib.get_close_matches(input_name, players)[:10]
-    ]
-    return close_names
-
-
 def update_records(interaction, command, subject, completed):
     if TESTING_MODE:
         return
@@ -1162,6 +1156,13 @@ async def fetch_loop():
             repeat = 900
 
 
+async def suggestions_loop():
+    while True:
+        global player_list
+        player_list = construct_players.construct_player_list()
+        await asyncio.sleep(86400)
+
+
 def create_crontab():
     cron = CronTab(tabfile=path.abspath(path.join("src", "crontibulousbobulous")))
     analysis_file = path.abspath(path.join("src", "scripts", "analyse_db.py"))
@@ -1177,5 +1178,6 @@ def create_crontab():
 if not TESTING_MODE:
     create_crontab()
     bot.loop.create_task(fetch_loop())
+    bot.loop.create_task(suggestions_loop())
 load_dotenv()
 bot.run(getenv(token))

@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 from os import path
 import sys
 
@@ -9,6 +10,7 @@ from gen_functions import api
 
 
 async def spam_redlime(start, limit):
+    print(f"\n***\nLoading latest matches - {datetime.now()}\n***\n")
     step_size = 100
     i = start
     old_additions = api.Match._additions
