@@ -45,11 +45,12 @@ SELECT {items} FROM {table}
 def get_elo(
     cursor: sqlite3.Cursor,
     uuid: str,
+    season: int = 8,
 ) -> Optional[int]:
     run = query_db(
         cursor,
         "runs",
-        items="eloRate, change",
+        items="eloRate, change, match_id",
         order="match_id DESC",
         limit=1,
         player_uuid=uuid
@@ -59,6 +60,15 @@ def get_elo(
     run = run[0]
     if not run[0]:
         return None
+    match = query_db(
+        cursor,
+        "matches",
+        items="season",
+        limit=1,
+        id=run[2]
+    )[0]
+    if int(match[0]) != season:
+        return None
     current_elo = run[0] + run[1]
     return current_elo
 
@@ -66,6 +76,7 @@ def get_elo(
 def get_sb(
     cursor: sqlite3.Cursor,
     uuid: str,
+    season: int = 8,
 ) -> Optional[int]:
     match = query_db(
         cursor,
@@ -76,6 +87,7 @@ def get_sb(
         type=2,
         result_uuid=uuid,
         forfeited=False,
+        season=season,
     )
     if match:
         return match[0][0]

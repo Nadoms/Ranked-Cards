@@ -132,4 +132,4 @@ async def get_detailed_matches(player_response, season, min_comps, target_games)
 
 
 def get_season():
-    return 7
+    return 8
