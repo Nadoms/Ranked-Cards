@@ -19,7 +19,6 @@ def train(data_oi, data):
     order = np.argsort(X_data)
     X = np.array(X_data)[order]
     Y = np.array(Y_data)[order]
-    print(X, Y)
 
     W = np.array([0.2, -0.25, 0.75])
     step_sizes = np.array([0.01, 0.1, 0.1])

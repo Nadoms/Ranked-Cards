@@ -1,3 +1,4 @@
+import asyncio
 import json
 
 from datetime import datetime
@@ -130,7 +131,7 @@ def collect_matches(season, cursor):
     return times, nums, runs_processed
 
 
-def main():
+async def analyse():
     print(f"\n***\nAnalysing database - {datetime.now()}\n***\n")
     season = games.get_season()
     ranked = {
@@ -152,6 +153,7 @@ def main():
     all_elos = {}
     for uuid in nums["split"]["ow"]:
         all_elos[uuid] = db.get_elo(cursor, uuid)
+        await asyncio.sleep(0.01)
 
     training_data = {
         "avg": [],
@@ -176,6 +178,7 @@ def main():
         if not sb:
             print(uuid, sb, elo, nums["completion"])
         ranked["sb"].append((sb, elo))
+        await asyncio.sleep(0.01)
 
     ranked["elo"].sort(reverse=True)
     ranked["avg"] = sorted(ranked["avg"], key=lambda x: x[0])
@@ -197,7 +200,6 @@ def main():
                     )
             ranked[performance][item] = sorted(ranked[performance][item], key=lambda x: x[0])
 
-
     print("\nDumping insights into playerbase file...")
     playerbase_file = PROJECT_DIR / "database" / "playerbase.json"
     with open(playerbase_file, "w") as f:
@@ -209,7 +211,8 @@ def main():
             data_oi,
             training_data[data_oi]
         )
+        await asyncio.sleep(1)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(analyse())

@@ -24,7 +24,7 @@ from commands import (
     leaderboard as leading,
 )
 from gen_functions import games, api, rank
-from scripts import construct_players, load_matches
+from scripts import analyse_db, construct_players, load_matches
 
 START_ID = 1790000
 TESTING_MODE = True
@@ -1162,27 +1162,23 @@ async def fetch_loop():
 
 
 async def suggestions_loop():
+    await asyncio.sleep(60)
     while True:
         global player_list
         player_list = construct_players.construct_player_list()
         await asyncio.sleep(86400)
 
 
-def create_crontab():
-    cron = CronTab(tabfile=path.abspath(path.join("src", "crontibulousbobulous")))
-    analysis_file = path.abspath(path.join("src", "scripts", "analyse_db.py"))
-    log_file = path.abspath(path.join("src", "logs", f"analyse_db_{datetime.now().strftime('%H-%M-%S')}.log"))
-    command = f"{sys.executable} {analysis_file} >> {log_file} 2>&1"
-    cron.remove_all()
-    job = cron.new(command=command)
-    job.setall("0 0 * * *")
-    cron.write()
-    subprocess.Popen(command, shell=True)
+async def analysis_loop():
+    await asyncio.sleep(120)
+    while True:
+        await analyse_db.analyse()
+        await asyncio.sleep(86400)
 
 
 if not TESTING_MODE:
-    create_crontab()
     bot.loop.create_task(fetch_loop())
     bot.loop.create_task(suggestions_loop())
+    bot.loop.create_task(analysis_loop())
 load_dotenv()
 bot.run(getenv(token))
