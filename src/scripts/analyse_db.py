@@ -26,23 +26,21 @@ OW_MAPPING = {
 }
 
 
-def main():
-    print(f"\n***\nAnalysing database - {datetime.now()}\n***\n")
-    season = games.get_season()
-    completion_times = {}
-    completion_nums = {}
-    avg_sb_elo = {}
-    split_times = {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}}
-    split_nums = {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}}
-    split_ranked = {"ow": [], "nether": [], "bastion": [], "fortress": [], "blind": [], "stronghold": [], "end": []}
-    bastion_times = {"bridge": {}, "housing": {}, "stables": {}, "treasure": {}}
-    bastion_nums = {"bridge": {}, "housing": {}, "stables": {}, "treasure": {}}
-    bastion_ranked = {"bridge": [], "housing": [], "stables": [], "treasure": []}
-    ow_times = {"bt": {}, "dt": {}, "rp": {}, "ship": {}, "village": {}}
-    ow_nums = {"bt": {}, "dt": {}, "rp": {}, "ship": {}, "village": {}}
-    ow_ranked = {"bt": [], "dt": [], "rp": [], "ship": [], "village": []}
+def collect_matches(season, cursor):
+    times = {
+        "split": {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}},
+        "bastion": {"bridge": {}, "housing": {}, "stables": {}, "treasure": {}},
+        "ow": {"bt": {}, "dt": {}, "rp": {}, "ship": {}, "village": {}},
+        "completion": {},
+    }
+    nums = {
+        "split": {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}},
+        "bastion": {"bridge": {}, "housing": {}, "stables": {}, "treasure": {}},
+        "ow": {"bt": {}, "dt": {}, "rp": {}, "ship": {}, "village": {}},
+        "completion": {},
+    }
+    runs_processed = 0
 
-    conn, cursor = db.start(PROJECT_DIR / "database" / "ranked.db")
     matches_info = db.query_db(
         cursor=cursor,
         items="id, seedType, bastionType, result_uuid, forfeited, time",
@@ -72,14 +70,16 @@ def main():
                     curr_split = "ow"
                     bastion_entry = bastion_exit = 0
 
+                # Dealing with overworlds
                 if event["type"] == "story.enter_the_nether":
                     ow_length = event["time"] - prev_time
-                    if uuid not in ow_times[OW_MAPPING[seed_type]]:
-                        ow_times[OW_MAPPING[seed_type]][uuid] = 0
-                        ow_nums[OW_MAPPING[seed_type]][uuid] = 0
-                    ow_times[OW_MAPPING[seed_type]][uuid] += ow_length
-                    ow_nums[OW_MAPPING[seed_type]][uuid] += 1
+                    if uuid not in times["ow"][OW_MAPPING[seed_type]]:
+                        times["ow"][OW_MAPPING[seed_type]][uuid] = 0
+                        nums["ow"][OW_MAPPING[seed_type]][uuid] = 0
+                    times["ow"][OW_MAPPING[seed_type]][uuid] += ow_length
+                    nums["ow"][OW_MAPPING[seed_type]][uuid] += 1
 
+                # Dealing with bastions
                 if event["type"] == "nether.find_bastion":
                     bastion_entry = event["time"]
 
@@ -92,120 +92,123 @@ def main():
                     ]:
                         bastion_exit = event["time"]
                         bastion_length = bastion_exit - bastion_entry
-                        if uuid not in bastion_times[bastion_type.lower()]:
-                            bastion_times[bastion_type.lower()][uuid] = 0
-                            bastion_nums[bastion_type.lower()][uuid] = 0
-                        bastion_times[bastion_type.lower()][uuid] += bastion_length
-                        bastion_nums[bastion_type.lower()][uuid] += 1
+                        if uuid not in times["bastion"][bastion_type.lower()]:
+                            times["bastion"][bastion_type.lower()][uuid] = 0
+                            nums["bastion"][bastion_type.lower()][uuid] = 0
+                        times["bastion"][bastion_type.lower()][uuid] += bastion_length
+                        nums["bastion"][bastion_type.lower()][uuid] += 1
 
+                # Dealing with splits
                 if event["type"] in SPLIT_MAPPING:
                     split_length = event["time"] - prev_time
-                    if uuid not in split_times[curr_split]:
-                        split_times[curr_split][uuid] = 0
-                        split_nums[curr_split][uuid] = 0
+                    if uuid not in times["split"][curr_split]:
+                        times["split"][curr_split][uuid] = 0
+                        nums["split"][curr_split][uuid] = 0
 
-                    split_times[curr_split][uuid] += split_length
-                    split_nums[curr_split][uuid] += 1
+                    times["split"][curr_split][uuid] += split_length
+                    nums["split"][curr_split][uuid] += 1
 
                     prev_time = event["time"]
                     curr_split = SPLIT_MAPPING[event["type"]]
 
             if result_uuid == uuid and not forfeited:
                 split_length = result_time - prev_time
-                if uuid not in split_times[curr_split]:
-                    split_times[curr_split][uuid] = 0
-                    split_nums[curr_split][uuid] = 0
-                split_times[curr_split][uuid] += split_length
-                split_nums[curr_split][uuid] += 1
+                if uuid not in times["split"][curr_split]:
+                    times["split"][curr_split][uuid] = 0
+                    nums["split"][curr_split][uuid] = 0
+                times["split"][curr_split][uuid] += split_length
+                nums["split"][curr_split][uuid] += 1
 
-                if uuid not in completion_times:
-                    completion_times[uuid] = 0
-                    completion_nums[uuid] = 0
-                completion_times[uuid] += result_time
-                completion_nums[uuid] += 1
+                if uuid not in times["completion"]:
+                    times["completion"][uuid] = 0
+                    nums["completion"][uuid] = 0
+                times["completion"][uuid] += result_time
+                nums["completion"][uuid] += 1
 
-    full_elos = {}
-    full_sbs = []
+            runs_processed += 1
 
-    completion_count = len(completion_times)
-    for i, uuid in enumerate(completion_times):
-        if i % (completion_count // 10) == 0:
-            print(f"{i}/{completion_count}")
-        elo = db.get_elo(cursor, uuid)
-        sb = db.get_sb(cursor, uuid)
-        if completion_nums[uuid] >= 5:
-            avg_sb_elo[uuid] = {
-                "avg": round(completion_times[uuid] / completion_nums[uuid]),
-                "elo": elo,
-                "sb": sb,
-            }
-        full_sbs.append((sb, elo))
-        if elo:
-            full_elos[uuid] = elo
+    return times, nums, runs_processed
 
-    avgs = [(avg_sb_elo[uuid]["avg"], avg_sb_elo[uuid]["elo"]) for uuid in avg_sb_elo]
-    elos = [avg_sb_elo[uuid]["elo"] for uuid in avg_sb_elo]
-    sbs = [(avg_sb_elo[uuid]["sb"], avg_sb_elo[uuid]["elo"]) for uuid in avg_sb_elo]
-    avgs = list(sorted(avgs, key=lambda item: item[0]))
-    elos = list(sorted(elos, reverse=True))
-    sbs = list(sorted(sbs, key=lambda item: item[0]))
-    full_sbs = list(sorted(full_sbs, key=lambda item: item[0]))
-    full_elos = dict(sorted(full_elos.items(), key=lambda item: item[1], reverse=True))
-    full_elos_list = list(full_elos.values())
 
-    for split in split_times:
-        for uuid in split_times[split]:
-            if split_nums[split][uuid] >= 3:
-                split_ranked[split].append((
-                    round(split_times[split][uuid] / split_nums[split][uuid]),
-                    full_elos.get(uuid),
-                ))
-        split_ranked[split] = list(sorted(split_ranked[split], key=lambda item: item[0]))
-        print(f"{split} count: {len(split_ranked[split])}")
-    print()
-
-    for bastion in bastion_times:
-        for uuid in bastion_times[bastion]:
-            if bastion_nums[bastion][uuid] >= 3:
-                bastion_ranked[bastion].append((
-                    round(bastion_times[bastion][uuid] / bastion_nums[bastion][uuid]),
-                    full_elos.get(uuid),
-                ))
-        bastion_ranked[bastion] = list(sorted(bastion_ranked[bastion], key=lambda item: item[0]))
-        print(f"{bastion} count: {len(bastion_ranked[bastion])}")
-    print()
-
-    for ow in ow_times:
-        for uuid in ow_times[ow]:
-            if ow_nums[ow][uuid] >= 3:
-                ow_ranked[ow].append((
-                    round(ow_times[ow][uuid] / ow_nums[ow][uuid]),
-                    full_elos.get(uuid),
-                ))
-        ow_ranked[ow] = list(sorted(ow_ranked[ow], key=lambda item: item[0]))
-        print(f"{ow} count: {len(ow_ranked[ow])}")
-
-    playerbase_data = {
-        "split": split_ranked,
-        "bastion": bastion_ranked,
-        "ow": ow_ranked,
-        "avg": avgs,
-        "elo": full_elos_list,
-        "sb": full_sbs,
+def main():
+    print(f"\n***\nAnalysing database - {datetime.now()}\n***\n")
+    season = games.get_season()
+    ranked = {
+        "split": {"ow": [], "nether": [], "bastion": [], "fortress": [], "blind": [], "stronghold": [], "end": []},
+        "bastion": {"bridge": [], "housing": [], "stables": [], "treasure": []},
+        "ow": {"bt": [], "dt": [], "rp": [], "ship": [], "village": []},
+        "elo": [],
+        "avg": [],
+        "sb": []
     }
 
+    conn, cursor = db.start(PROJECT_DIR / "database" / "ranked.db")
+    print("Collecting runs...")
+    times, nums, runs = collect_matches(season, cursor)
+    print(f"Finished collecting {runs} runs")
+
+    # Get the elo of every player accounted for
+    print(f"Fetching elos of {len(nums['split']['ow'])} players...")
+    all_elos = {}
+    for uuid in nums["split"]["ow"]:
+        all_elos[uuid] = db.get_elo(cursor, uuid)
+
+    training_data = {
+        "avg": [],
+        "sb": [],
+    }
+
+    # Construct training data and avg / sb ranking
+    print(f"Processing completions of {len(nums['completion'])} players...")
+    for uuid in times["completion"]:
+        elo = all_elos[uuid]
+        avg = times["completion"][uuid] / nums["completion"][uuid]
+        sb = db.get_sb(cursor, uuid)
+
+        if elo:
+            training_data["avg"].append((avg * 1e-6, elo * 1e-3))
+            training_data["sb"].append((sb * 1e-6, elo * 1e-3))
+            ranked["elo"].append(elo)
+
+        if nums["completion"][uuid] >= 3:
+            ranked["avg"].append((avg, elo))
+
+        if not sb:
+            print(uuid, sb, elo, nums["completion"])
+        ranked["sb"].append((sb, elo))
+
+    ranked["elo"].sort(reverse=True)
+    ranked["avg"] = sorted(ranked["avg"], key=lambda x: x[0])
+    ranked["sb"] = sorted(ranked["sb"], key=lambda x: x[0])
+
+    # Construct performance rankings
+    for performance in ["split", "bastion", "ow"]:
+        print(f"\nProcessing {performance}s...")
+        for item in times[performance]:
+            print(f"Processing {item} {performance}s of {len(nums[performance][item])} players...")
+            for uuid in times[performance][item]:
+                if nums[performance][item][uuid] >= 3:
+                    item_avg = round(
+                        times[performance][item][uuid]
+                        / nums[performance][item][uuid]
+                    )
+                    ranked[performance][item].append(
+                        (item_avg, all_elos[uuid])
+                    )
+            ranked[performance][item] = sorted(ranked[performance][item], key=lambda x: x[0])
+
+
+    print("\nDumping insights into playerbase file...")
     playerbase_file = PROJECT_DIR / "database" / "playerbase.json"
     with open(playerbase_file, "w") as f:
-        json.dump(playerbase_data, f, indent=4)
+        json.dump(ranked, f, indent=4)
 
-    train_model.train(
-        "avg",
-        [(avg_elo[0] * 1e-6, avg_elo[1] * 1e-3) for avg_elo in avgs]
-    )
-    train_model.train(
-        "sb",
-        [(sb_elo[0] * 1e-6, sb_elo[1] * 1e-3) for sb_elo in sbs]
-    )
+    print("Training models...")
+    for data_oi in training_data:
+        train_model.train(
+            data_oi,
+            training_data[data_oi]
+        )
 
 
 if __name__ == "__main__":
