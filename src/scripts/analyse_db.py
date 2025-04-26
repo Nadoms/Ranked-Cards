@@ -163,7 +163,7 @@ async def analyse(season):
     print(f"Processing completions of {len(nums['completion'])} players...")
     for uuid in times["completion"]:
         elo = all_elos[uuid]
-        avg = times["completion"][uuid] / nums["completion"][uuid]
+        avg = round(times["completion"][uuid] / nums["completion"][uuid])
         sb = db.get_sb(cursor, uuid, season)
 
         if not sb:

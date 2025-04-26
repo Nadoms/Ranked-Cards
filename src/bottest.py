@@ -8,7 +8,7 @@ from commands import card as carding
 from commands import graph as graphing
 from commands import match as matching
 from commands import analysis as analysing
-from gen_functions import api, constants, games
+from gen_functions import api, constants, games, rank
 
 
 DEFAULT_NAME = "Nadoms"
@@ -63,7 +63,7 @@ def main():
     analysis_parser = subparsers.add_parser("analysis", help="Perform analysis")
     analysis_parser.add_argument("--name", type=str, help="Name of the player", default=DEFAULT_NAME)
     analysis_parser.add_argument("--season", type=int, help="Season number", default=constants.SEASON)
-    analysis_parser.add_argument("--rank_filter", type=str, help="Ranks to compare to", default="All")
+    analysis_parser.add_argument("--rank_filter", type=rank.Rank, help="Ranks to compare to", default=None)
 
     args = parser.parse_args()
 
