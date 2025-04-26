@@ -4,16 +4,12 @@ import math
 import os
 import nextcord
 import json
-from nextcord import File, Interaction, ApplicationError, SlashOption, Embed, Colour
+from nextcord import File, Interaction, SlashOption, Embed, Colour
 from nextcord.ext import commands
 from os import getenv, path
 from dotenv import load_dotenv
 from time import time
-from datetime import datetime, timezone
-import subprocess
 import traceback
-from crontab import CronTab
-import sys
 
 from commands import (
     card as carding,
@@ -23,13 +19,12 @@ from commands import (
     race as racing,
     leaderboard as leading,
 )
-from gen_functions import games, api, rank
+from gen_functions import games, api, rank, constants
 from scripts import analyse_db, construct_players, load_matches
 
-START_ID = 1790000
+START_ID = 2000000
 TESTING_MODE = True
-CURRENT_SEASON = games.get_season()
-ALL_SEASONS = [str(season) for season in range(1, CURRENT_SEASON + 1)]
+ALL_SEASONS = [str(season) for season in range(1, constants.SEASON + 1)]
 ALL_COUNTRIES = [country for country in leading.COUNTRY_MAPPING]
 API_COOLDOWN_MSG = "Too many commands have been issued! The Ranked API is cooling down... (~10 mins)"
 token = "TEST_TOKEN" if TESTING_MODE else "DISCORD_TOKEN"
@@ -275,7 +270,7 @@ async def plot(
         "season",
         required=False,
         description="The season to gather data for.",
-        default=str(CURRENT_SEASON),
+        default=str(constants.SEASON),
         choices=ALL_SEASONS + ["Lifetime"],
     ),
 ):
@@ -441,7 +436,7 @@ async def match(
 
 @bot.slash_command(
     name="analysis",
-    description="Analyses 100+ games from any season to visualise how a player performs throughout their runs.",
+    description="Analyses past games to visualise how a player performs throughout their runs.",
 )
 async def analysis(
     interaction: Interaction,
@@ -456,7 +451,7 @@ async def analysis(
         "season",
         required=False,
         description="The season to gather data from.",
-        default=str(CURRENT_SEASON),
+        default=str(constants.SEASON),
         choices=ALL_SEASONS,
     ),
     selection: str = SlashOption(
@@ -546,7 +541,7 @@ async def analysis(
 
     head, comments, split_polygon, ow_polygon, bastion_polygon = anal
 
-    embed_general = nextcord.Embed(
+    embed_general = Embed(
         title=comments["general"]["title"],
         description=comments["general"]["description"],
         colour=nextcord.Colour.yellow(),
@@ -555,7 +550,7 @@ async def analysis(
     embed_types = ["splits", "bastion", "ow"]
 
     embed_split, embed_bastion, embed_ow = [
-        nextcord.Embed(
+        Embed(
             title=comments[type]["title"],
             description=comments[type]["description"],
             colour=nextcord.Colour.yellow(),
@@ -734,7 +729,7 @@ async def race(
 
 @bot.slash_command(
     name="leaderboard",
-    description="Returns the top 150 leaderboard for the specified season and country.",
+    description="Returns the top 150 leaderboard for the specified metric, season and country.",
 )
 async def leaderboard(
     interaction: Interaction,
@@ -753,7 +748,7 @@ async def leaderboard(
         "season",
         required=False,
         description="The season to display the leaderboard for.",
-        default=str(CURRENT_SEASON),
+        default=str(constants.SEASON),
         choices=ALL_SEASONS + ["Lifetime"],
     ),
     country: str = SlashOption(
@@ -774,7 +769,7 @@ async def leaderboard(
     if season == "Lifetime":
         season = None
         if type != "Completion Time":
-            season = str(CURRENT_SEASON)
+            season = str(constants.SEASON)
     try:
         if type == "Elo":
             response = api.EloLeaderboard(season=season, country=country_code).get()
@@ -986,7 +981,7 @@ async def help(
     interaction: Interaction,
 ):
 
-    embed = nextcord.Embed(
+    embed = Embed(
         title="Ranked Stats - Help and Commands",
         description="This is the MCSR Ranked Stats bot, made by @Nadoms. Any questions, just dm me :)\nThese are the current available commands:",
         colour=nextcord.Colour.yellow(),
@@ -1002,7 +997,7 @@ async def help(
     )
     embed.add_field(
         name="/plot",
-        value="`Options: Minecraft username, type of data [Elo / Completion time], season [Lifetime/1/2/3/4/5]`\n`Defaults: Connected user, Elo, S4`\n***Plots a graph*** for the type of data (Elo / Completion time) across the timeframe (Season 1/2/3/4 / Lifetime) and for the player you specify.",
+        value="`Options: Minecraft username, type of data, season`\n`Defaults: Connected user, elo, current season`\n***Plots a graph*** for the type of data (Elo / Completion time) across the timeframe and for the player you specify.",
         inline=False,
     )
     embed.add_field(
@@ -1012,12 +1007,17 @@ async def help(
     )
     embed.add_field(
         name="/analysis",
-        value="`Options: Minecraft username`\n`Defaults: Connected user`\n***Analyses your games*** to give feedback about splits and overworlds.",
+        value="`Options: Minecraft username, season, number of games, rank filter`\n`Defaults: Connected user, current season, up to last 300 games, any rank`\n***Analyses your games*** to give feedback about splits, bastions and overworlds.",
         inline=False,
     )
     embed.add_field(
         name="/race",
         value="`Options: Weekly race number`\n`Defaults: Current race`\n***Returns the leaderboard*** for the weekly race specified.",
+        inline=False,
+    )
+    embed.add_field(
+        name="/leaderboard",
+        value="`Options: Leaderboard type, season, country`\n`Defaults: Elo, current season, any country`\n***Returns the leaderboard*** for Elo / Fastest Completion / Phase Points, filtered by the season and country if specified.",
         inline=False,
     )
     embed.add_field(
@@ -1172,7 +1172,7 @@ async def suggestions_loop():
 async def analysis_loop():
     await asyncio.sleep(120)
     while True:
-        await analyse_db.analyse()
+        await analyse_db.analyse(constants.SEASON)
         await asyncio.sleep(86400)
 
 

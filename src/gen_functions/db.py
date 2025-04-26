@@ -4,6 +4,8 @@ from pathlib import Path
 import sqlite3
 from typing import Optional
 
+from gen_functions import constants
+
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_DB = PROJECT_DIR / "database" / "ranked.db"
@@ -45,7 +47,7 @@ SELECT {items} FROM {table}
 def get_elo(
     cursor: sqlite3.Cursor,
     uuid: str,
-    season: int = 8,
+    season: int = constants.SEASON,
 ) -> Optional[int]:
     run = query_db(
         cursor,
@@ -76,7 +78,7 @@ def get_elo(
 def get_sb(
     cursor: sqlite3.Cursor,
     uuid: str,
-    season: int = 8,
+    season: int = constants.SEASON,
 ) -> Optional[int]:
     match = query_db(
         cursor,

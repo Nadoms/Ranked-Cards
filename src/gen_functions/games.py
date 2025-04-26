@@ -3,7 +3,7 @@ from datetime import timedelta, datetime
 import asyncio
 from itertools import chain
 
-from gen_functions import api
+from gen_functions import api, constants
 from gen_functions.word import process_split
 
 
@@ -13,7 +13,7 @@ async def get_matches(name, season, decays):
     step_size = 5
 
     if season == "Lifetime":
-        seasons = range(get_season(), 0, -1)
+        seasons = range(constants.SEASON, 0, -1)
     else:
         seasons = [season]
 
@@ -129,7 +129,3 @@ async def get_detailed_matches(player_response, season, min_comps, target_games)
 
     process_split(then, "Gathering data")
     return num_comps, detailed_matches
-
-
-def get_season():
-    return 8

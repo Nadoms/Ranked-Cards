@@ -8,7 +8,7 @@ from commands import card as carding
 from commands import graph as graphing
 from commands import match as matching
 from commands import analysis as analysing
-from gen_functions import api, games
+from gen_functions import api, constants, games
 
 
 DEFAULT_NAME = "Nadoms"
@@ -54,7 +54,7 @@ def main():
 
     plot_parser = subparsers.add_parser("plot", help="Generate a plot")
     plot_parser.add_argument("--name", type=str, help="Name of the player", default=DEFAULT_NAME)
-    plot_parser.add_argument("--season", type=int, help="Season number", default=games.get_season())
+    plot_parser.add_argument("--season", type=int, help="Season number", default=constants.SEASON)
     plot_parser.add_argument("--type", type=str, help="Type of plot", default=DEFAULT_PLOT)
 
     match_parser = subparsers.add_parser("match", help="Generate a match image")
@@ -62,7 +62,7 @@ def main():
 
     analysis_parser = subparsers.add_parser("analysis", help="Perform analysis")
     analysis_parser.add_argument("--name", type=str, help="Name of the player", default=DEFAULT_NAME)
-    analysis_parser.add_argument("--season", type=int, help="Season number", default=games.get_season())
+    analysis_parser.add_argument("--season", type=int, help="Season number", default=constants.SEASON)
     analysis_parser.add_argument("--rank_filter", type=str, help="Ranks to compare to", default="All")
 
     args = parser.parse_args()

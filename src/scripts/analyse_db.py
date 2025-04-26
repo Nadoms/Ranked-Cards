@@ -7,7 +7,7 @@ import sys
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(1, str(PROJECT_DIR))
-from gen_functions import db, games
+from gen_functions import constants, db, games
 from models import train_model
 
 SPLIT_MAPPING = {
@@ -131,9 +131,8 @@ def collect_matches(season, cursor):
     return times, nums, runs_processed
 
 
-async def analyse():
+async def analyse(season):
     print(f"\n***\nAnalysing database - {datetime.now()}\n***\n")
-    season = games.get_season()
     ranked = {
         "split": {"ow": [], "nether": [], "bastion": [], "fortress": [], "blind": [], "stronghold": [], "end": []},
         "bastion": {"bridge": [], "housing": [], "stables": [], "treasure": []},
@@ -152,7 +151,7 @@ async def analyse():
     print(f"Fetching elos of {len(nums['split']['ow'])} players...")
     all_elos = {}
     for uuid in nums["split"]["ow"]:
-        all_elos[uuid] = db.get_elo(cursor, uuid)
+        all_elos[uuid] = db.get_elo(cursor, uuid, season)
         await asyncio.sleep(0.01)
 
     training_data = {
@@ -165,8 +164,10 @@ async def analyse():
     for uuid in times["completion"]:
         elo = all_elos[uuid]
         avg = times["completion"][uuid] / nums["completion"][uuid]
-        sb = db.get_sb(cursor, uuid)
+        sb = db.get_sb(cursor, uuid, season)
 
+        if not sb:
+            print(uuid, sb, elo, nums["completion"])
         if elo:
             training_data["avg"].append((avg * 1e-6, elo * 1e-3))
             training_data["sb"].append((sb * 1e-6, elo * 1e-3))
@@ -175,8 +176,6 @@ async def analyse():
         if nums["completion"][uuid] >= 3:
             ranked["avg"].append((avg, elo))
 
-        if not sb:
-            print(uuid, sb, elo, nums["completion"])
         ranked["sb"].append((sb, elo))
         await asyncio.sleep(0.01)
 
@@ -215,4 +214,4 @@ async def analyse():
 
 
 if __name__ == "__main__":
-    asyncio.run(analyse())
+    asyncio.run(analyse(constants.SEASON))

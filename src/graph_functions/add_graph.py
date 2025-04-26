@@ -8,7 +8,7 @@ import numpy as np
 import seaborn as sns
 import pandas as pd
 
-from gen_functions import games, rank
+from gen_functions import constants, rank
 
 
 def write(uuid, matches, data_type, season):
@@ -122,7 +122,7 @@ def write(uuid, matches, data_type, season):
 
     # Vertical season lines.
     if season == "Lifetime":
-        prev_season = games.get_season()
+        prev_season = constants.SEASON
         for i in range(0, len(data) - 1):
             season = data["Season"].loc[data.index[i]]
             if prev_season != season:
