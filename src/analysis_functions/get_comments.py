@@ -22,7 +22,8 @@ def main(response, elo, season, rank_filter):
     playerbase_str = "the entire playerbase" if rank_filter is None else f"{rank_filter} players"
     general_comments["description"] = (
         f"This is how you stack up against {playerbase_str}. Each comparison references at most {get_player_count(rank_filter)} players."
-        f"\nReference data will update daily-ish using season {season} matches."
+        f"\nReference data and Elo equivalence models will update daily using season 8 matches. Players are better this season; expect lower rankings."
+        f"\n**Note**: Since it's early in the season, many players are at the extremes with low sample sizes. Playerbase comparison accuracy will improve over time."
     )
 
     if not elo:
@@ -78,6 +79,8 @@ def get_attr_ranked(value, attr_type, rank_filter):
             for attr in attrs
             if rank_filter is None or (attr[1] and lower <= attr[1] < upper)
         ]
+    if not attrs:
+        raise LookupError("No players found in this rank to compare to.")
 
     ranked_attr = round(np.searchsorted(attrs, value) / len(attrs), 3)
     if attr_type != "elo":

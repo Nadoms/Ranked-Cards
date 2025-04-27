@@ -22,7 +22,7 @@ from commands import (
 from gen_functions import games, api, rank, constants
 from scripts import analyse_db, construct_players, load_matches
 
-START_ID = 2000000
+START_ID = 1985000
 TESTING_MODE = True
 ALL_SEASONS = [str(season) for season in range(1, constants.SEASON + 1)]
 ALL_COUNTRIES = [country for country in leading.COUNTRY_MAPPING]
@@ -529,6 +529,13 @@ async def analysis(
 
     try:
         anal = analysing.main(response, num_comps, detailed_matches, season, rank_filter)
+    except LookupError:
+        print("Not enough players in rank to compare to.")
+        await interaction.followup.send(
+            f"There are not enough players with matches played in {rank_filter} rank to compare to."
+        )
+        update_records(interaction, "analysis", input_name, False)
+        return
     except Exception:
         print("Error caught!")
         traceback.print_exc()
