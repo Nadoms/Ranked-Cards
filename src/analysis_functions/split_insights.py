@@ -497,7 +497,7 @@ def get_death_comments(average_deaths, elo, rank_filter):
             player_rank = rank.Rank.GOLD
     else:
         player_rank = rank_filter
-    file = path.join("src", "database", "mcsrstats", "deaths", "deaths.json")
+    file = path.join("src", "database", "deaths.json")
     with open(file, "r", encoding="UTF-8") as f:
         overall_deaths = json.load(f)["splits"][str(player_rank.value)]
 

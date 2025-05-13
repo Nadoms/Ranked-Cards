@@ -22,3 +22,6 @@ venv/
 
 # Vscode
 .vscode
+
+# Font
+*.ttf
