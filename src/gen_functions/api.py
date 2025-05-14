@@ -8,7 +8,7 @@ from typing import TextIO, Optional
 import aiohttp
 from dotenv import load_dotenv
 import requests
-from .db import *
+from db import *
 
 
 ROOT = Path(__file__).parent.parent.parent.resolve()
@@ -148,21 +148,24 @@ class Matches(API):
     def __init__(
         self,
         directory: str,
-        page: int,
+        before: int,
+        after: int,
         count: int,
         type: int,
         season: int,
     ):
-        self.page = page
+        self.before = before
+        self.after = after
         self.count = count
         self.type = type
         self.season = season
         super().__init__(directory)
         self.append(
-            page=self.page,
+            before=self.before,
+            after=self.after,
             count=self.count,
             type=self.type,
-            season=self.season
+            season=self.season,
         )
 
 
@@ -171,21 +174,25 @@ class RecentMatches(Matches):
     def __init__(
         self,
         *,
-        page: Optional[int] = None,
-        count: int = 50,
+        before: Optional[int] = None,
+        after: Optional[int] = None,
+        count: int = 100,
         type: Optional[int] = None,
+        tag: Optional[str] = None,
         season: Optional[int] = None,
         excludedecay: bool = True,
     ):
         self.excludedecay = excludedecay
+        self.tag = tag
         super().__init__(
             directory="matches",
-            page=page,
+            before=before,
+            after=after,
             count=count,
             type=type,
-            season=season
+            season=season,
         )
-        self.append(excludedecay=self.excludedecay)
+        self.append(excludedecay=self.excludedecay, tag=self.tag)
 
 
 class UserMatches(Matches):
@@ -194,8 +201,9 @@ class UserMatches(Matches):
         self,
         name: str,
         *,
-        page: Optional[int] = None,
-        count: int = 50,
+        before: Optional[int] = None,
+        after: Optional[int] = None,
+        count: int = 100,
         type: Optional[int] = None,
         season: Optional[int] = None,
         excludedecay: bool = True,
@@ -204,10 +212,11 @@ class UserMatches(Matches):
         self.excludedecay = excludedecay
         super().__init__(
             directory=f"users/{self.name}/matches",
-            page=page,
+            before=before,
+            after=after,
             count=count,
             type=type,
-            season=season
+            season=season,
         )
         self.append(excludedecay=self.excludedecay)
 
@@ -219,8 +228,9 @@ class VersusMatches(Matches):
         name_1: str,
         name_2: str,
         *,
-        page: Optional[int] = None,
-        count: int = 50,
+        before: Optional[int] = None,
+        after: Optional[int] = None,
+        count: int = 100,
         type: Optional[int] = None,
         season: Optional[int] = None,
     ):
@@ -228,10 +238,11 @@ class VersusMatches(Matches):
         self.name_2 = name_2
         super().__init__(
             directory=f"users/{self.name_1}/versus/{self.name_2}/matches",
-            page=page,
+            before=before,
+            after=after,
             count=count,
             type=type,
-            season=season
+            season=season,
         )
 
 
@@ -348,6 +359,14 @@ class Versus(API):
         self.name_2 = name_2
         super().__init__(f"users/{self.name_1}/versus/{self.name_2}")
         self.append(season=season)
+
+
+class Live(API):
+
+    def __init__(
+        self,
+    ):
+        super().__init__("live")
 
 
 class WeeklyRace(API):
