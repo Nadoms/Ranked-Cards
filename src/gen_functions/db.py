@@ -155,16 +155,17 @@ INSERT OR IGNORE INTO players (
             )
         )
 
-    for change in match["changes"]:
+    for player in match["players"]:
         timeline = [
             {
                 "time": event.get("time"),
                 "type": event.get("type"),
             }
             for event in match["timelines"]
-            if event.get("uuid") == change.get("uuid")
+            if event.get("uuid") == player.get("uuid")
         ]
         timeline_json = json.dumps(timeline)
+        change = next((change for change in match["changes"] if change.get("uuid") == player.get("uuid")), {})
         cursor.execute(
             """
 INSERT INTO runs (
@@ -177,7 +178,7 @@ INSERT INTO runs (
             """,
             (
                 match.get("id"),
-                change.get("uuid"),
+                player.get("uuid"),
                 change.get("change"),
                 change.get("eloRate"),
                 timeline_json,
@@ -201,7 +202,8 @@ CREATE TABLE IF NOT EXISTS matches (
     seedType TEXT,
     bastionType TEXT,
     tag TEXT,
-    replayExist BOOLEAN
+    replayExist BOOLEAN,
+    seed_id TEXT
 )
     """)
 
@@ -225,6 +227,25 @@ CREATE TABLE IF NOT EXISTS runs (
     """)
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_match_id ON runs (match_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_player_uuid ON runs (player_uuid)")
+
+    cursor.execute("""
+CREATE TABLE IF NOT EXISTS seeds (
+    id TEXT PRIMARY KEY,
+    seed_type TEXT,
+    bastion_type TEXT,
+    front_diag INTEGER,
+    front_straight INTEGER,
+    back_diag INTEGER,
+    back_straight INTEGER,
+    o_level INTEGER,
+    triples INTEGER,
+    singles INTEGER,
+    small_singles INTEGER,
+    bastion_biome TEXT,
+    fortress_biome TEXT,
+    stucture_biome TEXT
+)
+    """)
 
 
 def start(db_path: Path = DEFAULT_DB) -> tuple[sqlite3.Connection, sqlite3.Cursor]:
