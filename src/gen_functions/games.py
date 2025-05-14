@@ -28,6 +28,7 @@ def get_matches(name, season, decays, limit=None):
         if matches == []:
             if season == "Lifetime" and s > 1:
                 s -= 1
+                continue
             else:
                 break
         master_matches += matches
