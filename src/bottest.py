@@ -26,7 +26,7 @@ async def card_command(args):
 
 async def plot_command(args):
     response = api.User(args.name).get()
-    matches = await games.get_matches(args.name, args.season, True)
+    matches = games.get_matches(args.name, args.season, True)
     return [graphing.main(args.name, response, args.type, args.season, matches)]
 
 

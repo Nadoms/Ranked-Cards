@@ -7,38 +7,34 @@ from gen_functions import api, constants
 from gen_functions.word import process_split
 
 
-async def get_matches(name, season, decays):
+def get_matches(name, season, decays, limit=None):
     then = datetime.now()
     master_matches = []
-    step_size = 5
 
     if season == "Lifetime":
-        seasons = range(constants.SEASON, 0, -1)
+        s = constants.SEASON
     else:
-        seasons = [season]
+        s = season
 
-    for s in seasons:
-        i = 0
-        while True:
-            matches = await asyncio.gather(
-                *[
-                    api.UserMatches(
-                        name=name,
-                        page=page,
-                        type=2,
-                        season=s,
-                        excludedecay=not decays
-                    ).get_async()
-                    for page in range(i, i + step_size)
-                ]
-            )
-            master_matches += list(chain.from_iterable(matches))
-            if [] in matches:
+    last_id = 100000000
+    while limit is None or len(master_matches) < limit:
+        matches = api.UserMatches(
+            name=name,
+            before=last_id,
+            type=2,
+            season=s,
+            excludedecay=not decays
+        ).get()
+        if matches == []:
+            if season == "Lifetime" and s > 1:
+                s -= 1
+            else:
                 break
-            i += step_size
+        master_matches += matches
+        last_id = matches[-1]["id"]
 
-    process_split(then, "Gathering data")
-    return master_matches
+    process_split(then, "Gathering matches")
+    return master_matches if limit is None else master_matches[:limit]
 
 
 def get_playtime(response, season_or_total):
@@ -80,45 +76,27 @@ def get_avg_completion(response, season_or_total):
     return avg_completion
 
 
-async def get_detailed_matches(player_response, season, min_comps, target_games):
+async def get_detailed_matches(player_response, season, min_comps, limit):
     then = datetime.now()
     detailed_matches = []
     num_comps = 0
     num_games = 0
-    i = 0
 
     name = player_response["nickname"]
     uuid = player_response["uuid"]
     response = "PLACEHOLDER"
 
-    while True:
-        response = api.UserMatches(
-            name=name,
-            page=i,
-            type=2,
-            season=season
-        ).get()
+    brief_matches = get_matches(name, season, decays=False, limit=limit)
+    step = 100
 
-        games_left = target_games - num_games
-        if games_left <= 49 and len(response) > games_left:
-            response = response[0:games_left]
-
-        matches = await asyncio.gather(
+    for i in range(0, len(brief_matches), step):
+        detailed_matches += await asyncio.gather(
             *[
                 api.Match(id=match["id"]).get_async()
-                for match in response
+                for match in brief_matches[i : i + step]
             ]
         )
         api.Match.commit()
-
-        detailed_matches += matches
-        i += 1
-        num_games = len(detailed_matches)
-        if matches == []:
-            break
-
-        if num_games >= target_games:
-            break
 
     for match in detailed_matches:
         if not match["forfeited"] and match["result"]["uuid"] == uuid:
@@ -127,5 +105,5 @@ async def get_detailed_matches(player_response, season, min_comps, target_games)
     if num_comps < min_comps and not name == "Nadoms":
         return num_comps, -1  # Not enough completions this season
 
-    process_split(then, "Gathering data")
+    process_split(then, "Gathering match details")
     return num_comps, detailed_matches

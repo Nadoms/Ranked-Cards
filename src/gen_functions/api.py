@@ -8,7 +8,7 @@ from typing import TextIO, Optional
 import aiohttp
 from dotenv import load_dotenv
 import requests
-from db import *
+from .db import *
 
 
 ROOT = Path(__file__).parent.parent.parent.resolve()

@@ -22,7 +22,7 @@ from commands import (
 from gen_functions import games, api, rank, constants
 from scripts import analyse_db, construct_players, load_matches
 
-START_ID = 1985000
+START_ID = 2118500
 TESTING_MODE = True
 ALL_SEASONS = [str(season) for season in range(1, constants.SEASON + 1)]
 ALL_COUNTRIES = [country for country in leading.COUNTRY_MAPPING]
@@ -310,7 +310,7 @@ async def plot(
     await interaction.response.defer()
 
     input_name = response["nickname"]
-    matches = await games.get_matches(response["nickname"], season, True)
+    matches = games.get_matches(response["nickname"], season, True)
 
     try:
         img = graphing.main(input_name, response, type, season, matches)
@@ -520,7 +520,7 @@ async def analysis(
     if detailed_matches == -1:
         print("Player does not have enough completions.")
         await interaction.followup.send(
-            f"{input_name} needs a minimum of 5 completions from season {season} to analyse. (Has {num_comps})",
+            f"{input_name} needs a minimum of 5 completions from their last {target_games} games of season {season} to analyse. (Has {num_comps})",
         )
         update_records(interaction, "analysis", input_name, False)
         return
