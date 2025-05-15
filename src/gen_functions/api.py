@@ -78,6 +78,10 @@ class API():
         for key in kwargs:
             if kwargs[key] is None:
                 continue
+            if isinstance(kwargs[key], bool):
+                if kwargs[key]:
+                    parameters.append(key)
+                continue
             parameters.append(f"{key}={kwargs[key]}")
         self.url += "&" + "&".join(parameters)
 
