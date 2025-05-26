@@ -9,12 +9,10 @@ def write(chart, uuids, response, vs_response):
     stat_font = ImageFont.truetype("minecraft_font.ttf", stat_size)
     middle = 600
     x_values = [middle + 370, middle - 370]
-    y_values = [165, 195, 225, 255]
-
-    scores = get_scores(uuids, vs_response)
+    y_values = [180, 210, 240]
 
     for i in range(0, 2):
-        stats = get_stats(response, scores, uuids, i)
+        stats = get_stats(response, uuids, i)
         legacy_elo_colour = rank.get_colour(stats[0][1])[:2]
         current_elo_colour = rank.get_colour(stats[1][1])[:2]
         score_colour = ["#00ffff", "#122b30"]
@@ -52,41 +50,26 @@ def write(chart, uuids, response, vs_response):
     return chart
 
 
-def get_stats(response, scores, uuids, i):
+def get_stats(response, uuids, i):
     if "eloRate" not in response["players"][i]:
         _, cursor = db.start()
         current_elo = db.get_elo(cursor, uuids[i])
     else:
         current_elo = response["players"][i]["eloRate"]
     legacy_elo = None
+    change_elo = None
     for score_change in response["changes"]:
         if score_change["uuid"] == uuids[i]:
             legacy_elo = score_change["eloRate"]
+            change_elo = score_change["change"]
+    change_msg = (
+        "lost " if change_elo < 0 else "won "
+        f"{abs(change_elo)}"
+        " elo"
+    ) if change_elo is not None else "no elo change"
 
     return [
         ["was ", legacy_elo, " elo" if legacy_elo is not None else ""],
         ["now ", current_elo, " elo" if current_elo is not None else ""],
-        [scores[0][i]],
-        [scores[1][i]],
+        [change_msg],
     ]
-
-
-def get_scores(uuids, vs_response):
-    scores = []
-    overall_changes = []
-
-    for uuid in uuids:
-        score = vs_response["results"]["ranked"][uuid]
-        str_score = str(score) + " total win"
-        if score != 1:
-            str_score += "s"
-        scores.append(str_score)
-
-        overall_change = vs_response["changes"][uuid]
-        if overall_change >= 0:
-            overall_change = "+" + str(overall_change) + " elo taken"
-        else:
-            overall_change = str(overall_change) + " elo lost"
-        overall_changes.append(overall_change)
-
-    return [scores, overall_changes]
