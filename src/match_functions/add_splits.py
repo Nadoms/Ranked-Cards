@@ -94,7 +94,9 @@ def write(chart, uuids, response):
 
     for i in range(0, 2):
         coords = advancements[i][3]
+        events = advancements[i][4]
         times = advancements[i][5]
+        seens = advancements[i][6]
         is_shifted = False
 
         for j, coord in enumerate(coords):
@@ -118,12 +120,21 @@ def write(chart, uuids, response):
             else:
                 is_shifted = False
 
+            text_colour = "#ff9944" if seens[j] or events[j] in [0, 7, 10, 11] else "#44ccff"
             splitted_image.text(
                 (x, y),
                 time,
                 font=time_font,
-                fill="#44ffff",
-                stroke_width=3,
+                fill=text_colour,
+                stroke_width=5,
+                stroke_fill="#ffffff"
+            )
+            splitted_image.text(
+                (x, y),
+                time,
+                font=time_font,
+                fill=text_colour,
+                stroke_width=4,
                 stroke_fill="#000000"
             )
 
@@ -158,6 +169,7 @@ def process_advancements(splits, final_time):
     event_coords = [y]
     events = [0]
     event_times = [0]
+    seens = [False]
 
     for advancement in splits:
         prog_time = None
@@ -168,18 +180,21 @@ def process_advancements(splits, final_time):
             progressions.append(0)
             event_time = advancement["time"]
             events.append(0)
+            seens.append(advancement["seen"])
 
         elif advancement["timeline"] == "story.enter_the_nether":
             prog_time = advancement["time"]
             progressions.append(1)
             event_time = advancement["time"]
             events.append(1)
+            seens.append(advancement["seen"])
 
         elif advancement["timeline"] == "nether.find_bastion":
             prog_time = advancement["time"]
             progressions.append(2)
             event_time = advancement["time"]
             events.append(2)
+            seens.append(advancement["seen"])
 
         elif advancement["timeline"] == "nether.find_fortress":
             prog_time = advancement["time"]
@@ -190,44 +205,53 @@ def process_advancements(splits, final_time):
             progressions.append(3)
             event_time = advancement["time"]
             events.append(3)
+            seens.append(advancement["seen"])
 
         elif advancement["timeline"] == "projectelo.timeline.blind_travel":
             prog_time = advancement["time"]
             progressions.append(4)
             event_time = advancement["time"]
             events.append(4)
+            seens.append(advancement["seen"])
 
         elif advancement["timeline"] == "story.follow_ender_eye":
             prog_time = advancement["time"]
             progressions.append(5)
             event_time = advancement["time"]
             events.append(5)
+            seens.append(advancement["seen"])
 
         elif advancement["timeline"] == "story.enter_the_end":
             prog_time = advancement["time"]
             progressions.append(6)
             event_time = advancement["time"]
             events.append(6)
+            seens.append(advancement["seen"])
 
         elif advancement["timeline"] == "projectelo.timeline.death":
             event_time = advancement["time"]
             events.append(7)
+            seens.append(advancement["seen"])
 
         elif advancement["timeline"] == "win":
             event_time = advancement["time"]
             events.append(8)
+            seens.append(advancement["seen"])
 
         elif advancement["timeline"] == "finish":
             event_time = advancement["time"]
             events.append(9)
+            seens.append(advancement["seen"])
 
         elif advancement["timeline"] == "lose":
             event_time = advancement["time"]
             events.append(10)
+            seens.append(advancement["seen"])
 
         elif advancement["timeline"] == "forfeit":
             event_time = advancement["time"]
             events.append(11)
+            seens.append(advancement["seen"])
 
         if prog_time:
             prog_coord = int(y + length * prog_time / final_time)
@@ -238,7 +262,7 @@ def process_advancements(splits, final_time):
             event_coords.append(event_coord)
             event_times.append(event_time)
 
-    return [prog_coords, progressions, prog_times, event_coords, events, event_times]
+    return prog_coords, progressions, prog_times, event_coords, events, event_times, seens
 
 
 def extract_splits(uuids, response, final_time):
@@ -246,12 +270,16 @@ def extract_splits(uuids, response, final_time):
     timelines.reverse()
     player_0 = []
     player_1 = []
+    splits_seen = []
 
     for event in timelines:
+        seen = event["type"] in splits_seen
+        if not seen:
+            splits_seen.append(event["type"])
         if event["uuid"] == uuids[0]:
-            player_0.append({"timeline": event["type"], "time": event["time"]})
+            player_0.append({"timeline": event["type"], "time": event["time"], "seen": seen})
         elif event["uuid"] == uuids[1]:
-            player_1.append({"timeline": event["type"], "time": event["time"]})
+            player_1.append({"timeline": event["type"], "time": event["time"], "seen": seen})
 
     if response["forfeited"] is True:
         if response["result"]["uuid"] == uuids[0]:
@@ -271,7 +299,7 @@ def extract_splits(uuids, response, final_time):
             outcome_0 = "lose"
             outcome_1 = "finish"
 
-    player_0.append({"timeline": outcome_0, "time": final_time})
-    player_1.append({"timeline": outcome_1, "time": final_time})
+    player_0.append({"timeline": outcome_0, "time": final_time, "seen": False})
+    player_1.append({"timeline": outcome_1, "time": final_time, "seen": False})
 
-    return [player_0, player_1]
+    return player_0, player_1
