@@ -27,13 +27,27 @@ def write(chart, uuids, response):
     advancements = []
 
     for i in range(0, 2):
+        advancements.append(process_advancements(splits[i], final_time))
+
+    minute_coords = advancements[0][7]
+    minute_width = 800
+    for i, minute_coord in enumerate(minute_coords):
+        x = middle
+        y = minute_coord
+        colour = (96, 99, 103, 255) if i % 5 == 0 else (40, 43, 48, 255)
+        splitted_image.line(
+            [(x - minute_width, y), (x + minute_width, y)],
+            fill=colour,
+            width=5,
+        )
+
+    for i in range(0, 2):
         rect_coords = [
             x_values[i] - x_padding,
             y_values[0] - y_padding,
             x_values[i] + x_padding,
             y_values[1] + y_padding,
         ]
-        advancements.append(process_advancements(splits[i], final_time))
         splitted_image.rectangle(
             rect_coords, fill="#000000", outline="#ffffff", width=4
         )
@@ -120,7 +134,7 @@ def write(chart, uuids, response):
             else:
                 is_shifted = False
 
-            text_colour = "#ff9944" if seens[j] or events[j] in [0, 7, 10, 11] else "#44ccff"
+            text_colour = "#ff9944" if seens[j] or events[j] in [0, 7, 10, 11] else "#55ddff"
             splitted_image.text(
                 (x, y),
                 time,
@@ -148,7 +162,7 @@ def get_event_icon(event):
     return stroke(icon)
 
 
-def stroke(image, stroke_radius=5):
+def stroke(image, stroke_radius=3):
     buffer = 2 * stroke_radius
     size = tuple(dim + 2 * buffer for dim in image.size)
     stroke_image = Image.new("RGBA", size, (0, 0, 0, 0))
@@ -170,6 +184,7 @@ def process_advancements(splits, final_time):
     events = [0]
     event_times = [0]
     seens = [False]
+    minute_coords = [int(y + length * time / final_time) for time in range(0, final_time, 60000)]
 
     for advancement in splits:
         prog_time = None
@@ -262,7 +277,7 @@ def process_advancements(splits, final_time):
             event_coords.append(event_coord)
             event_times.append(event_time)
 
-    return prog_coords, progressions, prog_times, event_coords, events, event_times, seens
+    return prog_coords, progressions, prog_times, event_coords, events, event_times, seens, minute_coords
 
 
 def extract_splits(uuids, response, final_time):

@@ -54,14 +54,14 @@ def get_seed(response):
 def get_date(date):
     date = datetime.fromtimestamp(date)
     delta_date = datetime.now() - date
-    date_str = f"Played {date.strftime('%d/%m/%y')} ("
+    date_str = f"Played {date.strftime('%d.%m.%y')} - "
     if delta_date.days >= 1:
-        date_str += f"{delta_date.days} d"
+        date_str += f"{delta_date.days}d"
     elif delta_date.total_seconds() / 3600 >= 1:
-        date_str += f"{floor(delta_date.total_seconds() / 3600)} h"
+        date_str += f"{floor(delta_date.total_seconds() / 3600)}h"
     else:
-        date_str += f"{floor(delta_date.total_seconds() / 60)} m"
-    date_str += f" ago)"
+        date_str += f"{floor(delta_date.total_seconds() / 60)}m"
+    date_str += f" ago"
     return date_str
 
 
