@@ -1,6 +1,6 @@
 from os import path
 
-from PIL import ImageDraw, Image, ImageFont
+from PIL import ImageDraw, Image, ImageFont, ImageFilter
 
 from gen_functions import numb, word
 
@@ -103,7 +103,7 @@ def write(chart, uuids, response):
             time_font = ImageFont.truetype("minecraft_font.ttf", time_size)
 
             if j == 0:
-                time = "START!"
+                time = ""
 
             x = (
                 x_values[i]
@@ -118,7 +118,14 @@ def write(chart, uuids, response):
             else:
                 is_shifted = False
 
-            splitted_image.text((x, y), time, font=time_font, fill="#44ffff")
+            splitted_image.text(
+                (x, y),
+                time,
+                font=time_font,
+                fill="#44ffff",
+                stroke_width=3,
+                stroke_fill="#000000"
+            )
 
     return chart
 
@@ -127,7 +134,19 @@ def get_event_icon(event):
     file = path.join("src", "pics", "items", f"{event}.webp")
     icon = Image.open(file)
     icon = icon.resize((80, 80))
-    return icon
+    return stroke(icon)
+
+
+def stroke(image, stroke_radius=5):
+    buffer = 2 * stroke_radius
+    size = tuple(dim + 2 * buffer for dim in image.size)
+    stroke_image = Image.new("RGBA", size, (0, 0, 0, 0))
+    stroke_image.paste(image, (buffer, buffer))
+    stroke = Image.new("RGBA", size, (255, 255, 255, 255))
+    img_alpha = stroke_image.getchannel(3).point(lambda x: 255 if x > 0 else 0)
+    stroke_alpha = img_alpha.filter(ImageFilter.MaxFilter(stroke_radius))
+    stroke.putalpha(stroke_alpha)
+    return Image.alpha_composite(stroke, stroke_image)
 
 
 def process_advancements(splits, final_time):

@@ -23,7 +23,7 @@ def write(chart, uuids, response, vs_response):
         for j, stat_words in enumerate(stats):
             overall_line = ""
             for k in range(len(stats[j])):
-                if not stats[j][k]:
+                if stats[j][k] is None:
                     stats[j][k] = "unranked"
                 else:
                     stats[j][k] = str(stats[j][k])
@@ -64,8 +64,8 @@ def get_stats(response, scores, uuids, i):
             legacy_elo = score_change["eloRate"]
 
     return [
-        ["was ", legacy_elo, " elo"],
-        ["now ", current_elo, " elo"],
+        ["was ", legacy_elo, " elo" if legacy_elo is not None else ""],
+        ["now ", current_elo, " elo" if current_elo is not None else ""],
         [scores[0][i]],
         [scores[1][i]],
     ]

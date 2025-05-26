@@ -17,11 +17,12 @@ from gen_functions.word import process_split
 
 
 def main(response):
+    season = response["season"]
     names = [response["players"][0]["nickname"], response["players"][1]["nickname"]]
     uuids = [response["players"][0]["uuid"], response["players"][1]["uuid"]]
-    vs_response = api.Versus(name_1=uuids[0], name_2=uuids[1]).get()
+    vs_response = api.Versus(name_1=uuids[0], name_2=uuids[1], season=season).get()
 
-    chart = Image.new("RGB", (1200, 1920), "#313338")
+    chart = Image.new("RGBA", (1200, 1920), (0, 0, 0, 0))
 
     then = datetime.now()
     chart = add_shapes.write(chart)

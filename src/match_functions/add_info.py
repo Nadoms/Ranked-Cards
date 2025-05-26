@@ -25,10 +25,9 @@ def write(chart, response):
 
     text_y = round(y - word.horiz_to_vert(info_size) / 2)
 
-    date = get_delta(response)
-    left_text = f"Played {date}"
-    left_x = x_values[0] - word.calc_length(left_text, info_size)
-    infoed_image.text((left_x, text_y), left_text, font=info_font, fill="lightblue")
+    date_text = get_date(response["date"])
+    left_x = x_values[0] - word.calc_length(date_text, info_size)
+    infoed_image.text((left_x, text_y), date_text, font=info_font, fill="lightblue")
 
     time = numb.digital_time(response["result"]["time"])
     result = get_result(response)
@@ -36,7 +35,7 @@ def write(chart, response):
     right_x = x_values[2]
     infoed_image.text((right_x, text_y), right_text, font=info_font, fill="lightblue")
 
-    match_id = f"Match #{response['id']}"
+    match_id = f"Match #{response['id']} - Season {response['season']}"
     id_x = x_values[1] - word.calc_length(match_id, id_size) / 2
     id_y = round(y - word.horiz_to_vert(id_size) / 2) - 60
     infoed_image.text((id_x, id_y), match_id, font=id_font, fill="yellow")
@@ -52,15 +51,18 @@ def get_seed(response):
     return seed
 
 
-def get_delta(response):
-    date = response["date"]
-    delta_date = datetime.now() - datetime.fromtimestamp(date)
+def get_date(date):
+    date = datetime.fromtimestamp(date)
+    delta_date = datetime.now() - date
+    date_str = f"Played {date.strftime('%d/%m/%y')} ("
     if delta_date.days >= 1:
-        return f"{delta_date.days} day(s) ago"
+        date_str += f"{delta_date.days} d"
     elif delta_date.total_seconds() / 3600 >= 1:
-        return f"{floor(delta_date.total_seconds() / 3600)} hour(s) ago"
+        date_str += f"{floor(delta_date.total_seconds() / 3600)} h"
     else:
-        return f"{floor(delta_date.total_seconds() / 60)} minute(s) ago"
+        date_str += f"{floor(delta_date.total_seconds() / 60)} m"
+    date_str += f" ago)"
+    return date_str
 
 
 def get_result(response):
