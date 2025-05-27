@@ -20,6 +20,7 @@ from commands import (
     leaderboard as leading,
 )
 from gen_functions import games, api, rank, constants
+from gen_functions.numb import digital_time
 from scripts import analyse_db, construct_players, load_matches
 
 START_ID = 2118500
@@ -114,7 +115,6 @@ class Topics(nextcord.ui.View):
 class LBPage(nextcord.ui.View):
     def __init__(self, interaction: Interaction, embeds: list):
         super().__init__(timeout=840)
-        self.value = None
         self.interaction = interaction
         self.embeds = embeds
         self.size = len(embeds)
@@ -126,8 +126,6 @@ class LBPage(nextcord.ui.View):
                 item.style = nextcord.ButtonStyle.grey
                 item.disabled = True
         await self.interaction.edit_original_message(view=self)
-        for image in self.images:
-            image.close()
 
     @nextcord.ui.button(label="Previous", style=nextcord.ButtonStyle.blurple)
     async def previous(
@@ -153,6 +151,49 @@ class LBPage(nextcord.ui.View):
     ):
         print(f"Flipping to page {self.page} for {interaction.user.name}")
         await self.interaction.edit_original_message(embeds=[self.embeds[self.page]])
+        self._View__timeout_expiry -= self.timeout
+
+
+class MatchAgo(nextcord.ui.View):
+    def __init__(
+        self,
+        interaction: Interaction,
+        chart: File,
+        ids: list[int],
+        names: list[str]
+    ):
+        super().__init__(timeout=840)
+        self.interaction = interaction
+        self.charts = [chart]
+        self.ids = ids
+        self.names = names
+        self.matches_seen = [0]
+        self.add_item(
+            nextcord.ui.Select(
+                placeholder="Matches ago",
+                options=[
+                    nextcord.SelectOption(label=name, value=str(i))
+                    for i, name in enumerate(self.names)
+                ],
+            )
+        )
+
+    async def on_timeout(self):
+        for item in self.children:
+            if isinstance(item, nextcord.ui.Button):
+                item.style = nextcord.ButtonStyle.grey
+                item.disabled = True
+        await self.interaction.edit_original_message(view=self)
+
+    @nextcord.ui.select(placeholder="Matches ago")
+    async def select_match(
+        self,
+        select: nextcord.ui.Select,
+        interaction: Interaction,
+    ):
+        chosen_match = select.values[0]
+        print(f"Switching to match {self.id} for {interaction.user.name}")
+        await self.interaction.edit_original_message(file=file)
         self._View__timeout_expiry -= self.timeout
 
 
@@ -353,9 +394,9 @@ async def plot(
 async def match(
     interaction: Interaction,
     match_id: str = SlashOption(
-        "match_id",
+        "match id",
         required=False,
-        description="The match ID to draw a chart of.",
+        description="The specific match ID to draw a chart of.",
         default=None,
     ),
 ):
@@ -429,7 +470,25 @@ async def match(
     img.close()
     with open(f"chart_{match_id}.png", "rb") as f:
         img = File(f)
-    await interaction.followup.send(file=img)
+    if not match_id:
+        recent_matches = api.UserMatches(
+            name=input_name, count=50, type=2, excludedecay=True
+        ).get()
+        ids = [match["id"] for match in recent_matches]
+        match_names = []
+        for i, match in enumerate(recent_matches):
+            duration = match["duration"]
+            forfeited = match["forfeited"]
+            opponent = next(
+                player["nickname"]
+                for player in match["players"]
+                if player["nickname"].lower() != input_name.lower()
+            )
+            match_names.append(
+                f"{i + 1}. {'FFed' if forfeited else digital_time(duration)} vs {opponent}"
+            )
+        match_selector = MatchAgo(interaction, img, ids, match_names)
+    await interaction.followup.send(file=img, view=match_selector)
     update_records(interaction, "match", match_id, True)
     os.remove(f"chart_{match_id}.png")
 
