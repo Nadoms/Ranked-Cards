@@ -64,7 +64,7 @@ def get_stats(response, uuids, i):
             change_elo = score_change["change"]
     change_msg = (
         f"{'lost' if change_elo < 0 else 'won'}"
-        f"{abs(change_elo)} "
+        f" {abs(change_elo)} "
         " elo"
     ) if change_elo is not None else "no elo change"
 

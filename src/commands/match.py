@@ -22,7 +22,7 @@ def main(response):
     uuids = [response["players"][0]["uuid"], response["players"][1]["uuid"]]
     vs_response = api.Versus(name_1=uuids[0], name_2=uuids[1], season=season).get()
 
-    chart = Image.new("RGBA", (1200, 1920), (30, 33, 36, 255))
+    chart = Image.new("RGBA", (1200, 1920), (30, 33, 36, 0))
 
     then = datetime.now()
     chart = add_shapes.write(chart)
