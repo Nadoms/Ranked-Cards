@@ -1,4 +1,5 @@
 from datetime import datetime
+import math
 import gen_functions.numb as numb
 
 
@@ -55,6 +56,25 @@ def get_raw_time(time):
         raw_time += int(value) * (60**i)
 
     return raw_time * 1000
+
+
+def get_date(timestamp):
+    date = datetime.fromtimestamp(timestamp)
+    delta_date = datetime.now() - date
+    date_str = f"Played {date.strftime('%d.%m.%y')} - "
+    date_str += get_ago(timestamp)
+    return date_str
+
+
+def get_ago(timestamp):
+    date = datetime.fromtimestamp(timestamp)
+    delta_date = datetime.now() - date
+    if delta_date.days >= 1:
+        return f"{delta_date.days}d ago"
+    elif delta_date.total_seconds() / 3600 >= 1:
+        return f"{math.floor(delta_date.total_seconds() / 3600)}h ago"
+    else:
+        return f"{math.floor(delta_date.total_seconds() / 60)}m ago"
 
 
 def process_split(then, process):

@@ -134,13 +134,13 @@ def write(chart, uuids, response):
             else:
                 is_shifted = False
 
-            text_colour = "#ff9944" if seens[j] or events[j] in [0, 7, 10, 11] else "#55ddff"
+            text_colour = "#ffaa44" if seens[j] or events[j] in [0, 7, 10, 11] else "#55eeff"
             splitted_image.text(
                 (x, y),
                 time,
                 font=time_font,
                 fill=text_colour,
-                stroke_width=5,
+                stroke_width=7,
                 stroke_fill="#ffffff"
             )
             splitted_image.text(
@@ -148,7 +148,7 @@ def write(chart, uuids, response):
                 time,
                 font=time_font,
                 fill=text_colour,
-                stroke_width=4,
+                stroke_width=5,
                 stroke_fill="#000000"
             )
 

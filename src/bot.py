@@ -1,10 +1,9 @@
 import asyncio
-import difflib
+from io import BytesIO
 import math
-import os
 import nextcord
 import json
-from nextcord import File, Interaction, SlashOption, Embed, Colour
+from nextcord import File, Interaction, SlashOption, Embed
 from nextcord.ext import commands
 from os import getenv, path
 from dotenv import load_dotenv
@@ -19,7 +18,7 @@ from commands import (
     race as racing,
     leaderboard as leading,
 )
-from gen_functions import games, api, rank, constants
+from gen_functions import games, api, rank, constants, word
 from gen_functions.numb import digital_time
 from scripts import analyse_db, construct_players, load_matches
 
@@ -59,11 +58,9 @@ class Topics(nextcord.ui.View):
         for image in self.images:
             image.close()
 
-    def image_to_file(self, embed, image):
-        image.save(f"{self.value}.png")
-        file = File(f"{self.value}.png", filename=f"{self.value}.png")
+    def set_embed_image(self, embed, image):
+        file = image_to_file(image, f"{self.value}.png")
         embed.set_image(url=f"attachment://{self.value}.png")
-        os.remove(f"{self.value}.png")
         return file
 
     @nextcord.ui.button(label="Splits", style=nextcord.ButtonStyle.blurple)
@@ -74,7 +71,7 @@ class Topics(nextcord.ui.View):
     ):
         print(f"Flipping to splits for {interaction.user.name}")
         self.value = "splits"
-        file = self.image_to_file(self.topic_embeds[0], self.images[0])
+        file = self.set_embed_image(self.topic_embeds[0], self.images[0])
         await self.interaction.edit_original_message(
             embeds=[self.general_embed, self.topic_embeds[0]],
             file=file,
@@ -89,7 +86,7 @@ class Topics(nextcord.ui.View):
     ):
         print(f"Flipping to bastions for {interaction.user.name}")
         self.value = "bastions"
-        file = self.image_to_file(self.topic_embeds[1], self.images[1])
+        file = self.set_embed_image(self.topic_embeds[1], self.images[1])
         await self.interaction.edit_original_message(
             embeds=[self.general_embed, self.topic_embeds[1]],
             file=file,
@@ -104,7 +101,7 @@ class Topics(nextcord.ui.View):
     ):
         print(f"Flipping to overworlds for {interaction.user.name}")
         self.value = "ows"
-        file = self.image_to_file(self.topic_embeds[2], self.images[2])
+        file = self.set_embed_image(self.topic_embeds[2], self.images[2])
         await self.interaction.edit_original_message(
             embeds=[self.general_embed, self.topic_embeds[2]],
             file=file,
@@ -158,25 +155,46 @@ class MatchAgo(nextcord.ui.View):
     def __init__(
         self,
         interaction: Interaction,
-        chart: File,
-        ids: list[int],
-        names: list[str]
+        matches: list[dict],
+        input_uuid: str,
     ):
         super().__init__(timeout=840)
         self.interaction = interaction
-        self.charts = [chart]
-        self.ids = ids
-        self.names = names
+        self.charts = []
+        self.input_uuid = input_uuid
+        self.names = []
+        self.ids = []
+        self.name_matches(matches[:25])
         self.matches_seen = [0]
-        self.add_item(
-            nextcord.ui.Select(
-                placeholder="Matches ago",
+        self.select = nextcord.ui.Select(
+                placeholder="Select a match...",
                 options=[
-                    nextcord.SelectOption(label=name, value=str(i))
+                    nextcord.SelectOption(label=name, value=str(self.ids[i]))
                     for i, name in enumerate(self.names)
                 ],
             )
+        self.select.callback = self.select_match
+        self.add_item(
+            self.select
         )
+
+    def name_matches(self, matches):
+        self.ids = [match["id"] for match in matches]
+        for i, match in enumerate(matches):
+            duration = match["result"]["time"]
+            forfeited = match["forfeited"]
+            won = match["result"]["uuid"] == self.input_uuid
+            days_ago = word.get_ago(match["date"])
+            opponent = next(
+                player["nickname"]
+                for player in match["players"]
+                if player["uuid"].lower() != self.input_uuid.lower()
+            )
+            self.names.append(
+                f"{(i + 1):2d}. {'🏆' if won else '🥀'}"
+                f"{'🏳️' if forfeited else ' ' + digital_time(duration)} vs {opponent} "
+                f"({days_ago})"
+            )
 
     async def on_timeout(self):
         for item in self.children:
@@ -185,14 +203,26 @@ class MatchAgo(nextcord.ui.View):
                 item.disabled = True
         await self.interaction.edit_original_message(view=self)
 
-    @nextcord.ui.select(placeholder="Matches ago")
     async def select_match(
         self,
-        select: nextcord.ui.Select,
         interaction: Interaction,
     ):
-        chosen_match = select.values[0]
-        print(f"Switching to match {self.id} for {interaction.user.name}")
+        selected_id = int(self.select.values[0])
+        print(f"Switching to match {selected_id} for {interaction.user.name}")
+
+        try:
+            response = api.Match(id=selected_id).get()
+            img = matching.main(response)
+        except Exception:
+            print("Error caught!")
+            traceback.print_exc()
+            await interaction.followup.send(
+                "An error has occurred. <@298936021557706754> fix it pls:\n"
+                f"```{traceback.format_exc()}```"
+            )
+            return
+
+        file = image_to_file(img, f"chart_{selected_id}.png")
         await self.interaction.edit_original_message(file=file)
         self._View__timeout_expiry -= self.timeout
 
@@ -279,13 +309,9 @@ async def card(
         update_records(interaction, "card", input_name, False)
         return
 
-    img.save(f"card_{input_name}.png")
-    img.close()
-    with open(f"card_{input_name}.png", "rb") as f:
-        img = File(f)
-    await interaction.followup.send(file=img)
+    file = image_to_file(img, f"card_{input_name}.png")
+    await interaction.followup.send(file=file)
     update_records(interaction, "card", input_name, True)
-    os.remove(f"card_{input_name}.png")
 
 
 @bot.slash_command(
@@ -378,13 +404,9 @@ async def plot(
         update_records(interaction, "plot", input_name, False)
         return
 
-    img.save(f"graph_{input_name}.png")
-    img.close()
-    with open(f"graph_{input_name}.png", "rb") as f:
-        img = File(f)
-    await interaction.followup.send(file=img)
+    file = image_to_file(img, f"graph_{input_name}.png")
+    await interaction.followup.send(file=file)
     update_records(interaction, "plot", input_name, True)
-    os.remove(f"graph_{input_name}.png")
 
 
 @bot.slash_command(
@@ -394,12 +416,13 @@ async def plot(
 async def match(
     interaction: Interaction,
     match_id: str = SlashOption(
-        "match id",
+        "match_id",
         required=False,
         description="The specific match ID to draw a chart of.",
         default=None,
     ),
 ):
+    view = nextcord.utils.MISSING
     if not match_id:
         input_name = get_name(interaction)
         if not input_name:
@@ -411,8 +434,8 @@ async def match(
 
         print(f"---\nFinding {input_name}'s last match")
         try:
-            match_response = api.UserMatches(
-                name=input_name, count=1, type=2, excludedecay=True
+            recent_matches = api.UserMatches(
+                name=input_name, count=25, type=2, excludedecay=True
             ).get()
         except api.APIRateLimitError as e:
             print(e)
@@ -420,14 +443,25 @@ async def match(
             update_records(interaction, "match", "Unknown", False)
             return
 
-        if match_response == []:
+        if recent_matches == []:
             await interaction.response.send_message(
                 f"Player has no matches from this season. ({input_name})"
             )
             update_records(interaction, "match", "Unknown", False)
             return
 
-        match_id = match_response[0]["id"]
+        match_id = recent_matches[0]["id"]
+
+        input_uuid = next(
+            player["uuid"]
+            for player in recent_matches[0]["players"]
+            if player["nickname"].lower() == input_name.lower()
+        )
+        view = MatchAgo(
+            interaction,
+            recent_matches,
+            input_uuid,
+        )
 
     async def fail_get(msg):
         await interaction.response.send_message(msg)
@@ -466,31 +500,9 @@ async def match(
         update_records(interaction, "match", match_id, False)
         return
 
-    img.save(f"chart_{match_id}.png")
-    img.close()
-    with open(f"chart_{match_id}.png", "rb") as f:
-        img = File(f)
-    if not match_id:
-        recent_matches = api.UserMatches(
-            name=input_name, count=50, type=2, excludedecay=True
-        ).get()
-        ids = [match["id"] for match in recent_matches]
-        match_names = []
-        for i, match in enumerate(recent_matches):
-            duration = match["duration"]
-            forfeited = match["forfeited"]
-            opponent = next(
-                player["nickname"]
-                for player in match["players"]
-                if player["nickname"].lower() != input_name.lower()
-            )
-            match_names.append(
-                f"{i + 1}. {'FFed' if forfeited else digital_time(duration)} vs {opponent}"
-            )
-        match_selector = MatchAgo(interaction, img, ids, match_names)
-    await interaction.followup.send(file=img, view=match_selector)
+    file = image_to_file(img, f"chart_{match_id}.png")
+    await interaction.followup.send(file=file, view=view)
     update_records(interaction, "match", match_id, True)
-    os.remove(f"chart_{match_id}.png")
 
 
 @bot.slash_command(
@@ -628,8 +640,7 @@ async def analysis(
         name=interaction.user.name, icon_url=interaction.user.display_avatar.url
     )
 
-    split_polygon.save(f"split_{input_name}.png")
-    split_file = File(f"split_{input_name}.png", filename=f"split_{input_name}.png")
+    split_file = image_to_file(split_polygon, f"split_{input_name}.png")
     embed_split.set_image(url=f"attachment://split_{input_name}.png")
 
     gen_comms = comments["general"]
@@ -724,7 +735,6 @@ async def analysis(
         view=view,
     )
     update_records(interaction, "analysis", input_name, True)
-    os.remove(f"split_{input_name}.png")
 
 
 @card.on_autocomplete("input_name")
@@ -1211,6 +1221,15 @@ def update_records(interaction, command, subject, completed):
     with open(stats_file, "w") as f:
         stats_json = json.dumps(stats, indent=4)
         f.write(stats_json)
+
+
+def image_to_file(image, filename):
+    buffer = BytesIO()
+    image.save(buffer, format="PNG")
+    image.close()
+    buffer.seek(0)
+    file = File(buffer, filename=filename)
+    return file
 
 
 async def fetch_loop():

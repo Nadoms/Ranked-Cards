@@ -25,7 +25,7 @@ def write(chart, response):
 
     text_y = round(y - word.horiz_to_vert(info_size) / 2)
 
-    date_text = get_date(response["date"])
+    date_text = word.get_date(response["date"])
     left_x = x_values[0] - word.calc_length(date_text, info_size)
     infoed_image.text((left_x, text_y), date_text, font=info_font, fill="lightblue")
 
@@ -49,20 +49,6 @@ def get_seed(response):
     seed = Image.open(file)
     seed = seed.resize((80, 80), resample=Image.NEAREST)
     return seed
-
-
-def get_date(date):
-    date = datetime.fromtimestamp(date)
-    delta_date = datetime.now() - date
-    date_str = f"Played {date.strftime('%d.%m.%y')} - "
-    if delta_date.days >= 1:
-        date_str += f"{delta_date.days}d"
-    elif delta_date.total_seconds() / 3600 >= 1:
-        date_str += f"{floor(delta_date.total_seconds() / 3600)}h"
-    else:
-        date_str += f"{floor(delta_date.total_seconds() / 60)}m"
-    date_str += f" ago"
-    return date_str
 
 
 def get_result(response):

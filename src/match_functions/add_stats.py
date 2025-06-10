@@ -63,8 +63,8 @@ def get_stats(response, uuids, i):
             legacy_elo = score_change["eloRate"]
             change_elo = score_change["change"]
     change_msg = (
-        "lost " if change_elo < 0 else "won "
-        f"{abs(change_elo)}"
+        f"{'lost' if change_elo < 0 else 'won'}"
+        f"{abs(change_elo)} "
         " elo"
     ) if change_elo is not None else "no elo change"
 

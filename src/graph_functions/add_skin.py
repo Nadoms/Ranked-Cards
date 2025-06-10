@@ -19,7 +19,7 @@ def get_skin(uuid):
         response = requests.get(
             f"https://visage.surgeplay.com/head/120/{uuid}?y=65&p=15",
             headers=headers,
-            timeout=10,
+            timeout=2,
         )
         skin = Image.open(BytesIO(response.content))
     except:
