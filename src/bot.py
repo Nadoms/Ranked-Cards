@@ -921,12 +921,12 @@ async def live(interaction: Interaction):
             rank_emote = rank.get_emote(player_rank)
             player_tags.append(
                 f"{rank_emote} "
-                f"#{player["eloRank"]} "
-                f"{player["nickname"]}"
+                f"#{player['eloRank']} "
+                f"{player['nickname']}"
             )
             player_links.append(
-                f"[{player["nickname"]}]"
-                f"{match["data"][player["uuid"]]["liveUrl"]}"
+                f"[{player['nickname']}]"
+                f"{match['data'][player['uuid']]['liveUrl']}"
             )
         name = " vs ".join(player_tags)
         value = ", ".join(player_links)
