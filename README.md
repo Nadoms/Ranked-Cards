@@ -8,6 +8,7 @@ Produces images to graphically showcase your MCSR ranked stats.
 - analysis <minecraft_username> <season> <selection> <rank_filter> (Analyses your past games to visualise run performance.)
 - race <race_no> (Returns a leaderboard for the current weekly race, or the race specified.)
 - leaderboard <metric> <season> <country> (Returns a leaderboard for elo, records or phase points.)
+- live (Lists current live players in MCSR Ranked games.)
 - customise <background> (Customises your player card.)
 - connect <minecraft_username> (Connects your minecraft account with your discord account.)
 - disconnect (Disconnects your minecraft account with your discord account.)

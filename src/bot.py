@@ -1144,6 +1144,11 @@ async def help(
         inline=False,
     )
     embed.add_field(
+        name="/live",
+        value="***Lists current live players*** in MCSR Ranked games.",
+        inline=False,
+    )
+    embed.add_field(
         name="/customise",
         value="`Options: Card background`\n`Defaults: Classic`\n***Customises your card*** how you specify, currently with the background.",
         inline=False,
@@ -1248,6 +1253,11 @@ def update_records(interaction, command, subject, completed):
         stats["stats"]["totalGenerated"] += 1
         stats["stats"]["leaderboards"]["success"] += completed
         stats["stats"]["leaderboards"]["fail"] += 1 - completed
+
+    elif command == "live":
+        stats["stats"]["totalGenerated"] += 1
+        stats["stats"]["lives"]["success"] += completed
+        stats["stats"]["lives"]["fail"] += 1 - completed
 
     elif command == "connect":
         stats["stats"]["connectedUsers"] += 1
