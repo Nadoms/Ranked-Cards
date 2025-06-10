@@ -27,6 +27,7 @@ TESTING_MODE = True
 ALL_SEASONS = [str(season) for season in range(1, constants.SEASON + 1)]
 ALL_COUNTRIES = [country for country in leading.COUNTRY_MAPPING]
 API_COOLDOWN_MSG = "Too many commands have been issued! The Ranked API is cooling down... (~10 mins)"
+GENERIC_ERROR_MSG = "An error has occurred. <@298936021557706754> fix it pls:"
 token = "TEST_TOKEN" if TESTING_MODE else "DISCORD_TOKEN"
 default_guild_ids = [735859906434957392] if TESTING_MODE else None
 player_list = []
@@ -294,10 +295,7 @@ async def card(
     except Exception:
         print("Error caught!")
         traceback.print_exc()
-        await interaction.followup.send(
-            "An error has occurred. <@298936021557706754> fix it pls:\n"
-            f"```{traceback.format_exc()}```"
-        )
+        await interaction.followup.send(f"{GENERIC_ERROR_MSG}\n```{traceback.format_exc()}```")
         update_records(interaction, "card", input_name, False)
         return
 
@@ -376,10 +374,7 @@ async def plot(
     except Exception:
         print("Error caught!")
         traceback.print_exc()
-        await interaction.followup.send(
-            "An error has occurred. <@298936021557706754> fix it pls:\n"
-            f"```{traceback.format_exc()}```"
-        )
+        await interaction.followup.send(f"{GENERIC_ERROR_MSG}\n```{traceback.format_exc()}```")
         update_records(interaction, "plot", input_name, False)
         return
 
@@ -485,10 +480,7 @@ async def match(
     except Exception:
         print("Error caught!")
         traceback.print_exc()
-        await interaction.followup.send(
-            "An error has occurred. <@298936021557706754> fix it pls:\n"
-            f"```{traceback.format_exc()}```"
-        )
+        await interaction.followup.send(f"{GENERIC_ERROR_MSG}\n```{traceback.format_exc()}```")
         update_records(interaction, "match", match_id, False)
         return
 
@@ -602,10 +594,7 @@ async def analysis(
     except Exception:
         print("Error caught!")
         traceback.print_exc()
-        await interaction.followup.send(
-            "An error has occurred. <@298936021557706754> fix it pls:\n"
-            f"```{traceback.format_exc()}```"
-        )
+        await interaction.followup.send(f"{GENERIC_ERROR_MSG}\n```{traceback.format_exc()}```")
         update_records(interaction, "analysis", input_name, False)
         return
 
@@ -714,8 +703,8 @@ async def analysis(
     embeds = [embed_general, embed_split, embed_bastion, embed_ow]
     for embed in embeds[1:]:
         embed.set_footer(
-            text="By @nadoms • Send bugs & feedback! • youtube.com/@nqdoms",
-            icon_url="https://cdn.discordapp.com/avatars/298936021557706754/a_60fb14a1dbfb0d33f3b02cc33579dacf?size=256",
+            text=constants.FOOTER_TEXT,
+            icon_url=constants.FOOTER_ICON,
         )
 
     images = [split_polygon, bastion_polygon, ow_polygon]
@@ -784,10 +773,7 @@ async def race(
     except Exception:
         print("Error caught!")
         traceback.print_exc()
-        await interaction.followup.send(
-            "An error has occurred. <@298936021557706754> fix it pls:\n"
-            f"```{traceback.format_exc()}```"
-        )
+        await interaction.followup.send(f"{GENERIC_ERROR_MSG}\n```{traceback.format_exc()}```")
         update_records(interaction, "race", race_no, False)
         return
 
@@ -873,10 +859,7 @@ async def leaderboard(
     except Exception:
         print("Error caught!")
         traceback.print_exc()
-        await interaction.followup.send(
-            "An error has occurred. <@298936021557706754> fix it pls:\n"
-            f"```{traceback.format_exc()}```"
-        )
+        await interaction.followup.send(f"{GENERIC_ERROR_MSG}\n```{traceback.format_exc()}```")
         update_records(interaction, "leaderboard", type, False)
         return
 
@@ -893,6 +876,78 @@ async def country_autocomplete(interaction: Interaction, current: str):
         return
     near = [country for country in ALL_COUNTRIES if current.lower() in country.lower()][:25]
     await interaction.response.send_autocomplete(near)
+
+
+@bot.slash_command(
+    name="live",
+    description="Checks which Ranked streamers are live.",
+)
+async def live(interaction: Interaction):
+    print(f"---\nChecking who's live")
+    await interaction.response.defer()
+
+    try:
+        response = api.Live().get()
+    except api.APIRateLimitError as e:
+        print(e)
+        await interaction.response.send_message(API_COOLDOWN_MSG)
+        update_records(interaction, "live", type, False)
+        return
+
+    embed = Embed(
+        title="MCSR Ranked Live Players",
+        description=f"There are {response["players"]} players online.",
+        colour=nextcord.Colour.brand_red()
+    )
+    for match in sorted(
+        response["liveMatches"],
+        key=lambda x: max(
+            player["eloRate"] if player["eloRate"] is not None else 0
+            for player in x["players"]
+        ),
+        reverse=True
+    ):
+        name = ""
+        value = ""
+
+        player_tags = []
+        player_links = []
+        for player in sorted(
+            match["players"],
+            key=lambda x: x["eloRate"] if x["eloRate"] is not None else 0,
+            reverse=True
+        ):
+            player_rank = rank.get_rank(player["eloRate"])
+            rank_emote = rank.get_emote(player_rank)
+            player_tags.append(
+                f"{rank_emote} "
+                f"#{player["eloRank"]} "
+                f"{player["nickname"]}"
+            )
+            player_links.append(
+                f"[{player["nickname"]}]"
+                f"{match["data"][player["uuid"]]["liveUrl"]}"
+            )
+        name = " vs ".join(player_tags)
+        value = ", ".join(player_links)
+
+        timestamp = int(time() - match["currentTime"] / 1000)
+        value += f"\nMatch began <t:{timestamp}:R>."
+
+        embed.add_field(name=name, value=value, inline=False)
+
+    embed.add_field(
+        name="Want to show up when you're live?",
+        value="Link your twitch to MCSR Ranked in-game.\nTurn the 'Public Stream: Twitch' option on in Ranked settings.",
+        inline=False,
+    )
+    embed.set_footer(
+        text=constants.FOOTER_TEXT,
+        icon_url=constants.FOOTER_ICON,
+    )
+
+    await interaction.followup.send(embed=embed)
+    update_records(interaction, "live", type, True)
 
 
 @bot.slash_command(

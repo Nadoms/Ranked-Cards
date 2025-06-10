@@ -149,3 +149,19 @@ def get_elo_equivalent(value, attr_type):
     elo = round(elo * 10e2)
 
     return elo
+
+
+def get_emote(rank: Rank):
+    if rank == Rank.COAL:
+        return "<:coal_rank:1382105120170446968>"
+    if rank == Rank.IRON:
+        return "<:iron_rank:1382105118815555614>"
+    if rank == Rank.GOLD:
+        return "<:gold_rank:1382105117221716009>"
+    if rank == Rank.EMERALD:
+        return "<:emerald_rank:1382104820470648832>"
+    if rank == Rank.DIAMOND:
+        return "<:diamond_rank:1382104818260246588>"
+    if rank == Rank.NETHERITE:
+        return "<:netherite_rank:1382104816523804782>"
+    return "<:unranked:1382105122414530621>"

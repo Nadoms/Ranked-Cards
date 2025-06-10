@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 from nextcord import Embed, Colour
 
-from gen_functions import numb
+from gen_functions import constants, numb
 
 
 COUNTRY_MAPPING = {
@@ -338,8 +338,8 @@ def main(response, input_name, type, country, season, page):
     embed.add_field(name="", value=f"```{value}```", inline=False)
 
     embed.set_footer(
-        text="By @nadoms • Send bugs & feedback! • youtube.com/@nqdoms",
-        icon_url="https://cdn.discordapp.com/avatars/298936021557706754/a_60fb14a1dbfb0d33f3b02cc33579dacf?size=256",
+            text=constants.FOOTER_TEXT,
+            icon_url=constants.FOOTER_ICON,
     )
 
     return embed
