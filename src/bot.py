@@ -210,17 +210,9 @@ class MatchAgo(nextcord.ui.View):
         selected_id = int(self.select.values[0])
         print(f"Switching to match {selected_id} for {interaction.user.name}")
 
-        try:
-            response = api.Match(id=selected_id).get()
-            img = matching.main(response)
-        except Exception:
-            print("Error caught!")
-            traceback.print_exc()
-            await interaction.followup.send(
-                "An error has occurred. <@298936021557706754> fix it pls:\n"
-                f"```{traceback.format_exc()}```"
-            )
-            return
+        response = api.Match(id=selected_id).get()
+        await interaction.response.defer()
+        img = matching.main(response)
 
         file = image_to_file(img, f"chart_{selected_id}.png")
         await self.interaction.edit_original_message(file=file)
