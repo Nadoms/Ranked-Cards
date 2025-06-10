@@ -896,7 +896,7 @@ async def live(interaction: Interaction):
 
     embed = Embed(
         title="MCSR Ranked Live Players",
-        description=f"There are {response["players"]} players online.",
+        description=f"There are {response['players']} players online.",
         colour=nextcord.Colour.brand_red()
     )
     for match in sorted(
