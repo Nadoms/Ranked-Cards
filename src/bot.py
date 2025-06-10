@@ -60,7 +60,7 @@ class Topics(nextcord.ui.View):
             image.close()
 
     def set_embed_image(self, embed, image):
-        file = image_to_file(image, f"{self.value}.png")
+        file = image_to_file(image, f"{self.value}.png", close=False)
         embed.set_image(url=f"attachment://{self.value}.png")
         return file
 
@@ -621,7 +621,7 @@ async def analysis(
         name=interaction.user.name, icon_url=interaction.user.display_avatar.url
     )
 
-    split_file = image_to_file(split_polygon, f"split_{input_name}.png")
+    split_file = image_to_file(split_polygon, f"split_{input_name}.png", close=False)
     embed_split.set_image(url=f"attachment://split_{input_name}.png")
 
     gen_comms = comments["general"]
@@ -1280,12 +1280,13 @@ def update_records(interaction, command, subject, completed):
         f.write(stats_json)
 
 
-def image_to_file(image, filename):
+def image_to_file(image, filename, close=True):
     buffer = BytesIO()
     image.save(buffer, format="PNG")
-    image.close()
     buffer.seek(0)
     file = File(buffer, filename=filename)
+    if close:
+        image.close()
     return file
 
 
