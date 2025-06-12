@@ -926,7 +926,7 @@ async def live(interaction: Interaction):
             )
             player_links.append(
                 f"[{player['nickname']}]"
-                f"{match['data'][player['uuid']]['liveUrl']}"
+                f"({match['data'][player['uuid']]['liveUrl']})"
             )
         name = " vs ".join(player_tags)
         value = ", ".join(player_links)
