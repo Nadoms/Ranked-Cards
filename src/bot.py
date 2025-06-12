@@ -783,99 +783,199 @@ async def race(
 
 @bot.slash_command(
     name="leaderboard",
-    description="Returns the top 150 leaderboard for the specified metric, season and country.",
+    description="Returns the leaderboard for the specified metric.",
 )
-async def leaderboard(
+async def leaderboard(interaction: Interaction):
+    await leaderboard_elo(
+        interaction=interaction,
+        season=str(constants.SEASON),
+        country="",
+    )
+
+
+@leaderboard.subcommand(
+    name="elo",
+    description="Returns the Elo leaderboard for a given season and country.",
+)
+async def leaderboard_elo(
     interaction: Interaction,
-    type: str = SlashOption(
-        "type",
-        required=False,
-        description="The type of leaderboard to fetch.",
-        default="Elo",
-        choices=[
-            "Elo",
-            "Completion Time",
-            "Phase Points"
-        ],
-    ),
     season: str = SlashOption(
         "season",
         required=False,
         description="The season to display the leaderboard for.",
         default=str(constants.SEASON),
-        choices=ALL_SEASONS + ["Lifetime"],
+        choices=ALL_SEASONS,
     ),
     country: str = SlashOption(
         "country",
         required=False,
-        description="The country to filter the leaderboard by (FOR ELO / PHASE PTS ONLY).",
+        description="The country to filter the leaderboard by.",
         default="",
         autocomplete=True
     ),
 ):
+    lb_type = "elo"
     input_name = get_name(interaction)
-
     await interaction.response.defer()
-
     country_code = leading.COUNTRY_MAPPING.get(country)
 
-    print(f"---\nFetching {type} Leaderboard for season {season} in {country} / {country_code}")
-    if season == "Lifetime":
-        season = None
-        if type != "Completion Time":
-            season = str(constants.SEASON)
+    print(f"---\nFetching Elo Leaderboard for season {season} in {country} / {country_code}")
     try:
-        if type == "Elo":
-            response = api.EloLeaderboard(season=season, country=country_code).get()
-        elif type == "Completion Time":
-            response = api.RecordLeaderboard(season=season).get()
-        elif type == "Phase Points":
-            response = api.PhaseLeaderboard(season=season, country=country_code).get()
-
+        response = api.EloLeaderboard(season=season, country=country_code).get()
     except api.APINotFoundError as e:
         print(e)
         await interaction.response.send_message(
-            f"Error with finding leaderboard for season {season} in country {country}"
+            f"Error with finding leaderboard for season {season} in {country}"
         )
-        update_records(interaction, "leaderboard", type, False)
+        update_records(interaction, "leaderboard", lb_type, False)
         return
-
     except api.APIRateLimitError as e:
         print(e)
         await interaction.response.send_message(API_COOLDOWN_MSG)
-        update_records(interaction, "leaderboard", type, False)
+        update_records(interaction, "leaderboard", lb_type, False)
         return
 
-    leaderboard_size = math.ceil(len(response) / 20)
-    if type != "Completion Time":
-        leaderboard_size = math.ceil(len(response["users"]) / 20)
-    else:
-        leaderboard_size = math.ceil(len(response) / 20)
+    leaderboard_size = math.ceil(len(response["users"]) / 20)
     leaderboard_embeds = []
 
     try:
         for page in range(0, leaderboard_size):
-            leaderboard_embeds.append(leading.main(response, input_name, type, country, season, page))
+            leaderboard_embeds.append(leading.main(response, input_name, lb_type, country, season, page))
     except Exception:
         print("Error caught!")
         traceback.print_exc()
         await interaction.followup.send(f"{GENERIC_ERROR_MSG}\n```{traceback.format_exc()}```")
-        update_records(interaction, "leaderboard", type, False)
+        update_records(interaction, "leaderboard", lb_type, False)
         return
 
     view = LBPage(interaction, leaderboard_embeds)
 
     await interaction.followup.send(embed=leaderboard_embeds[0], view=view)
-    update_records(interaction, "leaderboard", type, True)
+    update_records(interaction, "leaderboard", lb_type, True)
 
 
-@leaderboard.on_autocomplete("country")
-async def country_autocomplete(interaction: Interaction, current: str):
+@leaderboard.subcommand(
+    name="phase",
+    description="Returns the Phase Points leaderboard for a given season and country.",
+)
+async def leaderboard_phasepoints(
+    interaction: Interaction,
+    season: str = SlashOption(
+        "season",
+        required=True,
+        description="The season to display the leaderboard for.",
+        choices=ALL_SEASONS,
+    ),
+    country: str = SlashOption(
+        "country",
+        required=False,
+        description="The country to filter the leaderboard by.",
+        default="",
+        autocomplete=True
+    ),
+):
+    lb_type = "phase"
+    input_name = get_name(interaction)
+    await interaction.response.defer()
+    country_code = leading.COUNTRY_MAPPING.get(country)
+
+    print(f"---\nFetching Phase Points Leaderboard for season {season} in {country} / {country_code}")
+    try:
+        response = api.PhaseLeaderboard(season=season, country=country_code).get()
+    except api.APINotFoundError as e:
+        print(e)
+        await interaction.response.send_message(
+            f"Error with finding leaderboard for season {season} in {country}"
+        )
+        update_records(interaction, "leaderboard", lb_type, False)
+        return
+    except api.APIRateLimitError as e:
+        print(e)
+        await interaction.response.send_message(API_COOLDOWN_MSG)
+        update_records(interaction, "leaderboard", lb_type, False)
+        return
+
+    leaderboard_size = math.ceil(len(response["users"]) / 20)
+    leaderboard_embeds = []
+
+    try:
+        for page in range(0, leaderboard_size):
+            leaderboard_embeds.append(leading.main(response, input_name, lb_type, country, season, page))
+    except Exception:
+        print("Error caught!")
+        traceback.print_exc()
+        await interaction.followup.send(f"{GENERIC_ERROR_MSG}\n```{traceback.format_exc()}```")
+        update_records(interaction, "leaderboard", lb_type, False)
+        return
+
+    view = LBPage(interaction, leaderboard_embeds)
+
+    await interaction.followup.send(embed=leaderboard_embeds[0], view=view)
+    update_records(interaction, "leaderboard", lb_type, True)
+
+
+@leaderboard_elo.on_autocomplete("country")
+@leaderboard_phasepoints.on_autocomplete("country")
+async def leaderboard_country_autocomplete(interaction: Interaction, current: str):
     if not current:
         await interaction.response.send_autocomplete(ALL_COUNTRIES[:25])
         return
     near = [country for country in ALL_COUNTRIES if current.lower() in country.lower()][:25]
     await interaction.response.send_autocomplete(near)
+
+
+@leaderboard.subcommand(
+    name="completion",
+    description="Returns the Completion Time leaderboard for a given season.",
+)
+async def leaderboard_completiontime(
+    interaction: Interaction,
+    season: str = SlashOption(
+        "season",
+        required=True,
+        description="The season to display the leaderboard for.",
+        choices=ALL_SEASONS + ["Lifetime"],
+    ),
+):
+    lb_type = "completion"
+    input_name = get_name(interaction)
+    await interaction.response.defer()
+
+    print(f"---\nFetching Completion Time Leaderboard for season {season}")
+    if season == "Lifetime":
+        season = None
+    try:
+        response = api.RecordLeaderboard(season=season).get()
+    except api.APINotFoundError as e:
+        print(e)
+        await interaction.response.send_message(
+            f"Error with finding leaderboard for season {season}"
+        )
+        update_records(interaction, "leaderboard", lb_type, False)
+        return
+    except api.APIRateLimitError as e:
+        print(e)
+        await interaction.response.send_message(API_COOLDOWN_MSG)
+        update_records(interaction, "leaderboard", lb_type, False)
+        return
+
+    leaderboard_size = math.ceil(len(response) / 20)
+    leaderboard_embeds = []
+
+    try:
+        for page in range(0, leaderboard_size):
+            leaderboard_embeds.append(leading.main(response, input_name, lb_type, "", season, page))
+    except Exception:
+        print("Error caught!")
+        traceback.print_exc()
+        await interaction.followup.send(f"{GENERIC_ERROR_MSG}\n```{traceback.format_exc()}```")
+        update_records(interaction, "leaderboard", lb_type, False)
+        return
+
+    view = LBPage(interaction, leaderboard_embeds)
+
+    await interaction.followup.send(embed=leaderboard_embeds[0], view=view)
+    update_records(interaction, "leaderboard", lb_type, True)
 
 
 @bot.slash_command(
