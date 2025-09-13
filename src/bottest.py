@@ -1,14 +1,15 @@
 import asyncio
-from os import getenv, path
-
 import argparse
-import requests
-import sys
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from commands import card as carding
 from commands import graph as graphing
 from commands import match as matching
 from commands import analysis as analysing
-from gen_functions import api, constants, games, rank
+from rankedutils import api, constants, games, rank
 
 
 DEFAULT_NAME = "Nadoms"

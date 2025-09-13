@@ -4,7 +4,7 @@ from os import path
 
 from PIL import Image, ImageDraw, ImageFont
 
-from gen_functions import numb, word
+from rankedutils import numb, word
 
 
 def write(chart, response):

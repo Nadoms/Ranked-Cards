@@ -6,7 +6,7 @@ import sys
 package = path.join("src")
 sys.path.insert(1, package)
 
-from gen_functions import api
+from rankedutils import api
 
 
 async def spam_redlime(start, limit):

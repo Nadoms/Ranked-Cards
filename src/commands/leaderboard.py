@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 from nextcord import Embed, Colour
 
-from gen_functions import constants, numb
+from rankedutils import constants
 
 
 COUNTRY_MAPPING = {

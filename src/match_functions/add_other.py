@@ -3,9 +3,7 @@ from os import path
 
 from PIL import Image, ImageDraw, ImageFont
 
-from gen_functions import word
-
-# rank with a circle indicating how close to the next main rank, with lines for each division
+from rankedutils import word
 
 
 def write(chart):

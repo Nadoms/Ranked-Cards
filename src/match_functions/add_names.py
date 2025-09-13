@@ -2,7 +2,7 @@ from os import path
 
 from PIL import ImageDraw, ImageFont, Image
 
-from gen_functions import word
+from rankedutils import word
 
 
 def write(chart, names, response):

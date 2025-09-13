@@ -1,6 +1,6 @@
 from PIL import ImageDraw, ImageFont
 
-from gen_functions import word
+from rankedutils import word
 
 
 def write(card, matches, uuid, winstreak):

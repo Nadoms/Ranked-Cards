@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-from gen_functions import word, numb, rank
+from rankedutils import word, numb, rank
 from analysis_functions.bastion_insights import add_rank_img
 
 SIDES = 7

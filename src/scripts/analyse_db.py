@@ -7,7 +7,7 @@ import sys
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(1, str(PROJECT_DIR))
-from gen_functions import constants, db, games
+from rankedutils import constants, db
 from models import train_model
 
 SPLIT_MAPPING = {

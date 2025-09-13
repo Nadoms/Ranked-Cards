@@ -1,9 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
-import requests
 from nextcord import Embed, Colour
-
-from gen_functions import numb
 
 
 def main(response, input_name):

@@ -2,7 +2,7 @@ from os import path
 
 from PIL import Image, ImageDraw, ImageFont
 
-from gen_functions import rank, word
+from rankedutils import rank, word
 
 
 def write(card, response):

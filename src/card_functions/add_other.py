@@ -3,7 +3,7 @@ from os import path
 
 from PIL import Image, ImageDraw, ImageFont
 
-from gen_functions import word
+from rankedutils import word
 
 
 def write(card):

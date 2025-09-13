@@ -1,8 +1,6 @@
 from datetime import datetime
 
 import requests
-import asyncio
-from PIL import Image
 
 from analysis_functions import (
     bastion_insights,
@@ -11,8 +9,7 @@ from analysis_functions import (
     split_insights,
     ow_insights,
 )
-from gen_functions import games
-from gen_functions.word import process_split
+from rankedutils.word import process_split
 
 
 def main(response, num_comps, detailed_matches, season, rank_filter=None):

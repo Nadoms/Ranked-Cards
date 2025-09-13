@@ -15,8 +15,7 @@ from card_functions import (
     add_socials,
     add_other,
 )
-from gen_functions import games
-from gen_functions.word import process_split
+from rankedutils.word import process_split
 
 
 def main(name, response, discord, pfp, background, history):

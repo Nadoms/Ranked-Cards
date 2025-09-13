@@ -5,9 +5,8 @@ from pathlib import Path
 
 import numpy as np
 
-from gen_functions import games, rank, numb
-from gen_functions.word import percentify
-from gen_functions.rank import Rank
+from rankedutils import games, rank, numb
+from rankedutils.word import percentify
 
 
 PLAYERBASE_FILE = Path("src") / "database" / "playerbase.json"
