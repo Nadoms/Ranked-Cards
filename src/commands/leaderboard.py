@@ -258,6 +258,161 @@ COUNTRY_MAPPING = {
 }
 
 
+def completion_time_leaderboard(leaderboard, input_name, season, page):
+    title = "Completion Time Leaderboard"
+    if season:
+        title += f" for Season {season}"
+    else:
+        title = "Lifetime " + title
+    title += f" - Page {page + 1}"
+
+    description = "These are the fastest completions."
+
+    embed = Embed(
+        title=title, description=description, colour=Colour.blurple()
+    )
+
+    lb_txt = ""
+    now = datetime.now(timezone.utc)
+    start = page * 20
+    end = (page + 1) * 20
+
+    for rank, item in enumerate(leaderboard):
+        name = item["user"]["nickname"]
+        if rank < start or rank >= end:
+            if name.lower() == input_name.lower():
+                lb_txt += f" ... | ................ | ....\n"
+            else:
+                continue
+        highlight = ">" if name.lower() == input_name.lower() else " "
+
+        ago = ""
+        attribute = str(timedelta(seconds=item["time"] // 1000))[2:]
+        if attribute[0] == "0":
+            attribute = attribute[1:]
+        then = datetime.fromtimestamp(item["date"], tz=timezone.utc)
+        days = str((now - then).days)
+        spacing_0 = " " * (3 - len(days))
+        ago = f" | {spacing_0}{days}d ago"
+        spacing_1 = " " * (2 - len(str(rank + 1)))
+        spacing_2 = " " * (16 - len(name))
+        line = f"{highlight}{spacing_1}#{rank + 1} | {name}{spacing_2} | {attribute}{ago}\n"
+        if rank < start:
+            lb_txt = line + lb_txt
+        else:
+            lb_txt += line
+
+    if not lb_txt:
+        lb_txt = "Nothing to see here."
+    embed.add_field(name="", value=f"```{lb_txt}```", inline=False)
+
+    embed.set_footer(
+            text=constants.FOOTER_TEXT,
+            icon_url=constants.FOOTER_ICON,
+    )
+
+    return embed
+
+
+def elo_leaderboard(leaderboard, input_name, season, country, page):
+    title = f"Elo Leaderboard for Season {season}"
+    if country:
+        title += f" - {country}"
+    title += f" - Page {page + 1}"
+
+    ends_at = leaderboard["season"]["endsAt"]
+    if ends_at:
+        description = f"Season {season} will end <t:{ends_at}:R>."
+    else:
+        description = f"This is taken from the very end of the season."
+
+    embed = Embed(
+        title=title, description=description, colour=Colour.blurple()
+    )
+
+    lb_txt = ""
+    start = page * 20
+    end = (page + 1) * 20
+
+    for rank, item in enumerate(leaderboard["users"]):
+        name = item["nickname"]
+        if rank < start or rank >= end:
+            if name.lower() == input_name.lower():
+                lb_txt += f" ... | ................ | ....\n"
+            else:
+                continue
+        highlight = ">" if name.lower() == input_name.lower() else " "
+
+        spacing_1 = " " * (2 - len(str(rank + 1)))
+        spacing_2 = " " * (16 - len(name))
+        line = f"{highlight}{spacing_1}#{rank + 1} | {name}{spacing_2} | {item["seasonResult"]["eloRate"]}\n"
+        if rank < start:
+            lb_txt = line + lb_txt
+        else:
+            lb_txt += line
+
+    if not lb_txt:
+        lb_txt = "Nothing to see here."
+    embed.add_field(name="", value=f"```{lb_txt}```", inline=False)
+
+    embed.set_footer(
+        text=constants.FOOTER_TEXT,
+        icon_url=constants.FOOTER_ICON,
+    )
+
+    return embed
+
+
+def phase_points_leaderboard(leaderboard, input_name, season, country, page):
+    title = f"Phase Points Leaderboard for Season {season}"
+    if country:
+        title += f" - {country}"
+    title += f" - Page {page + 1}"
+
+    ends_at = leaderboard["phase"]["endsAt"]
+    phase = leaderboard["phase"]["number"]
+    if ends_at:
+        description = f"Phase {phase} will end <t:{ends_at}:R>."
+    else:
+        description = f"This is taken from the very end of the season."
+
+    embed = Embed(
+        title=title, description=description, colour=Colour.blurple()
+    )
+
+    lb_txt = ""
+    start = page * 20
+    end = (page + 1) * 20
+
+    for rank, item in enumerate(leaderboard["users"]):
+        name = item["nickname"]
+        if rank < start or rank >= end:
+            if name.lower() == input_name.lower():
+                lb_txt += f" ... | ................ | ....\n"
+            else:
+                continue
+        highlight = ">" if name.lower() == input_name.lower() else " "
+
+        spacing_1 = " " * (2 - len(str(rank + 1)))
+        spacing_2 = " " * (16 - len(name))
+        line = f"{highlight}{spacing_1}#{rank + 1} | {name}{spacing_2} | {item["seasonResult"]["phasePoint"]} pts\n"
+        if rank < start:
+            lb_txt = line + lb_txt
+        else:
+            lb_txt += line
+
+    if not lb_txt:
+        lb_txt = "Nothing to see here."
+    embed.add_field(name="", value=f"```{lb_txt}```", inline=False)
+
+    embed.set_footer(
+        text=constants.FOOTER_TEXT,
+        icon_url=constants.FOOTER_ICON,
+    )
+
+    return embed
+
+
 def main(response, input_name, type, country, season, page):
     title = f"{type} Leaderboard"
     if season:
@@ -289,7 +444,6 @@ def main(response, input_name, type, country, season, page):
     )
 
     value = ""
-    found = False
 
     leaderboard = response
     if type != "Completion Time":

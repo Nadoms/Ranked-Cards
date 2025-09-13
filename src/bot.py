@@ -989,30 +989,23 @@ async def leaderboard_split(
         "split",
         required=True,
         description="The split to display the leaderboard for.",
-        choices=["ow", "nether", "bastion", "fortress", "blind", "stronghold", "end"],
+        choices=constants.SPLITS,
+    ),
+    rank_filter: str = SlashOption(
+        "rank_filter",
+        required=False,
+        description="What caliber of player to filter for.",
+        default="All",
+        choices=["All"] + rank.RANKS[:-1]
     ),
 ):
-    lb_type = "completion"
+    lb_type = "split"
     input_name = get_name(interaction)
     await interaction.response.defer()
 
-    print(f"---\nFetching Completion Time Leaderboard for season {season}")
-    if season == "Lifetime":
-        season = None
-    try:
-        response = api.RecordLeaderboard(season=season).get()
-    except api.APINotFoundError as e:
-        print(e)
-        await interaction.response.send_message(
-            f"Error with finding leaderboard for season {season}"
-        )
-        update_records(interaction, "leaderboard", lb_type, False)
-        return
-    except api.APIRateLimitError as e:
-        print(e)
-        await interaction.response.send_message(API_COOLDOWN_MSG)
-        update_records(interaction, "leaderboard", lb_type, False)
-        return
+    print(f"---\nFetching Avg Split Leaderboard for rank {rank_filter}")
+
+    response = None # idk
 
     leaderboard_size = math.ceil(len(response) / 20)
     leaderboard_embeds = []
