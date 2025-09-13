@@ -1,6 +1,6 @@
 from PIL import ImageDraw, ImageFont
 
-from gen_functions import word, rank
+from rankedutils import word, rank
 
 
 def write(graph, response):

@@ -4,7 +4,7 @@ from os import path
 import requests
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
-from gen_functions import word
+from rankedutils import word
 
 
 def write(card, discord, pfp, response):

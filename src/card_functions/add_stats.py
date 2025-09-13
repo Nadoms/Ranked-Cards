@@ -2,7 +2,7 @@ import math
 
 from PIL import ImageDraw, ImageFont
 
-from gen_functions import games, word, rank, numb
+from rankedutils import games, word, rank, numb
 
 
 def write(card, response):

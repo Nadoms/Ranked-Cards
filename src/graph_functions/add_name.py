@@ -1,7 +1,7 @@
 from PIL import ImageDraw
 from PIL import ImageFont
 
-from gen_functions import word
+from rankedutils import word
 
 
 def write(graph, name):

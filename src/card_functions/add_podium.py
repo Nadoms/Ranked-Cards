@@ -2,7 +2,7 @@ from os import path
 
 from PIL import Image
 
-from gen_functions import rank
+from rankedutils import rank
 
 
 def write(card, response):

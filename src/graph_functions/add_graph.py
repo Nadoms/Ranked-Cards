@@ -8,7 +8,7 @@ import numpy as np
 import seaborn as sns
 import pandas as pd
 
-from gen_functions import constants, rank
+from rankedutils import constants, rank
 
 
 def write(uuid, matches, data_type, season):

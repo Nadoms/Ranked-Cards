@@ -5,8 +5,7 @@ import requests
 from PIL import Image
 
 from graph_functions import add_graph, add_name, add_other, add_skin, add_stats
-from gen_functions import games
-from gen_functions.word import process_split
+from rankedutils.word import process_split
 
 
 def main(name, response, data_type, season, matches):

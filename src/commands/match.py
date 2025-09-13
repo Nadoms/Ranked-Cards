@@ -3,7 +3,7 @@ from datetime import datetime
 import requests
 from PIL import Image
 
-from gen_functions import api
+from rankedutils import api
 from match_functions import (
     add_info,
     add_names,
@@ -13,7 +13,7 @@ from match_functions import (
     add_splits,
     add_other,
 )
-from gen_functions.word import process_split
+from rankedutils.word import process_split
 
 
 def main(response):

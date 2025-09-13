@@ -1,6 +1,6 @@
 from PIL import ImageDraw, ImageFont
 
-from gen_functions import db, word, rank
+from rankedutils import db, word, rank
 
 
 def write(chart, uuids, response, vs_response):

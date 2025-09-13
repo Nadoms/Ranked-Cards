@@ -10,6 +10,8 @@ from dotenv import load_dotenv
 from time import time
 import traceback
 
+load_dotenv()
+
 from commands import (
     card as carding,
     graph as graphing,
@@ -18,8 +20,7 @@ from commands import (
     race as racing,
     leaderboard as leading,
 )
-from gen_functions import games, api, rank, constants, word
-from gen_functions.numb import digital_time
+from rankedutils import games, api, rank, constants, word, numb
 from scripts import analyse_db, construct_players, load_matches
 
 START_ID = 2118500
@@ -193,7 +194,7 @@ class MatchAgo(nextcord.ui.View):
             )
             self.names.append(
                 f"{(i + 1):2d}. {'🏆' if won else '🥀'}"
-                f"{'🏳️' if forfeited else ' ' + digital_time(duration)} vs {opponent} "
+                f"{'🏳️' if forfeited else ' ' + numb.digital_time(duration)} vs {opponent} "
                 f"({days_ago})"
             )
 
@@ -1323,5 +1324,4 @@ if not TESTING_MODE:
     bot.loop.create_task(fetch_loop())
     bot.loop.create_task(suggestions_loop())
     bot.loop.create_task(analysis_loop())
-load_dotenv()
 bot.run(getenv(token))

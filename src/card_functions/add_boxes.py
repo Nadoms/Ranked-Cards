@@ -1,7 +1,6 @@
 from PIL import ImageDraw, Image
 
-from card_functions.add_badge import get_badge
-from gen_functions import word
+from rankedutils import word
 from card_functions import add_name
 
 
