@@ -928,13 +928,67 @@ async def leaderboard_country_autocomplete(interaction: Interaction, current: st
     name="completion",
     description="Returns the Completion Time leaderboard for a given season.",
 )
-async def leaderboard_completiontime(
+async def leaderboard_completion(
     interaction: Interaction,
     season: str = SlashOption(
         "season",
         required=True,
         description="The season to display the leaderboard for.",
         choices=ALL_SEASONS + ["Lifetime"],
+    ),
+):
+    lb_type = "completion"
+    input_name = get_name(interaction)
+    await interaction.response.defer()
+
+    print(f"---\nFetching Completion Time Leaderboard for season {season}")
+    if season == "Lifetime":
+        season = None
+    try:
+        response = api.RecordLeaderboard(season=season).get()
+    except api.APINotFoundError as e:
+        print(e)
+        await interaction.response.send_message(
+            f"Error with finding leaderboard for season {season}"
+        )
+        update_records(interaction, "leaderboard", lb_type, False)
+        return
+    except api.APIRateLimitError as e:
+        print(e)
+        await interaction.response.send_message(API_COOLDOWN_MSG)
+        update_records(interaction, "leaderboard", lb_type, False)
+        return
+
+    leaderboard_size = math.ceil(len(response) / 20)
+    leaderboard_embeds = []
+
+    try:
+        for page in range(0, leaderboard_size):
+            leaderboard_embeds.append(leading.main(response, input_name, lb_type, "", season, page))
+    except Exception:
+        print("Error caught!")
+        traceback.print_exc()
+        await interaction.followup.send(f"{GENERIC_ERROR_MSG}\n```{traceback.format_exc()}```")
+        update_records(interaction, "leaderboard", lb_type, False)
+        return
+
+    view = LBPage(interaction, leaderboard_embeds)
+
+    await interaction.followup.send(embed=leaderboard_embeds[0], view=view)
+    update_records(interaction, "leaderboard", lb_type, True)
+
+
+@leaderboard.subcommand(
+    name="split",
+    description="Returns the leaderboard of fastest mean times for a given split.",
+)
+async def leaderboard_split(
+    interaction: Interaction,
+    split: str = SlashOption(
+        "split",
+        required=True,
+        description="The split to display the leaderboard for.",
+        choices=["ow", "nether", "bastion", "fortress", "blind", "stronghold", "end"],
     ),
 ):
     lb_type = "completion"
