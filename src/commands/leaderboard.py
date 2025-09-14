@@ -258,6 +258,50 @@ COUNTRY_MAPPING = {
 }
 
 
+def custom_leaderboard(leaderboard, lb_name, lb_desc, input_name, page):
+    title = f"{lb_name} - Page {page + 1}"
+
+    embed = Embed(
+        title=title, description=lb_desc, colour=Colour.blurple()
+    )
+
+    lb_txt = ""
+    start = page * 20
+    end = (page + 1) * 20
+
+    for rank, item in enumerate(leaderboard):
+        name = item[0]
+        if rank < start or rank >= end:
+            if name.lower() == input_name.lower():
+                lb_txt += f" ... | ................ | .... | .......\n"
+            else:
+                continue
+        highlight = ">" if name.lower() == input_name.lower() else " "
+
+        duration = str(timedelta(seconds=item[1] // 1000))[2:]
+        if duration[0] == "0":
+            duration = duration[1:]
+        count = f"{item[2]} c"
+        spacing_1 = " " * (3 - len(str(rank + 1)))
+        spacing_2 = " " * (16 - len(name))
+        line = f"{highlight}{spacing_1}#{rank + 1} | {name}{spacing_2} | {duration} | {count}\n"
+        if rank < start:
+            lb_txt = line + lb_txt
+        else:
+            lb_txt += line
+
+    if not lb_txt:
+        lb_txt = "Nothing to see here."
+    embed.add_field(name="", value=f"```{lb_txt}```", inline=False)
+
+    embed.set_footer(
+            text=constants.FOOTER_TEXT,
+            icon_url=constants.FOOTER_ICON,
+    )
+
+    return embed
+
+
 def completion_time_leaderboard(leaderboard, input_name, season, page):
     title = "Completion Time Leaderboard"
     if season:
@@ -281,12 +325,11 @@ def completion_time_leaderboard(leaderboard, input_name, season, page):
         name = item["user"]["nickname"]
         if rank < start or rank >= end:
             if name.lower() == input_name.lower():
-                lb_txt += f" ... | ................ | ....\n"
+                lb_txt += f" ... | ................ | .... | .......\n"
             else:
                 continue
         highlight = ">" if name.lower() == input_name.lower() else " "
 
-        ago = ""
         attribute = str(timedelta(seconds=item["time"] // 1000))[2:]
         if attribute[0] == "0":
             attribute = attribute[1:]
@@ -294,7 +337,7 @@ def completion_time_leaderboard(leaderboard, input_name, season, page):
         days = str((now - then).days)
         spacing_0 = " " * (3 - len(days))
         ago = f" | {spacing_0}{days}d ago"
-        spacing_1 = " " * (2 - len(str(rank + 1)))
+        spacing_1 = " " * (3 - len(str(rank + 1)))
         spacing_2 = " " * (16 - len(name))
         line = f"{highlight}{spacing_1}#{rank + 1} | {name}{spacing_2} | {attribute}{ago}\n"
         if rank < start:
@@ -343,7 +386,7 @@ def elo_leaderboard(leaderboard, input_name, season, country, page):
                 continue
         highlight = ">" if name.lower() == input_name.lower() else " "
 
-        spacing_1 = " " * (2 - len(str(rank + 1)))
+        spacing_1 = " " * (3 - len(str(rank + 1)))
         spacing_2 = " " * (16 - len(name))
         line = f"{highlight}{spacing_1}#{rank + 1} | {name}{spacing_2} | {item["seasonResult"]["eloRate"]}\n"
         if rank < start:
@@ -393,7 +436,7 @@ def phase_points_leaderboard(leaderboard, input_name, season, country, page):
                 continue
         highlight = ">" if name.lower() == input_name.lower() else " "
 
-        spacing_1 = " " * (2 - len(str(rank + 1)))
+        spacing_1 = " " * (3 - len(str(rank + 1)))
         spacing_2 = " " * (16 - len(name))
         line = f"{highlight}{spacing_1}#{rank + 1} | {name}{spacing_2} | {item["seasonResult"]["phasePoint"]} pts\n"
         if rank < start:
@@ -408,92 +451,6 @@ def phase_points_leaderboard(leaderboard, input_name, season, country, page):
     embed.set_footer(
         text=constants.FOOTER_TEXT,
         icon_url=constants.FOOTER_ICON,
-    )
-
-    return embed
-
-
-def main(response, input_name, type, country, season, page):
-    title = f"{type} Leaderboard"
-    if season:
-        title += f" for Season {season}"
-    if country and type != "Completion Time":
-        title += f" - {country}"
-    if not season and type == "Completion Time":
-        title = "Lifetime " + title
-    title += f" - Page {page + 1}"
-
-    if type == "Phase Points":
-        ends_at = response["phase"]["endsAt"]
-        phase = response["phase"]["number"]
-        if ends_at:
-            description = f"Phase {phase} will end <t:{ends_at}:R>."
-        else:
-            description = f"This is taken from the very end of the season."
-    elif type == "Elo":
-        ends_at = response["season"]["endsAt"]
-        if ends_at:
-            description = f"Season {season} will end <t:{ends_at}:R>."
-        else:
-            description = f"This is taken from the very end of the season."
-    else:
-        description = "These are the fastest completions."
-
-    embed = Embed(
-        title=title, description=description, colour=Colour.blurple()
-    )
-
-    value = ""
-
-    leaderboard = response
-    if type != "Completion Time":
-        leaderboard = leaderboard["users"]
-    now = datetime.now(timezone.utc)
-    start = page * 20
-    end = (page + 1) * 20
-
-    for rank, item in enumerate(leaderboard):
-        if type != "Completion Time":
-            name = item["nickname"]
-        else:
-            name = item["user"]["nickname"]
-        if rank < start or rank >= end:
-            if name.lower() == input_name.lower():
-                value += f" ... | ................ | ....\n"
-            else:
-                continue
-        if name.lower() == input_name.lower():
-            highlight = ">"
-        else:
-            highlight = " "
-
-        ago = ""
-        if type == "Completion Time":
-            attribute = str(timedelta(seconds=item["time"] // 1000))[2:]
-            if attribute[0] == "0":
-                attribute = attribute[1:]
-            then = datetime.fromtimestamp(item["date"], tz=timezone.utc)
-            days = str((now - then).days)
-            spacing_0 = " " * (3 - len(days))
-            ago = f" | {spacing_0}{days}d ago"
-        elif type == "Elo":
-            attribute = item["seasonResult"]["eloRate"]
-        elif type == "Phase Points":
-            attribute = str(item["seasonResult"]["phasePoint"]) + " pts"
-        spacing_1 = " " * (2 - len(str(rank + 1)))
-        spacing_2 = " " * (16 - len(name))
-        if rank < start:
-            value = f"{highlight}{spacing_1}#{rank + 1} | {name}{spacing_2} | {attribute}{ago}\n" + value
-        else:
-            value += f"{highlight}{spacing_1}#{rank + 1} | {name}{spacing_2} | {attribute}{ago}\n"
-
-    if not value:
-        value = "Nothing to see here."
-    embed.add_field(name="", value=f"```{value}```", inline=False)
-
-    embed.set_footer(
-            text=constants.FOOTER_TEXT,
-            icon_url=constants.FOOTER_ICON,
     )
 
     return embed

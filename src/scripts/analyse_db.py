@@ -174,7 +174,7 @@ async def analyse(season):
             ranked["elo"].append(elo)
 
         if nums["completion"][uuid] >= 3:
-            ranked["avg"].append((avg, elo))
+            ranked["avg"].append((avg, elo, nums["completion"][uuid]))
 
         ranked["sb"].append((sb, elo))
         await asyncio.sleep(0.01)
@@ -195,7 +195,7 @@ async def analyse(season):
                         / nums[performance][item][uuid]
                     )
                     ranked[performance][item].append(
-                        (item_avg, all_elos[uuid])
+                        (item_avg, all_elos[uuid], nums[performance][item][uuid])
                     )
             ranked[performance][item] = sorted(ranked[performance][item], key=lambda x: x[0])
 
