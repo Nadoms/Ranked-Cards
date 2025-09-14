@@ -1,0 +1,96 @@
+{
+    "splits": {
+        "0": {
+            "ow": 0.149,
+            "nether": 0.14,
+            "bastion": 0.453,
+            "fortress": 0.067,
+            "blind": 0.033,
+            "stronghold": 0.018,
+            "end": 0.024
+        },
+        "1": {
+            "ow": 0.131,
+            "nether": 0.131,
+            "bastion": 0.544,
+            "fortress": 0.087,
+            "blind": 0.055,
+            "stronghold": 0.035,
+            "end": 0.032
+        },
+        "2": {
+            "ow": 0.08,
+            "nether": 0.085,
+            "bastion": 0.476,
+            "fortress": 0.094,
+            "blind": 0.093,
+            "stronghold": 0.077,
+            "end": 0.044
+        },
+        "3": {
+            "ow": 0.047,
+            "nether": 0.049,
+            "bastion": 0.348,
+            "fortress": 0.092,
+            "blind": 0.139,
+            "stronghold": 0.168,
+            "end": 0.056
+        },
+        "4": {
+            "ow": 0.031,
+            "nether": 0.034,
+            "bastion": 0.254,
+            "fortress": 0.078,
+            "blind": 0.148,
+            "stronghold": 0.24,
+            "end": 0.062
+        },
+        "5": {
+            "ow": 0.015,
+            "nether": 0.02,
+            "bastion": 0.167,
+            "fortress": 0.053,
+            "blind": 0.095,
+            "stronghold": 0.271,
+            "end": 0.052
+        }
+    },
+    "bastions": {
+        "0": {
+            "bridge": 1.0,
+            "housing": 1.0,
+            "stables": 1.0,
+            "treasure": 1.0
+        },
+        "1": {
+            "bridge": 1.0,
+            "housing": 1.0,
+            "stables": 1.0,
+            "treasure": 1.0
+        },
+        "2": {
+            "bridge": 1.0,
+            "housing": 1.0,
+            "stables": 1.0,
+            "treasure": 1.0
+        },
+        "3": {
+            "bridge": 1.0,
+            "housing": 1.0,
+            "stables": 1.0,
+            "treasure": 1.0
+        },
+        "4": {
+            "bridge": 1.0,
+            "housing": 1.0,
+            "stables": 1.0,
+            "treasure": 1.0
+        },
+        "5": {
+            "bridge": 1.0,
+            "housing": 1.0,
+            "stables": 1.0,
+            "treasure": 1.0
+        }
+    }
+}

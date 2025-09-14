@@ -1,0 +1,42 @@
+{
+    "stats": {
+        "totalCommands": 6798,
+        "totalGenerated": 2971,
+        "connectedUsers": 223,
+        "totalHidden": 0,
+        "cards": {
+            "success": 1,
+            "fail": 0
+        },
+        "plots": {
+            "success": 0,
+            "fail": 0
+        },
+        "analyses": {
+            "success": 0,
+            "fail": 0
+        },
+        "races": {
+            "success": 0,
+            "fail": 0
+        },
+        "leaderboards": {
+            "success": 0,
+            "fail": 0
+        },
+        "lives": {
+            "success": 0,
+            "fail": 0
+        },
+        "connects": {
+            "success": 0,
+            "fail": 0
+        },
+        "disconnects": {
+            "success": 0,
+            "fail": 0
+        },
+        "backgrounds": 0,
+        "helps": 0
+    }
+}
