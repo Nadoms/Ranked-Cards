@@ -269,7 +269,7 @@ def get_season_stats(response):
     avg_completion = numb.digital_time(games.get_avg_completion(response, "season"))
 
     return [
-        ["W/L/D:", "Best ELO:", "FF/loss:", "Avg Finish:"],
+        ["W/L/D:", "Best Elo:", "FF/loss:", "Avg Finish:"],
         [f"{wins}/{losses}/{draws}", best_elo, ff_loss, avg_completion],
     ]
 
@@ -300,4 +300,4 @@ def get_major_stats(response):
     if pb:
         pb = numb.digital_time(pb)
 
-    return [["ELO:", "Rank:", "Win/loss:", "PB:"], [elo, ranking, win_loss, pb]]
+    return [["Elo:", "Rank:", "Win/loss:", "PB:"], [elo, ranking, win_loss, pb]]

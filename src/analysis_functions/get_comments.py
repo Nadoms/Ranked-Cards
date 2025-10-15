@@ -25,10 +25,10 @@ def main(response, elo, season, rank_filter):
     )
 
     if not elo:
-        general_comments["elo"] = [f"ELO: `-`"]
+        general_comments["elo"] = [f"Elo: `-`"]
     else:
         general_comments["elo"] = [
-            f"ELO: `{elo}`",
+            f"Elo: `{elo}`",
             percentify(get_attr_ranked(elo, "elo", rank_filter)),
             get_elo_info(elo),
         ]
@@ -41,12 +41,12 @@ def main(response, elo, season, rank_filter):
         general_comments["avg"] = [
             f"Avg Finish: `{numb.digital_time(avg)}`",
             percentify(get_attr_ranked(avg, "avg", rank_filter)),
-            f"Equivalent to {rank.get_elo_equivalent(avg, 'avg')} ELO",
+            f"Equivalent to {rank.get_elo_equivalent(avg, 'avg')} Elo",
         ]
         general_comments["sb"] = [
             f"Season Best: `{numb.digital_time(sb)}`",
             percentify(get_attr_ranked(sb, "sb", rank_filter)),
-            f"Equivalent to {rank.get_elo_equivalent(sb, 'sb')} ELO",
+            f"Equivalent to {rank.get_elo_equivalent(sb, 'sb')} Elo",
         ]
     ffl = games.get_ff_loss(response, "season")
     general_comments["ffl"] = [f"Forfeit/Loss `{ffl}%`", get_ffl_comments(ffl)]

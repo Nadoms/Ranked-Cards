@@ -103,7 +103,7 @@ def get_desc(recent_matches, uuid, winstreak):
     description = [
         "Winstreak: ",
         str(winstreak),
-        " / ELO change: ",
+        " / Elo change: ",
         elo_change,
     ]  # "W/L/D: ", str(wl.count(0)), "/", str(wl.count(1)), "/", str(wl.count(2)),
     return description
