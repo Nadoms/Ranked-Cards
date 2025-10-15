@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-from rankedutils import numb, rank, word
+from rankedutils import constants, numb, rank, word
 from analysis_functions.bastion_insights import add_rank_img
 
 SIDES = 5
@@ -21,6 +21,7 @@ ANGLES = [
     for i in range(SIDES)
 ]
 ANGLES.insert(0, ANGLES.pop())
+OWS = list(constants.OW_MAPPING.values())
 
 
 def main(uuid, detailed_matches, season, rank_filter):
@@ -44,13 +45,6 @@ def get_avg_ows(uuid, detailed_matches):
     number_ows = {"bt": 0, "dt": 0, "rp": 0, "ship": 0, "village": 0}
     time_ows = {"bt": 0, "dt": 0, "rp": 0, "ship": 0, "village": 0}
     average_ows = {"bt": 0, "dt": 0, "rp": 0, "ship": 0, "village": 0}
-    ow_mapping = {
-        "BURIED_TREASURE": "bt",
-        "DESERT_TEMPLE": "dt",
-        "RUINED_PORTAL": "rp",
-        "SHIPWRECK": "ship",
-        "VILLAGE": "village",
-    }
 
     for match in detailed_matches:
         if not match["timelines"]:
@@ -64,8 +58,8 @@ def get_avg_ows(uuid, detailed_matches):
                 continue
 
             if event["type"] == "story.enter_the_nether":
-                time_ows[ow_mapping[seed_type]] += event["time"] - ow_entry
-                number_ows[ow_mapping[seed_type]] += 1
+                time_ows[constants.OW_MAPPING[seed_type]] += event["time"] - ow_entry
+                number_ows[constants.OW_MAPPING[seed_type]] += 1
 
             elif event["type"] == "projectelo.timeline.reset":
                 ow_entry = event["time"]
@@ -110,7 +104,6 @@ def get_ranked_ows(average_ows, rank_filter):
 
 def get_polygon(ranked_ows):
     proportions = [INIT_PROP, INIT_PROP * 4 / 3, INIT_PROP * 2, INIT_PROP * 4, 10000]
-    ow_mapping = ["bt", "dt", "rp", "ship", "village"]
 
     polygon_frame = Image.new("RGBA", (IMG_SIZE_X, IMG_SIZE_Y), (0, 0, 0, 0))
     frame_draw = ImageDraw.Draw(polygon_frame)
@@ -160,7 +153,7 @@ def get_polygon(ranked_ows):
     # Drawing the player's polygon
     xy = []
     for i in range(len(ANGLES)):
-        val = ranked_ows[ow_mapping[i]]
+        val = ranked_ows[OWS[i]]
         if val == 0:
             proportion = 100000
         else:
@@ -193,7 +186,6 @@ def add_text(polygon, average_ows, ranked_ows, rank_filter):
         "#ffd700",
     ]
     titles = ["Buried Treasure", "Temple", "Ruined Portal", "Shipwreck", "Village"]
-    ow_mapping = ["bt", "dt", "rp", "ship", "village"]
 
     big_size = 50
     big_font = ImageFont.truetype("minecraft_font.ttf", big_size)
@@ -254,14 +246,14 @@ def add_text(polygon, average_ows, ranked_ows, rank_filter):
 
         s_colour = percentile_colour[0]
         for j in range(len(percentiles)):
-            if ranked_ows[ow_mapping[i]] <= percentiles[j]:
+            if ranked_ows[OWS[i]] <= percentiles[j]:
                 s_colour = percentile_colour[j]
                 break
-        if average_ows[ow_mapping[i]] == 1000000000000:
+        if average_ows[OWS[i]] == 1000000000000:
             stat = "No data"
         else:
-            time = numb.digital_time(average_ows[ow_mapping[i]])
-            stat = f"{time} / {word.percentify(ranked_ows[ow_mapping[i]])}"
+            time = numb.digital_time(average_ows[OWS[i]])
+            stat = f"{time} / {word.percentify(ranked_ows[OWS[i]])}"
 
         xy[i][0] -= word.calc_length(titles[i], title_size) / 2
         text_draw.text(
@@ -319,7 +311,7 @@ def get_count(number_ows):
 
 
 def get_best_worst(ranked_ows):
-    ow_mapping = {
+    OW_NAMING = {
         "bt": "Buried Treasure",
         "dt": "Desert Temple",
         "rp": "Ruined Portal",
@@ -357,12 +349,12 @@ def get_best_worst(ranked_ows):
 
     best = {
         "name": "Strongest Overworld Type",
-        "value": f"`{word.percentify(ranked_ows[max_key])}` - {ow_mapping[max_key]}",
+        "value": f"`{word.percentify(ranked_ows[max_key])}` - {OW_NAMING[max_key]}",
         "inline": True,
     }
     worst = {
         "name": f"Weakest Overworld Type",
-        "value": f"`{word.percentify(ranked_ows[min_key])}` - {ow_mapping[min_key]}",
+        "value": f"`{word.percentify(ranked_ows[min_key])}` - {OW_NAMING[min_key]}",
         "inline": True,
     }
 

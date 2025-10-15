@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 from nextcord import Embed, Colour
 
-from rankedutils import constants
+from rankedutils import constants, db
 
 
 COUNTRY_MAPPING = {
@@ -259,33 +259,34 @@ COUNTRY_MAPPING = {
 
 
 def custom_leaderboard(leaderboard, lb_name, lb_desc, input_name, page):
-    title = f"{lb_name} - Page {page + 1}"
-
     embed = Embed(
-        title=title, description=lb_desc, colour=Colour.blurple()
+        title=f"{lb_name} Leaderboard - Page {page + 1}",
+        description=f"{lb_desc}\nThere are {len(leaderboard)} players on this leaderboard.\nNote: This is updated nightly.",
+        colour=Colour.blurple()
     )
 
     lb_txt = ""
     start = page * 20
     end = (page + 1) * 20
 
-    for rank, item in enumerate(leaderboard):
-        name = item[0]
-        if rank < start or rank >= end:
+    conn, cursor = db.start()
+    for position, entry in enumerate(leaderboard):
+        name = db.get_nick(cursor, entry[3])
+        if position < start or position >= end:
             if name.lower() == input_name.lower():
-                lb_txt += f" ... | ................ | .... | .......\n"
+                lb_txt += f" .... | ................ | ..{'.' if lb_name == 'Average Completion' else ''}.. | ......\n"
             else:
                 continue
         highlight = ">" if name.lower() == input_name.lower() else " "
 
-        duration = str(timedelta(seconds=item[1] // 1000))[2:]
-        if duration[0] == "0":
+        duration = str(timedelta(seconds=entry[0] // 1000))[2:]
+        if duration[0] == "0" and lb_name != "Average Completion":
             duration = duration[1:]
-        count = f"{item[2]} c"
-        spacing_1 = " " * (3 - len(str(rank + 1)))
+        count = f"{entry[2]} c"
+        spacing_1 = " " * (3 - len(str(position + 1)))
         spacing_2 = " " * (16 - len(name))
-        line = f"{highlight}{spacing_1}#{rank + 1} | {name}{spacing_2} | {duration} | {count}\n"
-        if rank < start:
+        line = f"{highlight}{spacing_1}#{position + 1} | {name}{spacing_2} | {duration} | {count}\n"
+        if position < start:
             lb_txt = line + lb_txt
         else:
             lb_txt += line
@@ -298,6 +299,7 @@ def custom_leaderboard(leaderboard, lb_name, lb_desc, input_name, page):
             text=constants.FOOTER_TEXT,
             icon_url=constants.FOOTER_ICON,
     )
+    conn.close()
 
     return embed
 
@@ -321,26 +323,26 @@ def completion_time_leaderboard(leaderboard, input_name, season, page):
     start = page * 20
     end = (page + 1) * 20
 
-    for rank, item in enumerate(leaderboard):
-        name = item["user"]["nickname"]
-        if rank < start or rank >= end:
+    for position, entry in enumerate(leaderboard):
+        name = entry["user"]["nickname"]
+        if position < start or position >= end:
             if name.lower() == input_name.lower():
-                lb_txt += f" ... | ................ | .... | .......\n"
+                lb_txt += f" .... | ................ | .... | ......\n"
             else:
                 continue
         highlight = ">" if name.lower() == input_name.lower() else " "
 
-        attribute = str(timedelta(seconds=item["time"] // 1000))[2:]
+        attribute = str(timedelta(seconds=entry["time"] // 1000))[2:]
         if attribute[0] == "0":
             attribute = attribute[1:]
-        then = datetime.fromtimestamp(item["date"], tz=timezone.utc)
+        then = datetime.fromtimestamp(entry["date"], tz=timezone.utc)
         days = str((now - then).days)
         spacing_0 = " " * (3 - len(days))
         ago = f" | {spacing_0}{days}d ago"
-        spacing_1 = " " * (3 - len(str(rank + 1)))
+        spacing_1 = " " * (3 - len(str(position + 1)))
         spacing_2 = " " * (16 - len(name))
-        line = f"{highlight}{spacing_1}#{rank + 1} | {name}{spacing_2} | {attribute}{ago}\n"
-        if rank < start:
+        line = f"{highlight}{spacing_1}#{position + 1} | {name}{spacing_2} | {attribute}{ago}\n"
+        if position < start:
             lb_txt = line + lb_txt
         else:
             lb_txt += line
@@ -377,19 +379,19 @@ def elo_leaderboard(leaderboard, input_name, season, country, page):
     start = page * 20
     end = (page + 1) * 20
 
-    for rank, item in enumerate(leaderboard["users"]):
-        name = item["nickname"]
-        if rank < start or rank >= end:
+    for position, entry in enumerate(leaderboard["users"]):
+        name = entry["nickname"]
+        if position < start or position >= end:
             if name.lower() == input_name.lower():
-                lb_txt += f" ... | ................ | ....\n"
+                lb_txt += f" .... | ................ | ....\n"
             else:
                 continue
         highlight = ">" if name.lower() == input_name.lower() else " "
 
-        spacing_1 = " " * (3 - len(str(rank + 1)))
+        spacing_1 = " " * (3 - len(str(position + 1)))
         spacing_2 = " " * (16 - len(name))
-        line = f"{highlight}{spacing_1}#{rank + 1} | {name}{spacing_2} | {item["seasonResult"]["eloRate"]}\n"
-        if rank < start:
+        line = f"{highlight}{spacing_1}#{position + 1} | {name}{spacing_2} | {entry["seasonResult"]["eloRate"]}\n"
+        if position < start:
             lb_txt = line + lb_txt
         else:
             lb_txt += line
@@ -427,19 +429,19 @@ def phase_points_leaderboard(leaderboard, input_name, season, country, page):
     start = page * 20
     end = (page + 1) * 20
 
-    for rank, item in enumerate(leaderboard["users"]):
-        name = item["nickname"]
-        if rank < start or rank >= end:
+    for position, entry in enumerate(leaderboard["users"]):
+        name = entry["nickname"]
+        if position < start or position >= end:
             if name.lower() == input_name.lower():
-                lb_txt += f" ... | ................ | ....\n"
+                lb_txt += f" .... | ................ | ....\n"
             else:
                 continue
         highlight = ">" if name.lower() == input_name.lower() else " "
 
-        spacing_1 = " " * (3 - len(str(rank + 1)))
+        spacing_1 = " " * (3 - len(str(position + 1)))
         spacing_2 = " " * (16 - len(name))
-        line = f"{highlight}{spacing_1}#{rank + 1} | {name}{spacing_2} | {item["seasonResult"]["phasePoint"]} pts\n"
-        if rank < start:
+        line = f"{highlight}{spacing_1}#{position + 1} | {name}{spacing_2} | {entry["seasonResult"]["phasePoint"]} pts\n"
+        if position < start:
             lb_txt = line + lb_txt
         else:
             lb_txt += line

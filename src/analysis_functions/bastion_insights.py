@@ -22,12 +22,6 @@ ANGLES = [
 ]
 ANGLES.insert(0, ANGLES.pop())
 BASTION_TYPES = ["bridge", "housing", "stables", "treasure"]
-BASTION_MAPPING = {
-    "bridge": "Bridge",
-    "housing": "Housing",
-    "stables": "Stables",
-    "treasure": "Treasure",
-}
 
 
 def main(uuid, detailed_matches, elo, season, rank_filter):
@@ -414,12 +408,12 @@ def get_best_worst(ranked_bastions):
 
     best = {
         "name": "Strongest Bastion Type",
-        "value": f"`{word.percentify(ranked_bastions[max_key])}` - {BASTION_MAPPING[max_key]}",
+        "value": f"`{word.percentify(ranked_bastions[max_key])}` - {max_key.capitalize()}",
         "inline": True,
     }
     worst = {
         "name": "Weakest Bastion Type",
-        "value": f"`{word.percentify(ranked_bastions[min_key])}` - {BASTION_MAPPING[min_key]}",
+        "value": f"`{word.percentify(ranked_bastions[min_key])}` - {min_key.capitalize()}",
         "inline": True,
     }
 
@@ -452,7 +446,7 @@ def get_death_comments(average_deaths, elo, rank_filter):
     death_comment = {
         "name": "Your Death Rates",
         "value": [
-            f"`{' ' if average_deaths[bastion] < 0.1 else ''}{numb.round_sf(average_deaths[bastion] * 100, 3)}%` - {BASTION_MAPPING[bastion]}"
+            f"`{' ' if average_deaths[bastion] < 0.1 else ''}{numb.round_sf(average_deaths[bastion] * 100, 3)}%` - {bastion.capitalize()}"
             for bastion in average_deaths
         ],
         "inline": True,
@@ -460,7 +454,7 @@ def get_death_comments(average_deaths, elo, rank_filter):
     rank_comment = {
         "name": f"{player_rank} Death Rates",
         "value": [
-            f"`{' ' if overall_deaths[bastion] < 0.1 else ''}{numb.round_sf(overall_deaths[bastion] * 100, 3)}%` - {BASTION_MAPPING[bastion]}"
+            f"`{' ' if overall_deaths[bastion] < 0.1 else ''}{numb.round_sf(overall_deaths[bastion] * 100, 3)}%` - {bastion.capitalize()}"
             for bastion in overall_deaths
         ],
         "inline": True,

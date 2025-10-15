@@ -1,6 +1,7 @@
 import asyncio
 from io import BytesIO
 import math
+from pathlib import Path
 import nextcord
 import json
 from nextcord import File, Interaction, SlashOption, Embed
@@ -29,6 +30,8 @@ ALL_SEASONS = [str(season) for season in range(1, constants.SEASON + 1)]
 ALL_COUNTRIES = [country for country in leading.COUNTRY_MAPPING]
 API_COOLDOWN_MSG = "Too many commands have been issued! The Ranked API is cooling down... (~10 mins)"
 GENERIC_ERROR_MSG = "An error has occurred. <@298936021557706754> fix it pls:"
+ROOT_DIR = Path(__file__).parent
+DATABASE_DIR = ROOT_DIR / "database"
 token = "TEST_TOKEN" if TESTING_MODE else "DISCORD_TOKEN"
 default_guild_ids = [735859906434957392] if TESTING_MODE else None
 player_list = []
@@ -841,7 +844,7 @@ async def leaderboard_elo(
 
     try:
         for page in range(0, leaderboard_size):
-            leaderboard_embeds.append(leading.main(response, input_name, lb_type, country, season, page))
+            leaderboard_embeds.append(leading.elo_leaderboard(response, input_name, season, country, page))
     except Exception:
         print("Error caught!")
         traceback.print_exc()
@@ -901,7 +904,7 @@ async def leaderboard_phasepoints(
 
     try:
         for page in range(0, leaderboard_size):
-            leaderboard_embeds.append(leading.main(response, input_name, lb_type, country, season, page))
+            leaderboard_embeds.append(leading.phase_points_leaderboard(response, input_name, season, country, page))
     except Exception:
         print("Error caught!")
         traceback.print_exc()
@@ -965,7 +968,7 @@ async def leaderboard_completion(
 
     try:
         for page in range(0, leaderboard_size):
-            leaderboard_embeds.append(leading.main(response, input_name, lb_type, "", season, page))
+            leaderboard_embeds.append(leading.completion_time_leaderboard(response, input_name, season, page))
     except Exception:
         print("Error caught!")
         traceback.print_exc()
@@ -998,21 +1001,282 @@ async def leaderboard_split(
         default="All",
         choices=["All"] + rank.RANKS[:-1]
     ),
+    sample_size: int = SlashOption(
+        "sample_size",
+        required=False,
+        description="The minimum sample size to require of players.",
+        min_value=3,
+        max_value=100,
+        default=10,
+    ),
 ):
     lb_type = "split"
     input_name = get_name(interaction)
     await interaction.response.defer()
 
-    print(f"---\nFetching Avg Split Leaderboard for rank {rank_filter}")
+    print(f"---\nFetching {split} Avg Leaderboard for rank {rank_filter}")
 
-    response = None # idk
+    with open(DATABASE_DIR / "playerbase.json") as f:
+        lb = json.load(f)[lb_type][split]
+    lower, upper = rank.get_boundaries(rank.str_to_rank(rank_filter))
+    lb = [
+        entry for entry in lb
+        if (
+            (rank.str_to_rank(rank_filter) is None or (entry[1] and lower <= entry[1] < upper))
+            and (entry[2] >= sample_size)
+        )
+    ]
 
-    leaderboard_size = math.ceil(len(response) / 20)
+    leaderboard_size = min(math.ceil(len(lb) / 20), 10)
     leaderboard_embeds = []
+    lb_name = f"Average {split.capitalize()} Split"
+    lb_desc = (
+        f"These are the fastest players during the {split} split"
+        f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
+        f" ({sample_size}+)"
+    )
 
     try:
         for page in range(0, leaderboard_size):
-            leaderboard_embeds.append(leading.main(response, input_name, lb_type, "", season, page))
+            leaderboard_embeds.append(
+                leading.custom_leaderboard(
+                    lb,
+                    lb_name,
+                    lb_desc,
+                    input_name,
+                    page
+                )
+            )
+    except Exception:
+        print("Error caught!")
+        traceback.print_exc()
+        await interaction.followup.send(f"{GENERIC_ERROR_MSG}\n```{traceback.format_exc()}```")
+        update_records(interaction, "leaderboard", lb_type, False)
+        return
+
+    view = LBPage(interaction, leaderboard_embeds)
+
+    await interaction.followup.send(embed=leaderboard_embeds[0], view=view)
+    update_records(interaction, "leaderboard", lb_type, True)
+
+
+@leaderboard.subcommand(
+    name="bastion",
+    description="Returns the leaderboard of fastest mean times for a given bastion.",
+)
+async def leaderboard_bastion(
+    interaction: Interaction,
+    bastion: str = SlashOption(
+        "bastion",
+        required=True,
+        description="The bastion type to display the leaderboard for.",
+        choices=[b.lower() for b in constants.BASTIONS],
+    ),
+    rank_filter: str = SlashOption(
+        "rank_filter",
+        required=False,
+        description="What caliber of player to filter for.",
+        default="All",
+        choices=["All"] + rank.RANKS[:-1]
+    ),
+    sample_size: int = SlashOption(
+        "sample_size",
+        required=False,
+        description="The minimum sample size to require of players.",
+        min_value=3,
+        max_value=100,
+        default=10,
+    ),
+):
+    lb_type = "bastion"
+    input_name = get_name(interaction)
+    await interaction.response.defer()
+
+    print(f"---\nFetching {bastion} Avg Leaderboard for rank {rank_filter}")
+
+    with open(DATABASE_DIR / "playerbase.json") as f:
+        lb = json.load(f)[lb_type][bastion]
+    lower, upper = rank.get_boundaries(rank.str_to_rank(rank_filter))
+    lb = [
+        entry for entry in lb
+        if (
+            (rank.str_to_rank(rank_filter) is None or (entry[1] and lower <= entry[1] < upper))
+            and (entry[2] >= sample_size)
+        )
+    ]
+
+    leaderboard_size = min(math.ceil(len(lb) / 20), 10)
+    leaderboard_embeds = []
+    lb_name = f"Average {bastion.capitalize()} Bastion Split"
+    lb_desc = (
+        f"These are the fastest players at routing a {bastion} bastion"
+        f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
+        f" ({sample_size}+)"
+    )
+
+    try:
+        for page in range(0, leaderboard_size):
+            leaderboard_embeds.append(
+                leading.custom_leaderboard(
+                    lb,
+                    lb_name,
+                    lb_desc,
+                    input_name,
+                    page
+                )
+            )
+    except Exception:
+        print("Error caught!")
+        traceback.print_exc()
+        await interaction.followup.send(f"{GENERIC_ERROR_MSG}\n```{traceback.format_exc()}```")
+        update_records(interaction, "leaderboard", lb_type, False)
+        return
+
+    view = LBPage(interaction, leaderboard_embeds)
+
+    await interaction.followup.send(embed=leaderboard_embeds[0], view=view)
+    update_records(interaction, "leaderboard", lb_type, True)
+
+
+@leaderboard.subcommand(
+    name="overworld",
+    description="Returns the leaderboard of fastest mean times for a given overworld.",
+)
+async def leaderboard_overworld(
+    interaction: Interaction,
+    overworld: str = SlashOption(
+        "overworld",
+        required=True,
+        description="The seed type to display the leaderboard for.",
+        choices=[b.lower() for b in constants.OVERWORLDS],
+    ),
+    rank_filter: str = SlashOption(
+        "rank_filter",
+        required=False,
+        description="What caliber of player to filter for.",
+        default="All",
+        choices=["All"] + rank.RANKS[:-1]
+    ),
+    sample_size: int = SlashOption(
+        "sample_size",
+        required=False,
+        description="The minimum sample size to require of players.",
+        min_value=3,
+        max_value=100,
+        default=10,
+    ),
+):
+    lb_type = "ow"
+    input_name = get_name(interaction)
+    await interaction.response.defer()
+    ow_name = overworld.replace("_", " ")
+
+    print(f"---\nFetching {overworld} Avg Leaderboard for rank {rank_filter}")
+
+    with open(DATABASE_DIR / "playerbase.json") as f:
+        lb = json.load(f)[lb_type][constants.OW_MAPPING[overworld.upper()]]
+    lower, upper = rank.get_boundaries(rank.str_to_rank(rank_filter))
+    lb = [
+        entry for entry in lb
+        if (
+            (rank.str_to_rank(rank_filter) is None or (entry[1] and lower <= entry[1] < upper))
+            and (entry[2] >= sample_size)
+        )
+    ]
+
+    leaderboard_size = min(math.ceil(len(lb) / 20), 10)
+    leaderboard_embeds = []
+    lb_name = f"Average {ow_name.capitalize()} Overworld"
+    lb_desc = (
+        f"These are the fastest players at running {ow_name} overworlds"
+        f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
+        f" ({sample_size}+)"
+    )
+
+    try:
+        for page in range(0, leaderboard_size):
+            leaderboard_embeds.append(
+                leading.custom_leaderboard(
+                    lb,
+                    lb_name,
+                    lb_desc,
+                    input_name,
+                    page
+                )
+            )
+    except Exception:
+        print("Error caught!")
+        traceback.print_exc()
+        await interaction.followup.send(f"{GENERIC_ERROR_MSG}\n```{traceback.format_exc()}```")
+        update_records(interaction, "leaderboard", lb_type, False)
+        return
+
+    view = LBPage(interaction, leaderboard_embeds)
+
+    await interaction.followup.send(embed=leaderboard_embeds[0], view=view)
+    update_records(interaction, "leaderboard", lb_type, True)
+
+
+@leaderboard.subcommand(
+    name="average",
+    description="Returns the leaderboard of fastest average completion times.",
+)
+async def leaderboard_average(
+    interaction: Interaction,
+    rank_filter: str = SlashOption(
+        "rank_filter",
+        required=False,
+        description="What caliber of player to filter for.",
+        default="All",
+        choices=["All"] + rank.RANKS[:-1]
+    ),
+    sample_size: int = SlashOption(
+        "sample_size",
+        required=False,
+        description="The minimum sample size to require of players.",
+        min_value=3,
+        max_value=100,
+        default=5,
+    ),
+):
+    lb_type = "avg"
+    input_name = get_name(interaction)
+    await interaction.response.defer()
+
+    print(f"---\nFetching Completion Avg Leaderboard for rank {rank_filter}")
+
+    with open(DATABASE_DIR / "playerbase.json") as f:
+        lb = json.load(f)[lb_type]
+    lower, upper = rank.get_boundaries(rank.str_to_rank(rank_filter))
+    lb = [
+        entry for entry in lb
+        if (
+            (rank.str_to_rank(rank_filter) is None or (entry[1] and lower <= entry[1] < upper))
+            and (entry[2] >= sample_size)
+        )
+    ]
+
+    leaderboard_size = min(math.ceil(len(lb) / 20), 10)
+    leaderboard_embeds = []
+    lb_name = "Average Completion"
+    lb_desc = (
+        "These are the fastest players on average"
+        f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
+        f" ({sample_size}+)"
+    )
+
+    try:
+        for page in range(0, leaderboard_size):
+            leaderboard_embeds.append(
+                leading.custom_leaderboard(
+                    lb,
+                    lb_name,
+                    lb_desc,
+                    sample_size,
+                    input_name,
+                    page
+                )
+            )
     except Exception:
         print("Error caught!")
         traceback.print_exc()

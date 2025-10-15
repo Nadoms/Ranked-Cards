@@ -18,13 +18,6 @@ SPLIT_MAPPING = {
     "story.follow_ender_eye": "stronghold",
     "story.enter_the_end": "end",
 }
-OW_MAPPING = {
-    "BURIED_TREASURE": "bt",
-    "DESERT_TEMPLE": "dt",
-    "RUINED_PORTAL": "rp",
-    "SHIPWRECK": "ship",
-    "VILLAGE": "village",
-}
 
 
 def collect_matches(season, cursor):
@@ -74,11 +67,11 @@ def collect_matches(season, cursor):
                 # Dealing with overworlds
                 if event["type"] == "story.enter_the_nether":
                     ow_length = event["time"] - prev_time
-                    if uuid not in times["ow"][OW_MAPPING[seed_type]]:
-                        times["ow"][OW_MAPPING[seed_type]][uuid] = 0
-                        nums["ow"][OW_MAPPING[seed_type]][uuid] = 0
-                    times["ow"][OW_MAPPING[seed_type]][uuid] += ow_length
-                    nums["ow"][OW_MAPPING[seed_type]][uuid] += 1
+                    if uuid not in times["ow"][constants.OW_MAPPING[seed_type]]:
+                        times["ow"][constants.OW_MAPPING[seed_type]][uuid] = 0
+                        nums["ow"][constants.OW_MAPPING[seed_type]][uuid] = 0
+                    times["ow"][constants.OW_MAPPING[seed_type]][uuid] += ow_length
+                    nums["ow"][constants.OW_MAPPING[seed_type]][uuid] += 1
 
                 # Dealing with bastions
                 if event["type"] == "nether.find_bastion":
@@ -132,7 +125,7 @@ def collect_matches(season, cursor):
 
 
 async def analyse(season):
-    print(f"\n***\nAnalysing database - {datetime.now()}\n***\n")
+    print(f"\n***\nAnalysing database - {datetime.now()}\n***")
     ranked = {
         "split": {"ow": [], "nether": [], "bastion": [], "fortress": [], "blind": [], "stronghold": [], "end": []},
         "bastion": {"bridge": [], "housing": [], "stables": [], "treasure": []},
@@ -143,16 +136,16 @@ async def analyse(season):
     }
 
     conn, cursor = db.start(PROJECT_DIR / "database" / "ranked.db")
-    print("Collecting runs...")
+    print(f"\nCollecting runs - {datetime.now()}")
     times, nums, runs = collect_matches(season, cursor)
     print(f"Finished collecting {runs} runs")
 
     # Get the elo of every player accounted for
-    print(f"Fetching elos of {len(nums['split']['ow'])} players...")
+    print(f"\nFetching elos of {len(nums['split']['ow'])} players - {datetime.now()}")
     all_elos = {}
     for uuid in nums["split"]["ow"]:
         all_elos[uuid] = db.get_elo(cursor, uuid, season)
-        await asyncio.sleep(0.01)
+        await asyncio.sleep(0.001)
 
     training_data = {
         "avg": [],
@@ -160,7 +153,7 @@ async def analyse(season):
     }
 
     # Construct training data and avg / sb ranking
-    print(f"Processing completions of {len(nums['completion'])} players...")
+    print(f"\nProcessing completions of {len(nums['completion'])} players - {datetime.now()}")
     for uuid in times["completion"]:
         elo = all_elos[uuid]
         avg = round(times["completion"][uuid] / nums["completion"][uuid])
@@ -174,10 +167,10 @@ async def analyse(season):
             ranked["elo"].append(elo)
 
         if nums["completion"][uuid] >= 3:
-            ranked["avg"].append((avg, elo, nums["completion"][uuid]))
+            ranked["avg"].append((avg, elo, nums["completion"][uuid], uuid))
 
-        ranked["sb"].append((sb, elo))
-        await asyncio.sleep(0.01)
+        ranked["sb"].append((sb, elo, uuid))
+        await asyncio.sleep(0.001)
 
     ranked["elo"].sort(reverse=True)
     ranked["avg"] = sorted(ranked["avg"], key=lambda x: x[0])
@@ -185,7 +178,7 @@ async def analyse(season):
 
     # Construct performance rankings
     for performance in ["split", "bastion", "ow"]:
-        print(f"\nProcessing {performance}s...")
+        print(f"\nProcessing {performance}s - {datetime.now()}")
         for item in times[performance]:
             print(f"Processing {item} {performance}s of {len(nums[performance][item])} players...")
             for uuid in times[performance][item]:
@@ -195,22 +188,26 @@ async def analyse(season):
                         / nums[performance][item][uuid]
                     )
                     ranked[performance][item].append(
-                        (item_avg, all_elos[uuid], nums[performance][item][uuid])
+                        (item_avg, all_elos[uuid], nums[performance][item][uuid], uuid)
                     )
             ranked[performance][item] = sorted(ranked[performance][item], key=lambda x: x[0])
 
-    print("\nDumping insights into playerbase file...")
+    print(f"\nDumping insights into playerbase file - {datetime.now()}")
     playerbase_file = PROJECT_DIR / "database" / "playerbase.json"
     with open(playerbase_file, "w") as f:
         json.dump(ranked, f, indent=4)
 
-    print("Training models...")
+    print(f"\nTraining models - {datetime.now()}")
     for data_oi in training_data:
         train_model.train(
             data_oi,
             training_data[data_oi]
         )
         await asyncio.sleep(1)
+
+    conn.close()
+
+    print(f"\n***\nAnalysis and Training Complete - {datetime.now()}\n***\n")
 
 
 if __name__ == "__main__":

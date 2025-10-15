@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-from rankedutils import word, numb, rank
+from rankedutils import constants, word, numb, rank
 from analysis_functions.bastion_insights import add_rank_img
 
 SIDES = 7
@@ -21,6 +21,15 @@ ANGLES = [
     for i in range(SIDES)
 ]
 ANGLES.insert(0, ANGLES.pop())
+SPLIT_NAMING = {
+    "ow": "Overworld",
+    "nether": "Nether Terrain",
+    "bastion": "Bastion",
+    "fortress": "Fortress",
+    "blind": "Blind",
+    "stronghold": "Stronghold",
+    "end": "The End",
+}
 
 
 def main(uuid, detailed_matches, elo, season, num_comps, rank_filter):
@@ -203,7 +212,6 @@ def get_ranked_splits(average_splits, rank_filter):
 
 def get_polygon(ranked_splits):
     proportions = [INIT_PROP, INIT_PROP * 4 / 3, INIT_PROP * 2, INIT_PROP * 4, 10000]
-    split_mapping = ["ow", "nether", "bastion", "fortress", "blind", "stronghold", "end"]
 
     polygon_frame = Image.new("RGBA", (IMG_SIZE_X, IMG_SIZE_Y), (0, 0, 0, 0))
     frame_draw = ImageDraw.Draw(polygon_frame)
@@ -253,7 +261,7 @@ def get_polygon(ranked_splits):
     # Drawing the player's polygon
     xy = []
     for i, angle in enumerate(ANGLES):
-        val = ranked_splits[split_mapping[i]]
+        val = ranked_splits[constants.SPLITS[i]]
         if val == 0:
             proportion = 100000
         else:
@@ -286,7 +294,6 @@ def add_text(polygon, average_splits, ranked_splits, rank_filter):
         "#ffd700",
     ]
     titles = ["Overworld", "Nether", "Bastion", "Fortress", "Blind", "Stronghold", "The End"]
-    split_mapping = ["ow", "nether", "bastion", "fortress", "blind", "stronghold", "end"]
 
     big_size = 50
     big_font = ImageFont.truetype("minecraft_font.ttf", big_size)
@@ -347,14 +354,14 @@ def add_text(polygon, average_splits, ranked_splits, rank_filter):
 
         s_colour = percentile_colour[0]
         for j in range(len(percentiles)):
-            if ranked_splits[split_mapping[i]] <= percentiles[j]:
+            if ranked_splits[constants.splits[i]] <= percentiles[j]:
                 s_colour = percentile_colour[j]
                 break
-        if average_splits[split_mapping[i]] == 1000000000000:
+        if average_splits[constants.splits[i]] == 1000000000000:
             stat = "No data"
         else:
-            time = numb.digital_time(average_splits[split_mapping[i]])
-            stat = f"{time} / {word.percentify(ranked_splits[split_mapping[i]])}"
+            time = numb.digital_time(average_splits[constants.splits[i]])
+            stat = f"{time} / {word.percentify(ranked_splits[constants.splits[i]])}"
 
         xy[i][0] -= word.calc_length(titles[i], title_size) / 2
         text_draw.text(
@@ -414,16 +421,6 @@ def get_count(number_splits):
 
 
 def get_best_worst(ranked_splits):
-    split_mapping = {
-        "ow": "Overworld",
-        "nether": "Nether Terrain",
-        "bastion": "Bastion",
-        "fortress": "Fortress",
-        "blind": "Blind",
-        "stronghold": "Stronghold",
-        "end": "The End",
-    }
-
     # best_comments = {
     #     "ow": "You can handle the variety of overworld very well. Getting ahead early is key!",
     #     "nether": "You excel at navigating nether terrain and finding structures.",
@@ -459,12 +456,12 @@ def get_best_worst(ranked_splits):
 
     best = {
         "name": "Strongest Split",
-        "value": f"`{word.percentify(ranked_splits[max_key])}` - {split_mapping[max_key]}",
+        "value": f"`{word.percentify(ranked_splits[max_key])}` - {SPLIT_NAMING[max_key]}",
         "inline": True,
     }
     worst = {
         "name": f"Weakest Split",
-        "value": f"`{word.percentify(ranked_splits[min_key])}` - {split_mapping[min_key]}",
+        "value": f"`{word.percentify(ranked_splits[min_key])}` - {SPLIT_NAMING[min_key]}",
         "inline": True,
     }
 
@@ -472,15 +469,6 @@ def get_best_worst(ranked_splits):
 
 
 def get_death_comments(average_deaths, elo, rank_filter):
-    split_mapping = {
-        "ow": "Overworld",
-        "nether": "Nether Terrain",
-        "bastion": "Bastion",
-        "fortress": "Fortress",
-        "blind": "Blind",
-        "stronghold": "Stronghold",
-        "end": "The End",
-    }
     differences = {
         "ow": 0,
         "nether": 0,
@@ -514,7 +502,7 @@ def get_death_comments(average_deaths, elo, rank_filter):
         "value": [
             (
                 f"`{' ' if average_deaths[split] < 0.1 else ''}"
-                f"{numb.round_sf(average_deaths[split] * 100, 3)}%` - {split_mapping[split]}"
+                f"{numb.round_sf(average_deaths[split] * 100, 3)}%` - {SPLIT_NAMING[split]}"
             )
             for split in average_deaths
         ],
@@ -525,7 +513,7 @@ def get_death_comments(average_deaths, elo, rank_filter):
         "value": [
             (
                 f"`{' ' if overall_deaths[split] < 0.1 else ''}"
-                f"{numb.round_sf(overall_deaths[split] * 100, 3)}%` - {split_mapping[split]}"
+                f"{numb.round_sf(overall_deaths[split] * 100, 3)}%` - {SPLIT_NAMING[split]}"
             )
             for split in overall_deaths
         ],

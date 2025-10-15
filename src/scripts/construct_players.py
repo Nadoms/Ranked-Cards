@@ -35,7 +35,7 @@ def construct_player_list(length: int=500):
 
     with open(COMMON_FILE, "w") as f:
         json.dump(player_list, f, indent=4)
-    print(f"Constructed player list of length", len(player_list))
+    print(f"\n***\nPlayer List of {len(player_list)} Complete - {datetime.now()}\n***\n")
 
     return list(player_list.keys())
 

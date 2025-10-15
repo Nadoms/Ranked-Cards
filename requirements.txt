@@ -23,7 +23,7 @@ pyparsing==3.2.4
 python-dateutil==2.9.0.post0
 python-dotenv==1.1.1
 pytz==2025.2
-rankedutils @ git+https://github.com/Nadoms/ranked-utils.git@fe2f401de25e6e61fe7a4a84a3998632247335e1
+rankedutils @ git+https://github.com/Nadoms/ranked-utils.git
 requests==2.32.5
 seaborn==0.13.2
 six==1.17.0
