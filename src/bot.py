@@ -1275,7 +1275,6 @@ async def leaderboard_average(
                     lb,
                     lb_name,
                     lb_desc,
-                    sample_size,
                     input_name,
                     page
                 )
