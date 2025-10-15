@@ -354,14 +354,14 @@ def add_text(polygon, average_splits, ranked_splits, rank_filter):
 
         s_colour = percentile_colour[0]
         for j in range(len(percentiles)):
-            if ranked_splits[constants.splits[i]] <= percentiles[j]:
+            if ranked_splits[constants.SPLITS[i]] <= percentiles[j]:
                 s_colour = percentile_colour[j]
                 break
-        if average_splits[constants.splits[i]] == 1000000000000:
+        if average_splits[constants.SPLITS[i]] == 1000000000000:
             stat = "No data"
         else:
-            time = numb.digital_time(average_splits[constants.splits[i]])
-            stat = f"{time} / {word.percentify(ranked_splits[constants.splits[i]])}"
+            time = numb.digital_time(average_splits[constants.SPLITS[i]])
+            stat = f"{time} / {word.percentify(ranked_splits[constants.SPLITS[i]])}"
 
         xy[i][0] -= word.calc_length(titles[i], title_size) / 2
         text_draw.text(

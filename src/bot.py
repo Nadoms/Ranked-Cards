@@ -634,7 +634,7 @@ async def analysis(
             continue
         elif len(gen_comms[key]) == 1:
             value = ""
-        elif key != "ffl":
+        elif key not in ["ffl", "cmpr", "trwr"]:
             value = f"➢ {gen_comms[key][1]}\n➢ {gen_comms[key][2]}"
         else:
             value = gen_comms[key][1]
@@ -646,6 +646,9 @@ async def analysis(
         )
 
         if key == "avg":
+            embed_general.add_field(name="", value="", inline=False)
+
+        if key == "ffl":
             embed_general.add_field(name="", value="", inline=False)
 
     split_comms = comments["splits"]
