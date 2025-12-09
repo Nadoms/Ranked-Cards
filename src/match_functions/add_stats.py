@@ -51,6 +51,7 @@ def write(chart, uuids, response, vs_response):
 
 
 def get_stats(response, uuids, i):
+    conn = None
     if "eloRate" not in response["players"][i]:
         conn, cursor = db.start()
         current_elo = db.get_elo(cursor, uuids[i])
@@ -68,7 +69,8 @@ def get_stats(response, uuids, i):
         " elo"
     ) if change_elo is not None else "no elo change"
 
-    conn.close()
+    if conn:
+        conn.close()
 
     return [
         ["was ", legacy_elo, " elo" if legacy_elo is not None else ""],
