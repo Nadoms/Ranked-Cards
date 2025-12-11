@@ -33,6 +33,9 @@ def collect_matches(season, cursor):
         "ow": {"bt": {}, "dt": {}, "rp": {}, "ship": {}, "village": {}},
         "completion": {},
     }
+    sbs = {}
+    elos = {}
+    last_ids = {}
     runs_processed = 0
 
     matches_info = db.query_db(
@@ -47,12 +50,12 @@ def collect_matches(season, cursor):
         runs = db.query_db(
             cursor=cursor,
             table="runs",
-            items="player_uuid, timeline",
+            items="player_uuid, timeline, eloRate, change",
             match_id=match_id,
         )
 
         for run in runs:
-            uuid, timeline = run
+            uuid, timeline, old_elo, change = run
             timeline = json.loads(timeline)
             curr_split = "ow"
             prev_time = 0
@@ -116,12 +119,22 @@ def collect_matches(season, cursor):
                 if uuid not in times["completion"]:
                     times["completion"][uuid] = 0
                     nums["completion"][uuid] = 0
+                    sbs[uuid] = 100000000
                 times["completion"][uuid] += result_time
                 nums["completion"][uuid] += 1
+                if result_time < sbs[uuid]:
+                    sbs[uuid] = result_time
+
+            if uuid not in last_ids:
+                last_ids[uuid] = 0
+                elos[uuid] = 0
+            if match_id > last_ids[uuid]:
+                last_ids[uuid] = match_id
+                elos[uuid] = old_elo + change if old_elo is not None else None
 
             runs_processed += 1
 
-    return times, nums, runs_processed
+    return times, nums, sbs, elos, runs_processed
 
 
 async def analyse(season):
@@ -137,15 +150,15 @@ async def analyse(season):
 
     conn, cursor = db.start(PROJECT_DIR / "database" / "ranked.db")
     print(f"\nCollecting runs - {datetime.now()}")
-    times, nums, runs = collect_matches(season, cursor)
+    times, nums, sbs, elos, runs = collect_matches(season, cursor)
     print(f"Finished collecting {runs} runs")
 
     # Get the elo of every player accounted for
-    print(f"\nFetching elos of {len(nums['split']['ow'])} players - {datetime.now()}")
-    all_elos = {}
-    for uuid in nums["split"]["ow"]:
-        all_elos[uuid] = db.get_elo(cursor, uuid, season)
-        await asyncio.sleep(0.001)
+    # print(f"\nFetching elos of {len(nums['split']['ow'])} players - {datetime.now()}")
+    # all_elos = {}
+    # for uuid in nums["split"]["ow"]:
+    #     all_elos[uuid] = db.get_elo(cursor, uuid, season)
+    #     await asyncio.sleep(0.001)
 
     training_data = {
         "avg": [],
@@ -155,9 +168,9 @@ async def analyse(season):
     # Construct training data and avg / sb ranking
     print(f"\nProcessing completions of {len(nums['completion'])} players - {datetime.now()}")
     for uuid in times["completion"]:
-        elo = all_elos[uuid]
+        elo = elos[uuid]
         avg = round(times["completion"][uuid] / nums["completion"][uuid])
-        sb = db.get_sb(cursor, uuid, season)
+        sb = sbs[uuid] # db.get_sb(cursor, uuid, season)
 
         if not sb:
             print(uuid, sb, elo, nums["completion"])
@@ -188,7 +201,7 @@ async def analyse(season):
                         / nums[performance][item][uuid]
                     )
                     ranked[performance][item].append(
-                        (item_avg, all_elos[uuid], nums[performance][item][uuid], uuid)
+                        (item_avg, elos[uuid], nums[performance][item][uuid], uuid)
                     )
             ranked[performance][item] = sorted(ranked[performance][item], key=lambda x: x[0])
 
