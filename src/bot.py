@@ -24,7 +24,6 @@ from commands import (
 from rankedutils import games, api, rank, constants, word, numb
 from scripts import analyse_db, construct_players, load_matches
 
-START_ID = 2118500
 TESTING_MODE = True
 ALL_SEASONS = [str(season) for season in range(1, constants.SEASON + 1)]
 ALL_COUNTRIES = [country for country in leading.COUNTRY_MAPPING]
@@ -1705,11 +1704,14 @@ def image_to_file(image, filename, close=True):
 
 
 async def fetch_loop():
-    latest_load = START_ID
+    with open(DATABASE_DIR / "last_id.txt") as f:
+        latest_load = int(f.readline())
     repeat = 900
     while True:
         not_latest_load = latest_load
         latest_load = await load_matches.spam_redlime(latest_load, 1000)
+        with open(DATABASE_DIR / "last_id.txt", "w") as f:
+            f.write(str(latest_load))
         await asyncio.sleep(repeat)
         if not_latest_load == latest_load:
             print("No new matches found.")
