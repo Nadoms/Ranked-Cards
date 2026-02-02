@@ -46,7 +46,7 @@ def main(response, detailed_matches, elo, season, rank_filter):
     playerbase_str = "the entire playerbase" if rank_filter is None else f"{rank_filter} players"
     general_comments["description"] = (
         f"This is how you stack up against {playerbase_str}. Each comparison references at most {get_player_count(rank_filter)} players."
-        f"\nClick [here](https://docs.google.com/document/d/1hbz_lTBF0GdIKL_tEVhB2XFj3ZtWIvrRSakYXAk9fwU/edit?usp=sharing) for an explanation of this command."
+        f"\nClick [here](https://docs.google.com/document/d/e/2PACX-1vQvNO1Mmf7T2zfaij_rxDsOMUwaVavJcZG68Bfp8-9CkeGyJHoPrvBFxU69apix4E7gVsaV51BiCVwC/pub) for an explanation of this command."
     )
 
     if not elo:
