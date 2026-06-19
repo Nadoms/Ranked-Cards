@@ -633,7 +633,7 @@ async def analysis(
             continue
         elif len(gen_comms[key]) == 1:
             value = ""
-        elif key not in ["ffl", "cmpr", "trwr"]:
+        elif key not in ["ffl", "cmpr", "chwr"]:
             value = f"➢ {gen_comms[key][1]}\n➢ {gen_comms[key][2]}"
         else:
             value = gen_comms[key][1]

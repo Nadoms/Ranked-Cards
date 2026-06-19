@@ -27,7 +27,7 @@ COMMENTS = {
         50: "", # Highly confident in completing seeds.",
         100: "", # Plays ranked like no-reset.",
     },
-    "trwr": {
+    "chwr": {
         10: "", # Can't get more consistent.",
         25: "", # Goes deathless most games.",
         40: "", # Throws easy wins pretty often.",
@@ -73,8 +73,8 @@ def main(response, detailed_matches, elo, season, rank_filter):
     general_comments["ffl"] = [f"Forfeit/Loss: `{ffl}%`", get_comments(ffl, "ffl")]
     cmpr = games.get_completion_rate(response, "season")
     general_comments["cmpr"] = [f"Completion Rate: `{cmpr}%`", get_comments(cmpr, "cmpr")]
-    trwr = insight.get_throw_rate(response["uuid"], detailed_matches)
-    general_comments["trwr"] = [f"Throw Rate: `{trwr}%`", get_comments(trwr, "trwr")]
+    chwr = insight.get_choke_rate(response["uuid"], detailed_matches)
+    general_comments["chwr"] = [f"Choke Rate: `{chwr}%`", get_comments(chwr, "chwr")]
 
     return general_comments
 
