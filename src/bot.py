@@ -506,11 +506,18 @@ async def analysis(
         autocomplete=True,
     ),
     season: str = SlashOption(
-        "season",
+        "player_season",
         required=False,
-        description="The season to gather data from.",
+        description="The season to gather player data from.",
         default=str(constants.SEASON),
         choices=ALL_SEASONS,
+    ),
+    compare_season: str = SlashOption(
+        "compare_season",
+        required=False,
+        description="The season to gather playerbase comparison data from.",
+        default="player_season",
+        choices=ALL_SEASONS + ["player_season"],
     ),
     selection: str = SlashOption(
         "selection",
@@ -586,7 +593,7 @@ async def analysis(
     rank_filter = rank.str_to_rank(rank_filter)
 
     try:
-        anal = analysing.main(response, num_comps, detailed_matches, season, rank_filter)
+        anal = analysing.main(response, num_comps, detailed_matches, season, compare_season, rank_filter)
     except LookupError:
         print("Not enough players in rank to compare to.")
         await interaction.followup.send(
@@ -1731,6 +1738,10 @@ async def suggestions_loop():
 async def analysis_loop():
     await asyncio.sleep(120)
     while True:
+        for season in range(ALL_SEASONS - 1):
+            playerbase_file = f"playerbase_s{season}.json"
+            if (DATABASE_DIR / playerbase_file).exists():
+                await analyse_db.analyse(season, filename=playerbase_file)
         await analyse_db.analyse(constants.SEASON)
         await asyncio.sleep(86400)
 

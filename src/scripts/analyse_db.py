@@ -137,7 +137,7 @@ def collect_matches(season, cursor):
     return times, nums, sbs, elos, runs_processed
 
 
-async def analyse(season):
+async def analyse(season, filename="playerbase"):
     print(f"\n***\nAnalysing database - {datetime.now()}\n***")
     ranked = {
         "split": {"ow": [], "nether": [], "bastion": [], "fortress": [], "blind": [], "stronghold": [], "end": []},
@@ -206,7 +206,7 @@ async def analyse(season):
             ranked[performance][item] = sorted(ranked[performance][item], key=lambda x: x[0])
 
     print(f"\nDumping insights into playerbase file - {datetime.now()}")
-    playerbase_file = PROJECT_DIR / "database" / "playerbase.json"
+    playerbase_file = PROJECT_DIR / "database" / f"{filename}.json"
     with open(playerbase_file, "w") as f:
         json.dump(ranked, f, indent=4)
 

@@ -12,7 +12,7 @@ from analysis_functions import (
 from rankedutils.word import process_split
 
 
-def main(response, num_comps, detailed_matches, season, rank_filter=None):
+def main(response, num_comps, detailed_matches, season, compare_season, rank_filter=None):
     uuid = response["uuid"]
     elo = response["seasonResult"]["last"]["eloRate"]
     if elo:
