@@ -10,6 +10,7 @@ from analysis_functions import (
     split_insights,
     ow_insights,
 )
+import rankedutils.constants
 from rankedutils.word import season_suffix, process_split
 
 
@@ -23,7 +24,8 @@ def main(response, num_comps, detailed_matches, player_season, compare_season, r
     skin = get_skin.main(uuid)
     then = process_split(then, "Finding skin")
 
-    playerbase_file = Path("src") / "database" / "playerbase" + season_suffix(compare_season) + ".json"
+    season_suffix = "" if compare_season == str(constants.SEASON) else f"_s{compare_season}"
+    playerbase_file = Path("src") / "database" / f"playerbase{season_suffix}.json"
     general_comments = get_comments.main(
         response, detailed_matches, elo, player_season, compare_season, rank_filter, playerbase_file
     )

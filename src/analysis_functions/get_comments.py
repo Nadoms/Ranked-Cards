@@ -5,7 +5,7 @@ from os import path
 import numpy as np
 
 from rankedutils import constants, games, insight, rank, numb
-from rankedutils.word import percentify, season_suffix
+from rankedutils.word import percentify
 
 
 COMMENTS = {
