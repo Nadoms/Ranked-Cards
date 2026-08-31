@@ -24,11 +24,11 @@ ANGLES.insert(0, ANGLES.pop())
 BASTION_TYPES = ["bridge", "housing", "stables", "treasure"]
 
 
-def main(uuid, detailed_matches, elo, season, rank_filter):
+def main(uuid, detailed_matches, elo, player_season, rank_filter, playerbase_file):
     completed_bastions, average_bastions, average_deaths = get_avg_bastions(
         uuid, detailed_matches
     )
-    ranked_bastions = get_ranked_bastions(average_bastions, rank_filter)
+    ranked_bastions = get_ranked_bastions(average_bastions, rank_filter, playerbase_file)
     polygon = get_polygon(ranked_bastions)
     polygon = add_text(polygon, average_bastions, ranked_bastions, rank_filter)
     sum_bastions = sum(completed_bastions.values())
@@ -40,7 +40,7 @@ def main(uuid, detailed_matches, elo, season, rank_filter):
     )
     comments["count"] = get_count(completed_bastions)
     comments["best"], comments["worst"] = get_best_worst(ranked_bastions)
-    if season != 1:
+    if player_season != 1:
         comments["player_deaths"], comments["rank_deaths"] = get_death_comments(
             average_deaths, elo, rank_filter
         )
@@ -130,10 +130,9 @@ def get_avg_bastions(uuid, detailed_matches):
     return completed_bastions, average_bastions, average_deaths
 
 
-def get_ranked_bastions(average_bastions, rank_filter):
+def get_ranked_bastions(average_bastions, rank_filter, playerbase_file):
     ranked_bastions = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
 
-    playerbase_file = Path("src") / "database" / "playerbase.json"
     with open(playerbase_file, "r") as f:
         bastions_final_boss = json.load(f)["bastion"]
 

@@ -505,7 +505,7 @@ async def analysis(
         default="",
         autocomplete=True,
     ),
-    season: str = SlashOption(
+    player_season: str = SlashOption(
         "player_season",
         required=False,
         description="The season to gather player data from.",
@@ -557,7 +557,7 @@ async def analysis(
     print(f"---\nAnalysing {input_name}'s games")
 
     try:
-        response = api.User(name=input_name, season=season).get()
+        response = api.User(name=input_name, season=player_season).get()
 
     except api.APINotFoundError as e:
         print(e)
@@ -579,21 +579,23 @@ async def analysis(
 
     target_games = int(selection[5:])
     num_comps, detailed_matches = await games.get_detailed_matches(
-        response, season, 5, target_games
+        response, player_season, 5, target_games
     )
 
     if detailed_matches == -1:
         print("Player does not have enough completions.")
         await interaction.followup.send(
-            f"{input_name} needs a minimum of 5 completions from their last {target_games} games of season {season} to analyse. (Has {num_comps})",
+            f"{input_name} needs a minimum of 5 completions from their last {target_games} games of season {player_season} to analyse. (Has {num_comps})",
         )
         update_records(interaction, "analysis", input_name, False)
         return
 
+    if compare_season == "player_season":
+        compare_season = player_season
     rank_filter = rank.str_to_rank(rank_filter)
 
     try:
-        anal = analysing.main(response, num_comps, detailed_matches, season, compare_season, rank_filter)
+        anal = analysing.main(response, num_comps, detailed_matches, player_season, compare_season, rank_filter)
     except LookupError:
         print("Not enough players in rank to compare to.")
         await interaction.followup.send(
@@ -1550,7 +1552,7 @@ async def help(
     )
     embed.add_field(
         name="/analysis",
-        value="`Options: Minecraft username, season, number of games, rank filter`\n`Defaults: Connected user, current season, up to last 300 games, any rank`\n***Analyses your games*** to give feedback about splits, bastions and overworlds.",
+        value="`Options: Minecraft username, season data for player, season data for comparisons, number of games, rank filter`\n`Defaults: Connected user, current season, player season selection, up to last 300 games, any rank`\n***Analyses your games*** to give feedback about splits, bastions and overworlds.",
         inline=False,
     )
     embed.add_field(
@@ -1716,7 +1718,8 @@ async def fetch_loop():
     repeat = 900
     while True:
         not_latest_load = latest_load
-        latest_load = await load_matches.spam_redlime(latest_load, 1000)
+        await load_matches.spam_redlime(constants.FIRST_MATCHES[1], 500)
+        latest_load = await load_matches.spam_redlime(latest_load, 1500)
         with open(DATABASE_DIR / "last_id.txt", "w") as f:
             f.write(str(latest_load))
         await asyncio.sleep(repeat)

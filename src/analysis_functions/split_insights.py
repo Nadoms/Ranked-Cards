@@ -32,11 +32,11 @@ SPLIT_NAMING = {
 }
 
 
-def main(uuid, detailed_matches, elo, season, num_comps, rank_filter):
+def main(uuid, detailed_matches, elo, player_season, num_comps, rank_filter, playerbase_file):
     number_splits, average_splits, average_deaths = get_avg_splits(
         uuid, detailed_matches
     )
-    ranked_splits = get_ranked_splits(average_splits, rank_filter)
+    ranked_splits = get_ranked_splits(average_splits, rank_filter, playerbase_file)
     polygon = get_polygon(ranked_splits)
     polygon = add_text(polygon, average_splits, ranked_splits, rank_filter)
 
@@ -47,7 +47,7 @@ def main(uuid, detailed_matches, elo, season, num_comps, rank_filter):
     )
     comments["count"] = get_count(number_splits)
     comments["best"], comments["worst"] = get_best_worst(ranked_splits)
-    if season != 1:
+    if player_season != 1:
         comments["player_deaths"], comments["rank_deaths"] = get_death_comments(
             average_deaths, elo, rank_filter
         )
@@ -164,7 +164,7 @@ def get_avg_splits(uuid, detailed_matches):
     return number_splits, average_splits, average_deaths
 
 
-def get_ranked_splits(average_splits, rank_filter):
+def get_ranked_splits(average_splits, rank_filter, playerbase_file):
     ranked_splits = {
         "ow": 0,
         "nether": 0,
@@ -184,7 +184,6 @@ def get_ranked_splits(average_splits, rank_filter):
         "end": [],
     }
 
-    playerbase_file = Path("src") / "database" / "playerbase.json"
     with open(playerbase_file, "r") as f:
         splits_final_boss = json.load(f)["split"]
 

@@ -24,9 +24,9 @@ ANGLES.insert(0, ANGLES.pop())
 OWS = list(constants.OW_MAPPING.values())
 
 
-def main(uuid, detailed_matches, season, rank_filter):
+def main(uuid, detailed_matches, rank_filter, playerbase_file):
     number_ows, average_ows = get_avg_ows(uuid, detailed_matches)
-    ranked_ows = get_ranked_ows(average_ows, rank_filter)
+    ranked_ows = get_ranked_ows(average_ows, rank_filter, playerbase_file)
     polygon = get_polygon(ranked_ows)
     polygon = add_text(polygon, average_ows, ranked_ows, rank_filter)
 
@@ -73,10 +73,9 @@ def get_avg_ows(uuid, detailed_matches):
     return number_ows, average_ows
 
 
-def get_ranked_ows(average_ows, rank_filter):
+def get_ranked_ows(average_ows, rank_filter, playerbase_file):
     ranked_ows = {"bt": 0, "dt": 0, "rp": 0, "ship": 0, "village": 0}
 
-    playerbase_file = Path("src") / "database" / "playerbase.json"
     with open(playerbase_file, "r") as f:
         ows_final_boss = json.load(f)["ow"]
 
