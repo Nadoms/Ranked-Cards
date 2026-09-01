@@ -1,5 +1,6 @@
 from pathlib import Path
 import subprocess
+import sys
 from datetime import datetime
 
 from dotenv import load_dotenv
@@ -11,13 +12,13 @@ LOG = ROOT / "logs" / f"bot_{datetime.now().strftime('%m%d-%H%M')}.log"
 load_dotenv(ROOT.parent / ".env")
 
 subprocess.run(
-    f"pip3 uninstall rankedutils -y && pip3 install git+https://github.com/Nadoms/ranked-utils.git",
+    f"{sys.executable} -m pip uninstall rankedutils -y && {sys.executable} -m pip install git+https://github.com/Nadoms/ranked-utils.git",
     text=True,
     shell=True,
 )
 
 process = subprocess.run(
-    f"python3 -u {BOT} 2>&1 | tee {LOG}",
+    f"{sys.executable} -u {BOT} 2>&1 | tee {LOG}",
     text=True,
     shell=True,
 )
