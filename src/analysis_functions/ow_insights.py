@@ -33,10 +33,10 @@ def main(uuid, detailed_matches, rank_filter, playerbase_file):
     comments = {}
     comments["title"] = f"Overworld Performance"
     comments["description"] = (
-        f"{len(detailed_matches)} games were used in analysing your overworlds. {get_sample_size(len(detailed_matches))}"
+        f"{len(detailed_matches)} games were used in analysing this player's overworlds. {get_sample_size(len(detailed_matches))}"
     )
     comments["count"] = get_count(number_ows)
-    comments["best"], comments["worst"] = get_best_worst(ranked_ows)
+    comments["best"], comments["worst"] = get_best_worst(ranked_ows, average_ows)
 
     return comments, polygon
 
@@ -287,7 +287,7 @@ def get_sample_size(num_games):
     if num_games < 80:
         return "This is an OK sample size."
     else:
-        return "This is a large sample size and the data will reflect your overworld skills properly."
+        return "This is a large sample size and the data will reflect overworld skill-levels properly."
 
 
 def get_count(number_ows):
@@ -309,7 +309,7 @@ def get_count(number_ows):
     return count_comment
 
 
-def get_best_worst(ranked_ows):
+def get_best_worst(ranked_ows, avg_ows):
     OW_NAMING = {
         "bt": "Buried Treasure",
         "dt": "Desert Temple",
@@ -317,20 +317,6 @@ def get_best_worst(ranked_ows):
         "ship": "Shipwreck",
         "village": "Village",
     }
-    # best_comments = {
-    #     "bt": "You're most comfortable with mapless, island crafts and magma portals.",
-    #     "dt": "You're fastest with routing the overworlds of desert temples.",
-    #     "rp": "You excel at finding and looting ruined portals, as well as foraging around them.",
-    #     "ship": "You're at your best when spotting shipwrecks and magma ravines.",
-    #     "village": "Routing villages is your strongest overworld ability."
-    # }
-    # worst_comments = {
-    #     "bt": "You're slower at finding buried treasures than expected. Practice finding the correct chunk with only 2 pie chart swipes!",
-    #     "dt": "Your desert temple overworlds are slower than others. Make sure to take mental notes of what's around you as you move.",
-    #     "rp": "You falter with ruined portal overworlds. Make sure to think ahead about what you're crafting while getting wood or food.",
-    #     "ship": "Your shipwrecks aren't as fast as your other overworlds. Remember that you can use mapless for these too!",
-    #     "village": "Routing villages is where you slow down the most. Plan out movements in advance as you go from the blacksmith, to hay, to the golem."
-    # }
 
     max_key = ""
     max_val = -1
@@ -346,14 +332,21 @@ def get_best_worst(ranked_ows):
             min_val = ranked_ows[key]
             min_key = key
 
+    def ow_to_text(ow):
+        if avg_ows[ow] == 1000000000000:
+            return "`Not enough data`"
+        else:
+            time = numb.digital_time(avg_ows[ow])
+            return f"`{time} ({word.percentify(ranked_ows[ow])})`"
+
     best = {
-        "name": "Strongest Overworld Type",
-        "value": f"`{word.percentify(ranked_ows[max_key])}` - {OW_NAMING[max_key]}",
+        "name": f"Strongest Seed Type - {OW_NAMING[max_key]}",
+        "value": ow_to_text(max_key),
         "inline": True,
     }
     worst = {
-        "name": f"Weakest Overworld Type",
-        "value": f"`{word.percentify(ranked_ows[min_key])}` - {OW_NAMING[min_key]}",
+        "name": f"Weakest Seed Type - {OW_NAMING[min_key]}",
+        "value": ow_to_text(min_key),
         "inline": True,
     }
 

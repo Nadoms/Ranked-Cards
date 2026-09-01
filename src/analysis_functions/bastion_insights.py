@@ -36,14 +36,14 @@ def main(uuid, detailed_matches, elo, player_season, rank_filter, playerbase_fil
     comments = {}
     comments["title"] = f"Bastion Performance"
     comments["description"] = (
-        f"{sum_bastions} completed bastion splits were used in analysing your performance. {get_sample_size(sum_bastions)}"
+        f"{sum_bastions} completed bastion splits were used in analysing this player's performance. {get_sample_size(sum_bastions)}"
     )
     comments["count"] = get_count(info_bastions["self"]["completions"])
     if int(player_season) != 1:
         comments["player_deaths"], comments["opp_deaths"] = get_death_comments(
             death_bastions, elo, rank_filter
         )
-    comments["best"], comments["worst"] = get_best_worst(ranked_bastions)
+    comments["best"], comments["worst"] = get_best_worst(ranked_bastions, info_bastions["self"]["avg"])
 
     return comments, polygon
 
@@ -386,7 +386,7 @@ def get_count(completed_bastions):
     return count_comment
 
 
-def get_best_worst(ranked_bastions):
+def get_best_worst(ranked_bastions, avg_bastions):
     max_key = ""
     max_val = -1
     min_key = ""
@@ -401,14 +401,21 @@ def get_best_worst(ranked_bastions):
             min_val = ranked_bastions[key]
             min_key = key
 
+    def bastion_to_text(bastion):
+        if avg_bastions[bastion] == 1000000000000:
+            return "`Not enough data`"
+        else:
+            time = numb.digital_time(avg_bastions[bastion])
+            return f"`{time} ({word.percentify(ranked_bastions[bastion])})`"
+
     best = {
-        "name": "Strongest Bastion Type",
-        "value": f"{max_key.capitalize()} - `{word.percentify(ranked_bastions[max_key])}`",
+        "name": f"Strongest Bastion - {max_key.capitalize()}",
+        "value": bastion_to_text(max_key),
         "inline": True,
     }
     worst = {
-        "name": "Weakest Bastion Type",
-        "value": f"{min_key.capitalize()} - `{word.percentify(ranked_bastions[min_key])}`",
+        "name": f"Weakest Bastion - {min_key.capitalize()}",
+        "value": bastion_to_text(min_key),
         "inline": True,
     }
 

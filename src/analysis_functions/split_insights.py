@@ -23,7 +23,7 @@ ANGLES = [
 ANGLES.insert(0, ANGLES.pop())
 SPLIT_NAMING = {
     "ow": "Overworld",
-    "nether": "Nether Terrain",
+    "nether": "Nether",
     "bastion": "Bastion",
     "fortress": "Fortress",
     "blind": "Blind",
@@ -43,14 +43,14 @@ def main(uuid, detailed_matches, elo, player_season, num_comps, rank_filter, pla
     comments = {}
     comments["title"] = f"Split Performance"
     comments["description"] = (
-        f"{len(detailed_matches)} games (with {num_comps} completions) were used in analysing your splits. {get_sample_size(num_comps)}"
+        f"{len(detailed_matches)} games (with {num_comps} completions) were used in analysing this player's splits. {get_sample_size(num_comps)}"
     )
     comments["count"] = get_count(info_splits["self"]["completions"])
     if int(player_season) != 1:
         comments["player_deaths"], comments["opp_deaths"] = get_death_comments(
             death_splits, elo, rank_filter
         )
-    comments["best"], comments["worst"] = get_best_worst(ranked_splits)
+    comments["best"], comments["worst"] = get_best_worst(ranked_splits, info_splits["self"]["avg"])
 
     return comments, polygon
 
@@ -498,7 +498,7 @@ def get_count(number_splits):
     return count_comment
 
 
-def get_best_worst(ranked_splits):
+def get_best_worst(ranked_splits, avg_splits):
     max_key = ""
     max_val = -1
     min_key = ""
@@ -513,14 +513,21 @@ def get_best_worst(ranked_splits):
             min_val = ranked_splits[key]
             min_key = key
 
+    def split_to_text(split):
+        if avg_splits[split] == 1000000000000:
+            return "`Not enough data`"
+        else:
+            time = numb.digital_time(avg_splits[split])
+            return f"`{time} ({word.percentify(ranked_splits[split])})`"
+
     best = {
-        "name": "Strongest Split",
-        "value": f"{SPLIT_NAMING[max_key]} - `{word.percentify(ranked_splits[max_key])}`",
+        "name": f"Strongest Split - {SPLIT_NAMING[max_key]}",
+        "value": split_to_text(max_key),
         "inline": True,
     }
     worst = {
-        "name": f"Weakest Split",
-        "value": f"{SPLIT_NAMING[min_key]} - `{word.percentify(ranked_splits[min_key])}`",
+        "name": f"Weakest Split - {SPLIT_NAMING[min_key]}",
+        "value": split_to_text(min_key),
         "inline": True,
     }
 
