@@ -664,13 +664,7 @@ async def analysis(
     for key in split_comms:
         if key == "title" or key == "description":
             continue
-        elif (key == "player_deaths" or key == "rank_deaths") and int(player_season) != 1:
-            embed_split.add_field(
-                name=split_comms[key]["name"],
-                value="\n".join(split_comms[key]["value"]),
-                inline=split_comms[key]["inline"],
-            )
-        else:
+        elif (key != "player_deaths" and key != "opp_deaths") or int(player_season) != 1:
             embed_split.add_field(
                 name=split_comms[key]["name"],
                 value=split_comms[key]["value"],
@@ -688,12 +682,6 @@ async def analysis(
         for key in bastion_comms:
             if key == "title" or key == "description":
                 continue
-            elif key == "player_deaths" or key == "rank_deaths":
-                embed_bastion.add_field(
-                    name=bastion_comms[key]["name"],
-                    value="\n".join(bastion_comms[key]["value"]),
-                    inline=bastion_comms[key]["inline"],
-                )
             else:
                 embed_bastion.add_field(
                     name=bastion_comms[key]["name"],

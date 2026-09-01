@@ -48,10 +48,10 @@ def main(uuid, detailed_matches, elo, player_season, num_comps, rank_filter, pla
     comments["count"] = get_count(number_splits)
     comments["best"], comments["worst"] = get_best_worst(ranked_splits)
     if int(player_season) != 1:
-        comments["player_deaths"], _ = get_death_comments(  # comments["rank_deaths"]
+        comments["player_deaths"], _ = get_death_comments(
             average_deaths, elo, rank_filter
         )
-    comments["rank_deaths"] = {  # temporary TODO remove
+    comments["opp_deaths"] = {  # temporary TODO remove
         "name": "Opponent Death Rates",
         "value": "Coming soon...",
         "inline": True,
@@ -503,24 +503,24 @@ def get_death_comments(average_deaths, elo, rank_filter):
 
     death_comment = {
         "name": "Death Rates",
-        "value": [
+        "value": "\n".join([
             (
                 f"`{' ' if average_deaths[split] < 0.1 else ''}"
                 f"{numb.round_sf(average_deaths[split] * 100, 3)}%` - {SPLIT_NAMING[split]}"
             )
             for split in average_deaths
-        ],
+        ]),
         "inline": True,
     }
     rank_comment = {
         "name": f"{player_rank} Death Rates",
-        "value": [
+        "value": "\n".join([
             (
                 f"`{' ' if overall_deaths[split] < 0.1 else ''}"
                 f"{numb.round_sf(overall_deaths[split] * 100, 3)}%` - {SPLIT_NAMING[split]}"
             )
             for split in overall_deaths
-        ],
+        ]),
         "inline": True,
     }
     return death_comment, rank_comment
