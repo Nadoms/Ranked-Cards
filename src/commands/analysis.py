@@ -11,7 +11,7 @@ from analysis_functions import (
     ow_insights,
 )
 import rankedutils.constants
-from rankedutils.word import season_suffix, process_split
+from rankedutils.word import process_split
 
 
 def main(response, num_comps, detailed_matches, player_season, compare_season, rank_filter=None):
