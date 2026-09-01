@@ -37,7 +37,7 @@ COMMENTS = {
 
 def main(response, detailed_matches, elo, player_season, compare_season, rank_filter, playerbase_file):
     general_comments = {}
-    rank_filter_str = "" if rank_filter is None else f", {rank_filter}"
+    rank_filter_str = "" if rank_filter is None else f" {rank_filter}"
     season_str = f"S{compare_season}"
     general_comments["title"] = (
         f"`{response['nickname']}`'s S{player_season} Performance against {season_str}{rank_filter_str} Players"
@@ -60,12 +60,12 @@ def main(response, detailed_matches, elo, player_season, compare_season, rank_fi
     general_comments["avg"] = [
         f"Avg Finish: `{numb.digital_time(avg)}`",
         percentify(get_attr_ranked(avg, "avg", rank_filter, playerbase_file)),
-        f"Equivalent to {rank.get_elo_equivalent(avg, 'avg')} Elo",
+        f"Equal to {rank.get_elo_equivalent(avg, 'avg')} Elo now",
     ]
     general_comments["sb"] = [
         f"Season Best: `{numb.digital_time(sb)}`",
         percentify(get_attr_ranked(sb, "sb", rank_filter, playerbase_file)),
-        f"Equivalent to {rank.get_elo_equivalent(sb, 'sb')} Elo",
+        f"Equal to {rank.get_elo_equivalent(sb, 'sb')} Elo now",
     ]
     ffl = games.get_ff_loss(response, "season")
     general_comments["ffl"] = [f"Forfeit/Loss: `{ffl}%`", get_comments(ffl, "ffl")]

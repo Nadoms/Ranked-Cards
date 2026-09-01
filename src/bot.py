@@ -64,15 +64,15 @@ class Topics(nextcord.ui.View):
         }
         self.buttons = {}
 
-        for name in ["splits", "ows", "bastions"]:
+        for name in self.button_labels:
+            if self.embeds[name] is None:
+                continue
             button = nextcord.ui.Button(
                 label=self.button_labels[name],
                 style=self.button_styles[name],
             )
             button.callback = self._make_callback(name)
-            button.disabled = self.embeds[name] is None
             self.buttons[name] = button
-            self.add_item(button)
 
         self.update_buttons()
 
@@ -83,15 +83,12 @@ class Topics(nextcord.ui.View):
         return callback
 
     def update_buttons(self):
-        for name, button in self.buttons.items():
-            is_current = name == self.value
-            button.disabled = is_current or self.embeds[name] is None
-            button.style = nextcord.ButtonStyle.grey if is_current else self.button_styles[name]
+        self.clear_items()
+        for name in self.buttons:
+            if name != self.value:
+                self.add_item(self.buttons[name])
 
     async def switch_to(self, interaction: Interaction, name: str):
-        if self.embeds[name] is None:
-            return
-
         print(f"Flipping to {name} for {interaction.user.name}")
         self.value = name
         self.update_buttons()
@@ -101,13 +98,10 @@ class Topics(nextcord.ui.View):
             file=file,
             view=self,
         )
-        self._View__timeout_expiry -= self.timeout
 
     async def on_timeout(self):
-        for item in self.children:
-            if isinstance(item, nextcord.ui.Button):
-                item.style = nextcord.ButtonStyle.grey
-                item.disabled = True
+        print("timeout")
+        self.clear_items()
         await self.interaction.edit_original_message(view=self)
         for image in self.images:
             if self.images[image] is not None:
@@ -670,7 +664,7 @@ async def analysis(
     for key in split_comms:
         if key == "title" or key == "description":
             continue
-        elif key == "player_deaths" or key == "rank_deaths":
+        elif (key == "player_deaths" or key == "rank_deaths") and int(player_season) != 1:
             embed_split.add_field(
                 name=split_comms[key]["name"],
                 value="\n".join(split_comms[key]["value"]),
@@ -1767,5 +1761,4 @@ if not TESTING_MODE:
     bot.loop.create_task(fetch_loop())
     bot.loop.create_task(suggestions_loop())
     bot.loop.create_task(analysis_loop())
-bot.loop.create_task(analysis_loop()) ### remove
 bot.run(getenv(token))

@@ -40,10 +40,15 @@ def main(uuid, detailed_matches, elo, player_season, rank_filter, playerbase_fil
     )
     comments["count"] = get_count(completed_bastions)
     comments["best"], comments["worst"] = get_best_worst(ranked_bastions)
-    if player_season != 1:
-        comments["player_deaths"], comments["rank_deaths"] = get_death_comments(
+    if int(player_season) != 1:
+        comments["player_deaths"], _ = get_death_comments(  # comments["rank_deaths"]
             average_deaths, elo, rank_filter
         )
+    comments["rank_deaths"] = {  # temporary TODO remove
+        "name": "Opponent Death Rates",
+        "value": "Coming soon...",
+        "inline": True,
+    }
 
     return comments, polygon
 
@@ -355,7 +360,7 @@ def get_sample_size(sum_bastions):
     if sum_bastions < 60:
         return "This is an OK sample size."
     else:
-        return "This is a large sample size and the data will reflect your bastion skills properly."
+        return "This is a large sample size and the data will reflect bastion skill-levels properly."
 
 
 def get_count(completed_bastions):
@@ -443,7 +448,7 @@ def get_death_comments(average_deaths, elo, rank_filter):
             max_bastion = bastion_key
 
     death_comment = {
-        "name": "Your Death Rates",
+        "name": "Death Rates",
         "value": [
             f"`{' ' if average_deaths[bastion] < 0.1 else ''}{numb.round_sf(average_deaths[bastion] * 100, 3)}%` - {bastion.capitalize()}"
             for bastion in average_deaths
