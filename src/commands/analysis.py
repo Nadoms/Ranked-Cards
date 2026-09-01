@@ -10,7 +10,7 @@ from analysis_functions import (
     split_insights,
     ow_insights,
 )
-import rankedutils.constants
+from rankedutils import constants
 from rankedutils.word import process_split
 
 
