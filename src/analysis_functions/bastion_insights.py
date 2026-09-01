@@ -25,40 +25,54 @@ BASTION_TYPES = ["bridge", "housing", "stables", "treasure"]
 
 
 def main(uuid, detailed_matches, elo, player_season, rank_filter, playerbase_file):
-    completed_bastions, average_bastions, average_deaths = get_avg_bastions(
+    info_bastions, death_bastions = get_avg_bastions(
         uuid, detailed_matches
     )
-    ranked_bastions = get_ranked_bastions(average_bastions, rank_filter, playerbase_file)
+    ranked_bastions = get_ranked_bastions(info_bastions["self"]["avg"], rank_filter, playerbase_file)
     polygon = get_polygon(ranked_bastions)
-    polygon = add_text(polygon, average_bastions, ranked_bastions, rank_filter)
-    sum_bastions = sum(completed_bastions.values())
+    polygon = add_text(polygon, info_bastions["self"]["avg"], ranked_bastions, rank_filter)
+    sum_bastions = sum(info_bastions["self"]["completions"].values())
 
     comments = {}
     comments["title"] = f"Bastion Performance"
     comments["description"] = (
         f"{sum_bastions} completed bastion splits were used in analysing your performance. {get_sample_size(sum_bastions)}"
     )
-    comments["count"] = get_count(completed_bastions)
-    comments["best"], comments["worst"] = get_best_worst(ranked_bastions)
+    comments["count"] = get_count(info_bastions["self"]["completions"])
     if int(player_season) != 1:
-        comments["player_deaths"], _ = get_death_comments(
-            average_deaths, elo, rank_filter
+        comments["player_deaths"], comments["opp_deaths"] = get_death_comments(
+            death_bastions, elo, rank_filter
         )
-    comments["opp_deaths"] = {  # temporary TODO remove
-        "name": "Opponent Death Rates",
-        "value": "Coming soon...",
-        "inline": True,
-    }
+    comments["best"], comments["worst"] = get_best_worst(ranked_bastions)
 
     return comments, polygon
 
 
 def get_avg_bastions(uuid, detailed_matches):
-    completed_bastions = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
-    entered_bastions = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
-    time_bastions = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
-    average_bastions = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
-    average_deaths = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
+    info_bastions = {
+        "self": {
+            "completions": {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0},
+            "time": {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0},
+            "avg": {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0},
+        },
+        "opp": {
+            "completions": {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0},
+            "time": {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0},
+            "avg": {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0},
+        }
+    }
+    death_bastions = {
+        "self": {
+            "count": {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0},
+            "enters": {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0},
+            "rate": {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0},
+        },
+        "opp": {
+            "count": {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0},
+            "enters": {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0},
+            "rate": {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0},
+        },
+    }
     death_opportunities = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
     bastion_conditions = [
         "nether.obtain_crying_obsidian",
@@ -77,62 +91,52 @@ def get_avg_bastions(uuid, detailed_matches):
             continue
 
         bastion_type = match["bastionType"].lower()
-        bastion_entry = 0
-        bastion_exit = 0
-        bastion_progression = 0
+        bastion_entry = {"self": 0, "opp": 0}
+        bastion_exit = {"self": 0, "opp": 0}
+        bastion_progression = {"self": 0, "opp": 0}
 
         for event in reversed(match["timelines"]):
-            if event["uuid"] != uuid:
-                continue
+            player_type = "self" if event["uuid"] == uuid else "opp"
 
             # If entering bastion, set entry time.
             if event["type"] == "nether.find_bastion":
-                bastion_entry = event["time"]
-                entered_bastions[bastion_type] += 1
-                death_opportunities[bastion_type] += 1
+                bastion_entry[player_type] = event["time"]
+                death_bastions[player_type]["enters"][bastion_type] += 1
 
             # If resetting, set everything to how it was.
             elif event["type"] == "projectelo.timeline.reset":
-                bastion_entry = 0
-                bastion_progression = 0
+                bastion_entry[player_type] = 0
+                bastion_progression[player_type] = 0
 
             # If currently inside the bastion,
-            elif bastion_entry and not bastion_exit:
+            elif bastion_entry[player_type] and not bastion_exit[player_type]:
                 # If doing bastion things, increase the bastion progression.
                 if event["type"] in bastion_conditions:
-                    bastion_progression += 1
+                    bastion_progression[player_type] += 1
 
                 # If dying during the bastion, increment the death count.
                 elif event["type"] == "projectelo.timeline.death":
-                    average_deaths[bastion_type] += 1
+                    death_bastions[player_type]["count"][bastion_type] += 1
 
                 # If entering another split after bastion, set the exit time.
                 elif event["type"] in post_bastion:
-                    bastion_exit = event["time"]
-                    bastion_length = bastion_exit - bastion_entry
-                    time_bastions[bastion_type] += bastion_length
-                    completed_bastions[bastion_type] += 1
+                    bastion_exit[player_type] = event["time"]
+                    bastion_length = bastion_exit[player_type] - bastion_entry[player_type]
+                    info_bastions[player_type]["time"][bastion_type] += bastion_length
+                    info_bastions[player_type]["completions"][bastion_type] += 1
 
-        # If the opponent ended the game, discount the split as an opportunity to die.
-        else:
-            if (
-                match["result"]["uuid"] != uuid and not match["forfeited"]
-                and match["result"]["uuid"] == uuid and match["forfeited"]
-                and bastion_entry and not bastion_exit
-            ):
-                death_opportunities[bastion_type] -= 1
+    for player_type in ("self", "opp"):
+        for bastion in BASTION_TYPES:
+            if info_bastions[player_type]["completions"][bastion] == 0:
+                info_bastions[player_type]["avg"][bastion] = 1000000000000
+            else:
+                info_bastions[player_type]["avg"][bastion] = round(info_bastions[player_type]["time"][bastion] / info_bastions[player_type]["completions"][bastion])
+            if death_bastions[player_type]["enters"][bastion] == 0:
+                death_bastions[player_type]["rate"][bastion] = 0
+            else:
+                death_bastions[player_type]["rate"][bastion] = round(death_bastions[player_type]["count"][bastion] / death_bastions[player_type]["enters"][bastion], 3)
 
-    for key in average_bastions:
-        if completed_bastions[key] == 0:
-            average_bastions[key] = 1000000000000
-        else:
-            average_bastions[key] = round(time_bastions[key] / completed_bastions[key])
-        if death_opportunities[key] == 0:
-            average_deaths[key] = 0
-        else:
-            average_deaths[key] = round(average_deaths[key] / death_opportunities[key], 3)
-
-    return completed_bastions, average_bastions, average_deaths
+    return info_bastions, death_bastions
 
 
 def get_ranked_bastions(average_bastions, rank_filter, playerbase_file):
@@ -368,8 +372,8 @@ def get_count(completed_bastions):
     count = ""
     for bastion in completed_bastions:
         num = completed_bastions[bastion]
-        count += f" {num}"
         count += " " * (5 - len(str(num)))
+        count += f"{num} "
         if bastion != "treasure":
             count += "/"
     value = f"`|{names}|`\n`|{count}|`"
@@ -383,19 +387,6 @@ def get_count(completed_bastions):
 
 
 def get_best_worst(ranked_bastions):
-    # best_comments = {
-    #     "bridge": "You can handle the variety of overworld very well. Getting ahead early is key!",
-    #     "housing": "You excel at navigating nether terrain and finding structures.",
-    #     "stables": "Routing bastions is your strongest bastion.",
-    #     "treasure": "Blaze fighting is your strong suit.",
-    # }
-    # worst_comments = {
-    #     "bridge": "Your overworld routing is slower than your other bastions. Remember to practice every type of overworld!",
-    #     "housing": "Your terrain nav to the bastion is slower than expected. Try to think through all of the different terrain decisions you can make.",
-    #     "stables": "Your bastion routing is slower than other bastions. There are tons of tools to practice routing, so this is the easiest to improve on!",
-    #     "treasure": "You often falter a little in your fortress bastion. Make sure drop RD for strays on the way to the spawner, and practice your blaze bed.",
-    # }
-
     max_key = ""
     max_val = -1
     min_key = ""
@@ -412,19 +403,20 @@ def get_best_worst(ranked_bastions):
 
     best = {
         "name": "Strongest Bastion Type",
-        "value": f"`{word.percentify(ranked_bastions[max_key])}` - {max_key.capitalize()}",
+        "value": f"{max_key.capitalize()} - `{word.percentify(ranked_bastions[max_key])}`",
         "inline": True,
     }
     worst = {
         "name": "Weakest Bastion Type",
-        "value": f"`{word.percentify(ranked_bastions[min_key])}` - {min_key.capitalize()}",
+        "value": f"{min_key.capitalize()} - `{word.percentify(ranked_bastions[min_key])}`",
         "inline": True,
     }
 
     return [best, worst]
 
 
-def get_death_comments(average_deaths, elo, rank_filter):
+def get_death_comments(death_bastions, elo, rank_filter):
+    # Redundant atm
     differences = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
 
     if rank_filter is None:
@@ -441,26 +433,37 @@ def get_death_comments(average_deaths, elo, rank_filter):
     max_bastion = None
     for bastion_key in differences:
         differences[bastion_key] = (
-            average_deaths[bastion_key] / overall_deaths[bastion_key]
+            death_bastions["self"]["rate"][bastion_key] / overall_deaths[bastion_key]
         )
         if differences[bastion_key] > max_diff:
             max_diff = differences[bastion_key]
             max_bastion = bastion_key
 
+
+    values = []
+    for player in ("self", "opp"):
+        count = ""
+        rate = ""
+        for bastion in death_bastions[player]["count"]:
+            deaths = death_bastions[player]["count"][bastion]
+            death_rate = f"{numb.round_sf(death_bastions[player]["rate"][bastion] * 100, 2)}%"
+            count += " " * (5 - len(str(deaths)))
+            count += f"{deaths} "
+            rate += " " * (5 - len(str(death_rate)))
+            rate += f"{death_rate} "
+            if bastion != "treasure":
+                count += "/"
+                rate += "/"
+        values.append(f"`|{count}|`\n`|{rate}|`")
+
     death_comment = {
         "name": "Death Rates",
-        "value": "\n".join([
-            f"`{' ' if average_deaths[bastion] < 0.1 else ''}{numb.round_sf(average_deaths[bastion] * 100, 3)}%` - {bastion.capitalize()}"
-            for bastion in average_deaths
-        ]),
-        "inline": True,
+        "value": values[0],
+        "inline": False,
     }
-    rank_comment = {
-        "name": f"{player_rank} Death Rates",
-        "value": "\n".join([
-            f"`{' ' if overall_deaths[bastion] < 0.1 else ''}{numb.round_sf(overall_deaths[bastion] * 100, 3)}%` - {bastion.capitalize()}"
-            for bastion in overall_deaths
-        ]),
-        "inline": True,
+    opp_comment = {
+        "name": "Opponent Death Rates",
+        "value": values[1],
+        "inline": False,
     }
-    return death_comment, rank_comment
+    return death_comment, opp_comment

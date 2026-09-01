@@ -33,69 +33,148 @@ SPLIT_NAMING = {
 
 
 def main(uuid, detailed_matches, elo, player_season, num_comps, rank_filter, playerbase_file):
-    number_splits, average_splits, average_deaths = get_avg_splits(
+    info_splits, death_splits = get_avg_splits(
         uuid, detailed_matches
     )
-    ranked_splits = get_ranked_splits(average_splits, rank_filter, playerbase_file)
+    ranked_splits = get_ranked_splits(info_splits["self"]["avg"], rank_filter, playerbase_file)
     polygon = get_polygon(ranked_splits)
-    polygon = add_text(polygon, average_splits, ranked_splits, rank_filter)
+    polygon = add_text(polygon, info_splits["self"]["avg"], ranked_splits, rank_filter)
 
     comments = {}
     comments["title"] = f"Split Performance"
     comments["description"] = (
         f"{len(detailed_matches)} games (with {num_comps} completions) were used in analysing your splits. {get_sample_size(num_comps)}"
     )
-    comments["count"] = get_count(number_splits)
-    comments["best"], comments["worst"] = get_best_worst(ranked_splits)
+    comments["count"] = get_count(info_splits["self"]["completions"])
     if int(player_season) != 1:
-        comments["player_deaths"], _ = get_death_comments(
-            average_deaths, elo, rank_filter
+        comments["player_deaths"], comments["opp_deaths"] = get_death_comments(
+            death_splits, elo, rank_filter
         )
-    comments["opp_deaths"] = {  # temporary TODO remove
-        "name": "Opponent Death Rates",
-        "value": "Coming soon...",
-        "inline": True,
-    }
+    comments["best"], comments["worst"] = get_best_worst(ranked_splits)
 
     return comments, polygon
 
 
 def get_avg_splits(uuid, detailed_matches):
-    number_splits = {
-        "ow": 0,
-        "nether": 0,
-        "bastion": 0,
-        "fortress": 0,
-        "blind": 0,
-        "stronghold": 0,
-        "end": 0,
+    info_splits = {
+        "self": {
+            "completions": {
+                "ow": 0,
+                "nether": 0,
+                "bastion": 0,
+                "fortress": 0,
+                "blind": 0,
+                "stronghold": 0,
+                "end": 0,
+            },
+                "time": {
+                "ow": 0,
+                "nether": 0,
+                "bastion": 0,
+                "fortress": 0,
+                "blind": 0,
+                "stronghold": 0,
+                "end": 0,
+            },
+                "avg": {
+                "ow": 0,
+                "nether": 0,
+                "bastion": 0,
+                "fortress": 0,
+                "blind": 0,
+                "stronghold": 0,
+                "end": 0,
+            },
+        },
+        "opp": {
+            "completions": {
+                "ow": 0,
+                "nether": 0,
+                "bastion": 0,
+                "fortress": 0,
+                "blind": 0,
+                "stronghold": 0,
+                "end": 0,
+            },
+                "time": {
+                "ow": 0,
+                "nether": 0,
+                "bastion": 0,
+                "fortress": 0,
+                "blind": 0,
+                "stronghold": 0,
+                "end": 0,
+            },
+                "avg": {
+                "ow": 0,
+                "nether": 0,
+                "bastion": 0,
+                "fortress": 0,
+                "blind": 0,
+                "stronghold": 0,
+                "end": 0,
+            },
+        }
     }
-    time_splits = {
-        "ow": 0,
-        "nether": 0,
-        "bastion": 0,
-        "fortress": 0,
-        "blind": 0,
-        "stronghold": 0,
-        "end": 0,
-    }
-    average_splits = {
-        "ow": 0,
-        "nether": 0,
-        "bastion": 0,
-        "fortress": 0,
-        "blind": 0,
-        "stronghold": 0,
-        "end": 0,
-    }
-    average_deaths = {
-        "ow": 0,
-        "nether": 0,
-        "bastion": 0,
-        "fortress": 0,
-        "blind": 0,
-        "stronghold": 0,
-        "end": 0,
+    death_splits = {
+        "self": {
+            "count": {
+                "ow": 0,
+                "nether": 0,
+                "bastion": 0,
+                "fortress": 0,
+                "blind": 0,
+                "stronghold": 0,
+                "end": 0,
+            },
+            "enters": {
+                "ow": 0,
+                "nether": 0,
+                "bastion": 0,
+                "fortress": 0,
+                "blind": 0,
+                "stronghold": 0,
+                "end": 0,
+            },
+            "rate": {
+                "ow": 0,
+                "nether": 0,
+                "bastion": 0,
+                "fortress": 0,
+                "blind": 0,
+                "stronghold": 0,
+                "end": 0,
+            },
+        },
+        "opp": {
+            "count": {
+                "ow": 0,
+                "nether": 0,
+                "bastion": 0,
+                "fortress": 0,
+                "blind": 0,
+                "stronghold": 0,
+                "end": 0,
+            },
+            "enters": {
+                "ow": 0,
+                "nether": 0,
+                "bastion": 0,
+                "fortress": 0,
+                "blind": 0,
+                "stronghold": 0,
+                "end": 0,
+            },
+            "rate": {
+                "ow": 0,
+                "nether": 0,
+                "bastion": 0,
+                "fortress": 0,
+                "blind": 0,
+                "stronghold": 0,
+                "end": 0,
+            },
+        }
     }
     death_opportunities = {
         "ow": 0,
@@ -119,54 +198,49 @@ def get_avg_splits(uuid, detailed_matches):
         if not match["timelines"]:
             continue
 
-        prev_event = "ow"
-        prev_time = 0
-        death_opportunities["ow"] += 1
+        prev_event = {"self": "ow", "opp": "ow"}
+        prev_time = {"self": 0, "opp": 0}
 
         for event in reversed(match["timelines"]):
-            if event["uuid"] != uuid:
-                continue
+            player_type = "self" if event["uuid"] == uuid else "opp"
 
             if event["type"] == "projectelo.timeline.reset":
-                prev_time = event["time"]
-                prev_event = "ow"
-                death_opportunities[prev_event] += 1
+                prev_time[player_type] = event["time"]
+                prev_event[player_type] = "ow"
+                death_splits[player_type]["enters"][prev_event[player_type]] += 1
+                death_opportunities[prev_event[player_type]] += 1
 
             elif event["type"] in event_mapping:
-                split_length = event["time"] - prev_time
-                time_splits[prev_event] += split_length
-                number_splits[prev_event] += 1
+                split_length = event["time"] - prev_time[player_type]
+                info_splits[player_type]["time"][prev_event[player_type]] += split_length
+                info_splits[player_type]["completions"][prev_event[player_type]] += 1
 
-                prev_time = event["time"]
-                prev_event = event_mapping[event["type"]]
-                death_opportunities[prev_event] += 1
+                prev_time[player_type] = event["time"]
+                prev_event[player_type] = event_mapping[event["type"]]
+                death_splits[player_type]["enters"][prev_event[player_type]] += 1
+                death_opportunities[prev_event[player_type]] += 1
 
             elif event["type"] == "projectelo.timeline.death":
-                average_deaths[prev_event] += 1
+                death_splits[player_type]["count"][prev_event[player_type]] += 1
 
-        # If the opponent ended the game, discount the split as an opportunity to die.
-        else:
-            if (
-                match["result"]["uuid"] != uuid and not match["forfeited"]
-                and match["result"]["uuid"] == uuid and match["forfeited"]
-            ):
-                death_opportunities[prev_event] -= 1
+        if match["forfeited"] is False:
+            player_type = "self" if match["result"]["uuid"] == uuid else "opp"
+            split_length = match["result"]["time"] - prev_time[player_type]
+            info_splits[player_type]["time"][prev_event[player_type]] += split_length
+            info_splits[player_type]["completions"][prev_event[player_type]] += 1
 
-        if match["result"]["uuid"] == uuid and match["forfeited"] is False:
-            split_length = match["result"]["time"] - prev_time
-            time_splits[prev_event] += split_length
-            number_splits[prev_event] += 1
+    for player_type in ("self", "opp"):
+        for split in SPLIT_NAMING:
+            if info_splits[player_type]["completions"][split] == 0:
+                info_splits[player_type]["avg"][split] = 1000000000000
+            else:
+                info_splits[player_type]["avg"][split] = round(info_splits[player_type]["time"][split] / info_splits[player_type]["completions"][split])
+            if death_splits[player_type]["enters"][split] == 0:
+                death_splits[player_type]["rate"][split] = 0
+            else:
+                death_splits[player_type]["rate"][split] = round(death_splits[player_type]["count"][split] / death_splits[player_type]["enters"][split], 3)
 
-    for key in average_splits:
-        if number_splits[key] == 0:
-            average_splits[key] = 1000000000000
-            if death_opportunities[key] == 0:
-                average_deaths[key] = 0
-        else:
-            average_splits[key] = round(time_splits[key] / number_splits[key])
-            average_deaths[key] = round(average_deaths[key] / death_opportunities[key], 3)
-
-    return number_splits, average_splits, average_deaths
+    return info_splits, death_splits
 
 
 def get_ranked_splits(average_splits, rank_filter, playerbase_file):
@@ -406,12 +480,12 @@ def get_sample_size(num_comps):
 
 
 def get_count(number_splits):
-    names = " OW  / NTR / BAS / FRT / BLN / SH  / END "
+    names = " OW   / NETH / BAST / FORT / BLND / SH   / END  "
     count = ""
     for split in number_splits:
         num = number_splits[split]
-        count += f" {num}"
-        count += " " * (4 - len(str(num)))
+        count += " " * (5 - len(str(num)))
+        count += f"{num} "
         if split != "end":
             count += "/"
     value = f"`|{names}|`\n`|{count}|`"
@@ -425,25 +499,6 @@ def get_count(number_splits):
 
 
 def get_best_worst(ranked_splits):
-    # best_comments = {
-    #     "ow": "You can handle the variety of overworld very well. Getting ahead early is key!",
-    #     "nether": "You excel at navigating nether terrain and finding structures.",
-    #     "bastion": "Routing bastions is your strongest split.",
-    #     "fortress": "Blaze fighting is your strong suit.",
-    #     "blind": "Measuring eyes and nether pearl travel is where you shine.",
-    #     "stronghold": "You are exceptional at finding the portal room quickly.",
-    #     "end": "You're at your best when taking down the ender dragon."
-    # }
-    # worst_comments = {
-    #     "ow": "Your overworld routing is slower than your other splits. Remember to practice every type of overworld!",
-    #     "nether": "Your terrain nav to the bastion is slower than expected. Try to think through all of the different terrain decisions you can make.",
-    #     "bastion": "Your bastion routing is slower than other splits. There are tons of tools to practice routing, so this is the easiest to improve on!",
-    #     "fortress": "You often falter a little in your fortress split. Make sure drop RD for strays on the way to the spawner, and practice your blaze bed.",
-    #     "blind": "You slow down when measuring eyes and pearling to coords. This split is often overlooked, so practice it!",
-    #     "stronghold": "Your stronghold nav isn't as fast as your other splits, make sure to practice premptive - even around mineshafts.",
-    #     "end": "You relax your aggression a bit more when you reach the end. Always go for halfbow or try a zero cycle."
-    # }
-
     max_key = ""
     max_val = -1
     min_key = ""
@@ -460,19 +515,20 @@ def get_best_worst(ranked_splits):
 
     best = {
         "name": "Strongest Split",
-        "value": f"`{word.percentify(ranked_splits[max_key])}` - {SPLIT_NAMING[max_key]}",
+        "value": f"{SPLIT_NAMING[max_key]} - `{word.percentify(ranked_splits[max_key])}`",
         "inline": True,
     }
     worst = {
         "name": f"Weakest Split",
-        "value": f"`{word.percentify(ranked_splits[min_key])}` - {SPLIT_NAMING[min_key]}",
+        "value": f"{SPLIT_NAMING[min_key]} - `{word.percentify(ranked_splits[min_key])}`",
         "inline": True,
     }
 
     return [best, worst]
 
 
-def get_death_comments(average_deaths, elo, rank_filter):
+def get_death_comments(death_splits, elo, rank_filter):
+    # Redundant atm
     differences = {
         "ow": 0,
         "nether": 0,
@@ -496,31 +552,36 @@ def get_death_comments(average_deaths, elo, rank_filter):
     max_diff = 0
     max_split = None
     for split_key in differences:
-        differences[split_key] = average_deaths[split_key] / overall_deaths[split_key]
+        differences[split_key] = death_splits["self"]["rate"][split_key] / overall_deaths[split_key]
         if differences[split_key] > max_diff:
             max_diff = differences[split_key]
             max_split = split_key
 
+
+    values = []
+    for player in ("self", "opp"):
+        count = ""
+        rate = ""
+        for split in death_splits[player]["count"]:
+            deaths = death_splits[player]["count"][split]
+            death_rate = f"{numb.round_sf(death_splits[player]["rate"][split] * 100, 2)}%"
+            count += " " * (5 - len(str(deaths)))
+            count += f"{deaths} "
+            rate += " " * (5 - len(str(death_rate)))
+            rate += f"{death_rate} "
+            if split != "end":
+                count += "/"
+                rate += "/"
+        values.append(f"`|{count}|`\n`|{rate}|`")
+
     death_comment = {
         "name": "Death Rates",
-        "value": "\n".join([
-            (
-                f"`{' ' if average_deaths[split] < 0.1 else ''}"
-                f"{numb.round_sf(average_deaths[split] * 100, 3)}%` - {SPLIT_NAMING[split]}"
-            )
-            for split in average_deaths
-        ]),
-        "inline": True,
+        "value": values[0],
+        "inline": False,
     }
-    rank_comment = {
-        "name": f"{player_rank} Death Rates",
-        "value": "\n".join([
-            (
-                f"`{' ' if overall_deaths[split] < 0.1 else ''}"
-                f"{numb.round_sf(overall_deaths[split] * 100, 3)}%` - {SPLIT_NAMING[split]}"
-            )
-            for split in overall_deaths
-        ]),
-        "inline": True,
+    opp_comment = {
+        "name": "Opponent Death Rates",
+        "value": values[1],
+        "inline": False,
     }
-    return death_comment, rank_comment
+    return death_comment, opp_comment

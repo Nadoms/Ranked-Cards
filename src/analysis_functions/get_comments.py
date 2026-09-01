@@ -101,7 +101,7 @@ def get_attr_ranked(value, attr_type, rank_filter, playerbase_file):
             if rank_filter is None or (attr[1] and lower <= attr[1] < upper)
         ]
     if not attrs:
-        raise LookupError("No players found in this rank to compare to.")
+        raise FileExistsError("No players found in this rank to compare to.")
 
     ranked_attr = round(np.searchsorted(attrs, value) / len(attrs), 3)
     if attr_type != "elo":

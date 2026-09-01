@@ -100,7 +100,6 @@ class Topics(nextcord.ui.View):
         )
 
     async def on_timeout(self):
-        print("timeout")
         self.clear_items()
         await self.interaction.edit_original_message(view=self)
         for image in self.images:
@@ -596,7 +595,7 @@ async def analysis(
 
     try:
         anal = analysing.main(response, num_comps, detailed_matches, player_season, compare_season, rank_filter)
-    except LookupError:
+    except FileExistsError:
         print("Not enough players in rank to compare to.")
         await interaction.followup.send(
             f"There are not enough players with matches played in {rank_filter} rank to compare to."
@@ -670,12 +669,6 @@ async def analysis(
                 value=split_comms[key]["value"],
                 inline=split_comms[key]["inline"],
             )
-        if key == "worst":
-            embed_split.add_field(
-                name="",
-                value="",
-                inline=False,
-            )
 
     if int(player_season) >= 5 and int(compare_season) >= 5:
         bastion_comms = comments["bastion"]
@@ -687,12 +680,6 @@ async def analysis(
                     name=bastion_comms[key]["name"],
                     value=bastion_comms[key]["value"],
                     inline=bastion_comms[key]["inline"],
-                )
-            if key == "worst":
-                embed_bastion.add_field(
-                    name="",
-                    value="",
-                    inline=False,
                 )
 
     ow_comms = comments["ow"]
