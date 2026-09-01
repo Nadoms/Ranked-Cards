@@ -1,7 +1,6 @@
 import json
 import math
 from os import path
-from pathlib import Path
 
 import numpy as np
 
@@ -9,7 +8,6 @@ from rankedutils import constants, games, insight, rank, numb
 from rankedutils.word import percentify
 
 
-PLAYERBASE_FILE = Path("src") / "database" / "playerbase.json"
 COMMENTS = {
     "ffl": {
         0: "Absolutely unyielding 👑",
@@ -37,15 +35,15 @@ COMMENTS = {
 }
 
 
-def main(response, detailed_matches, elo, season, rank_filter):
+def main(response, detailed_matches, elo, player_season, compare_season, rank_filter, playerbase_file):
     general_comments = {}
-    comparison_str = "" if rank_filter is None else f" - {rank_filter} Comparison"
+    rank_filter_str = "" if rank_filter is None else f" {rank_filter}"
+    season_str = f"S{compare_season}"
     general_comments["title"] = (
-        f"Analysis of `{response['nickname']}` in S{season}{comparison_str}"
+        f"`{response['nickname']}`'s S{player_season} Performance against {season_str}{rank_filter_str} Players"
     )
-    playerbase_str = "the entire playerbase" if rank_filter is None else f"{rank_filter} players"
     general_comments["description"] = (
-        f"This is how you stack up against {playerbase_str}. Each comparison references at most {get_player_count(rank_filter)} players."
+        f"This is how `{response['nickname']}` stacks up against the {season_str}{rank_filter_str} playerbase. Each comparison references at most {get_player_count(rank_filter, playerbase_file)} players."
         f"\nClick [here](https://docs.google.com/document/d/e/2PACX-1vQvNO1Mmf7T2zfaij_rxDsOMUwaVavJcZG68Bfp8-9CkeGyJHoPrvBFxU69apix4E7gVsaV51BiCVwC/pub) for an explanation of this command."
     )
 
@@ -54,20 +52,20 @@ def main(response, detailed_matches, elo, season, rank_filter):
     else:
         general_comments["elo"] = [
             f"Elo: `{elo}`",
-            percentify(get_attr_ranked(elo, "elo", rank_filter)),
+            percentify(get_attr_ranked(elo, "elo", rank_filter, playerbase_file)),
             get_elo_info(elo),
         ]
     avg = games.get_avg_completion(response, "season")
     sb = int(response["statistics"]["season"]["bestTime"]["ranked"])
     general_comments["avg"] = [
         f"Avg Finish: `{numb.digital_time(avg)}`",
-        percentify(get_attr_ranked(avg, "avg", rank_filter)),
-        f"Equivalent to {rank.get_elo_equivalent(avg, 'avg')} Elo",
+        percentify(get_attr_ranked(avg, "avg", rank_filter, playerbase_file)),
+        f"Equal to {rank.get_elo_equivalent(avg, 'avg')} Elo now",
     ]
     general_comments["sb"] = [
         f"Season Best: `{numb.digital_time(sb)}`",
-        percentify(get_attr_ranked(sb, "sb", rank_filter)),
-        f"Equivalent to {rank.get_elo_equivalent(sb, 'sb')} Elo",
+        percentify(get_attr_ranked(sb, "sb", rank_filter, playerbase_file)),
+        f"Equal to {rank.get_elo_equivalent(sb, 'sb')} Elo now",
     ]
     ffl = games.get_ff_loss(response, "season")
     general_comments["ffl"] = [f"Forfeit/Loss: `{ffl}%`", get_comments(ffl, "ffl")]
@@ -79,16 +77,16 @@ def main(response, detailed_matches, elo, season, rank_filter):
     return general_comments
 
 
-def get_player_count(rank_filter):
-    with open(PLAYERBASE_FILE, "r") as f:
+def get_player_count(rank_filter, playerbase_file):
+    with open(playerbase_file, "r") as f:
         elos = json.load(f)["elo"]
     lower, upper = rank.get_boundaries(rank_filter)
     player_count = sum(1 for elo in elos if lower <= elo < upper)
     return player_count
 
 
-def get_attr_ranked(value, attr_type, rank_filter):
-    with open(PLAYERBASE_FILE, "r") as f:
+def get_attr_ranked(value, attr_type, rank_filter, playerbase_file):
+    with open(playerbase_file, "r") as f:
         attrs = json.load(f)[attr_type]
     if attr_type == "elo":
         attrs = list(reversed(attrs))

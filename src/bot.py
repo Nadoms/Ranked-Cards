@@ -47,70 +47,70 @@ bot = commands.Bot(
 class Topics(nextcord.ui.View):
     def __init__(self, interaction, embeds, images):
         super().__init__(timeout=840)
-        self.value = None
+        self.value = "splits"
         self.interaction = interaction
-        self.general_embed = embeds[0]
-        self.topic_embeds = embeds[1:]
+        self.general_embed = embeds["general"]
+        self.embeds = embeds
         self.images = images
+        self.button_labels = {
+            "splits": "Splits",
+            "ows": "Overworlds",
+            "bastions": "Bastions",
+        }
+        self.button_styles = {
+            "splits": nextcord.ButtonStyle.blurple,
+            "ows": nextcord.ButtonStyle.green,
+            "bastions": nextcord.ButtonStyle.gray,
+        }
+        self.buttons = {}
+
+        for name in self.button_labels:
+            if self.embeds[name] is None:
+                continue
+            button = nextcord.ui.Button(
+                label=self.button_labels[name],
+                style=self.button_styles[name],
+            )
+            button.callback = self._make_callback(name)
+            self.buttons[name] = button
+
+        self.update_buttons()
+
+    def _make_callback(self, name):
+        async def callback(interaction: Interaction):
+            await self.switch_to(interaction, name)
+
+        return callback
+
+    def update_buttons(self):
+        self.clear_items()
+        for name in self.buttons:
+            if name != self.value:
+                self.add_item(self.buttons[name])
+
+    async def switch_to(self, interaction: Interaction, name: str):
+        print(f"Flipping to {name} for {interaction.user.name}")
+        self.value = name
+        self.update_buttons()
+        file = self.set_embed_image(self.embeds[name], self.images[name])
+        await self.interaction.edit_original_message(
+            embeds=[self.general_embed, self.embeds[name]],
+            file=file,
+            view=self,
+        )
 
     async def on_timeout(self):
-        for item in self.children:
-            if isinstance(item, nextcord.ui.Button):
-                item.style = nextcord.ButtonStyle.grey
-                item.disabled = True
+        print("timeout")
+        self.clear_items()
         await self.interaction.edit_original_message(view=self)
         for image in self.images:
-            image.close()
+            if self.images[image] is not None:
+                self.images[image].close()
 
     def set_embed_image(self, embed, image):
         file = image_to_file(image, f"{self.value}.png", close=False)
         embed.set_image(url=f"attachment://{self.value}.png")
         return file
-
-    @nextcord.ui.button(label="Splits", style=nextcord.ButtonStyle.blurple)
-    async def show_splits(
-        self,
-        button: nextcord.ui.Button,
-        interaction: Interaction,
-    ):
-        print(f"Flipping to splits for {interaction.user.name}")
-        self.value = "splits"
-        file = self.set_embed_image(self.topic_embeds[0], self.images[0])
-        await self.interaction.edit_original_message(
-            embeds=[self.general_embed, self.topic_embeds[0]],
-            file=file,
-        )
-        self._View__timeout_expiry -= self.timeout
-
-    @nextcord.ui.button(label="Bastions", style=nextcord.ButtonStyle.gray)
-    async def show_bastions(
-        self,
-        button: nextcord.ui.Button,
-        interaction: Interaction,
-    ):
-        print(f"Flipping to bastions for {interaction.user.name}")
-        self.value = "bastions"
-        file = self.set_embed_image(self.topic_embeds[1], self.images[1])
-        await self.interaction.edit_original_message(
-            embeds=[self.general_embed, self.topic_embeds[1]],
-            file=file,
-        )
-        self._View__timeout_expiry -= self.timeout
-
-    @nextcord.ui.button(label="Overworlds", style=nextcord.ButtonStyle.green)
-    async def show_overworlds(
-        self,
-        button: nextcord.ui.Button,
-        interaction: Interaction,
-    ):
-        print(f"Flipping to overworlds for {interaction.user.name}")
-        self.value = "ows"
-        file = self.set_embed_image(self.topic_embeds[2], self.images[2])
-        await self.interaction.edit_original_message(
-            embeds=[self.general_embed, self.topic_embeds[2]],
-            file=file,
-        )
-        self._View__timeout_expiry -= self.timeout
 
 
 class LBPage(nextcord.ui.View):
@@ -505,12 +505,19 @@ async def analysis(
         default="",
         autocomplete=True,
     ),
-    season: str = SlashOption(
-        "season",
+    player_season: str = SlashOption(
+        "player_season",
         required=False,
-        description="The season to gather data from.",
+        description="The season to gather player data from.",
         default=str(constants.SEASON),
         choices=ALL_SEASONS,
+    ),
+    compare_season: str = SlashOption(
+        "compare_season",
+        required=False,
+        description="The season to gather playerbase comparison data from.",
+        default="player_season",
+        choices=ALL_SEASONS + ["player_season"],
     ),
     selection: str = SlashOption(
         "selection",
@@ -550,7 +557,7 @@ async def analysis(
     print(f"---\nAnalysing {input_name}'s games")
 
     try:
-        response = api.User(name=input_name, season=season).get()
+        response = api.User(name=input_name, season=player_season).get()
 
     except api.APINotFoundError as e:
         print(e)
@@ -572,21 +579,23 @@ async def analysis(
 
     target_games = int(selection[5:])
     num_comps, detailed_matches = await games.get_detailed_matches(
-        response, season, 5, target_games
+        response, player_season, 5, target_games
     )
 
     if detailed_matches == -1:
         print("Player does not have enough completions.")
         await interaction.followup.send(
-            f"{input_name} needs a minimum of 5 completions from their last {target_games} games of season {season} to analyse. (Has {num_comps})",
+            f"{input_name} needs a minimum of 5 completions from their last {target_games} games of season {player_season} to analyse. (Has {num_comps})",
         )
         update_records(interaction, "analysis", input_name, False)
         return
 
+    if compare_season == "player_season":
+        compare_season = player_season
     rank_filter = rank.str_to_rank(rank_filter)
 
     try:
-        anal = analysing.main(response, num_comps, detailed_matches, season, rank_filter)
+        anal = analysing.main(response, num_comps, detailed_matches, player_season, compare_season, rank_filter)
     except LookupError:
         print("Not enough players in rank to compare to.")
         await interaction.followup.send(
@@ -616,7 +625,8 @@ async def analysis(
             title=comments[type]["title"],
             description=comments[type]["description"],
             colour=nextcord.Colour.yellow(),
-        ) for type in embed_types
+        ) if comments[type] is not None else None
+        for type in embed_types
     ]
 
     embed_general.set_thumbnail(url=head)
@@ -654,13 +664,7 @@ async def analysis(
     for key in split_comms:
         if key == "title" or key == "description":
             continue
-        elif key == "player_deaths" or key == "rank_deaths":
-            embed_split.add_field(
-                name=split_comms[key]["name"],
-                value="\n".join(split_comms[key]["value"]),
-                inline=split_comms[key]["inline"],
-            )
-        else:
+        elif (key != "player_deaths" and key != "opp_deaths") or int(player_season) != 1:
             embed_split.add_field(
                 name=split_comms[key]["name"],
                 value=split_comms[key]["value"],
@@ -673,28 +677,23 @@ async def analysis(
                 inline=False,
             )
 
-    bastion_comms = comments["bastion"]
-    for key in bastion_comms:
-        if key == "title" or key == "description":
-            continue
-        elif key == "player_deaths" or key == "rank_deaths":
-            embed_bastion.add_field(
-                name=bastion_comms[key]["name"],
-                value="\n".join(bastion_comms[key]["value"]),
-                inline=bastion_comms[key]["inline"],
-            )
-        else:
-            embed_bastion.add_field(
-                name=bastion_comms[key]["name"],
-                value=bastion_comms[key]["value"],
-                inline=bastion_comms[key]["inline"],
-            )
-        if key == "worst":
-            embed_bastion.add_field(
-                name="",
-                value="",
-                inline=False,
-            )
+    if int(player_season) >= 5 and int(compare_season) >= 5:
+        bastion_comms = comments["bastion"]
+        for key in bastion_comms:
+            if key == "title" or key == "description":
+                continue
+            else:
+                embed_bastion.add_field(
+                    name=bastion_comms[key]["name"],
+                    value=bastion_comms[key]["value"],
+                    inline=bastion_comms[key]["inline"],
+                )
+            if key == "worst":
+                embed_bastion.add_field(
+                    name="",
+                    value="",
+                    inline=False,
+                )
 
     ow_comms = comments["ow"]
     for key in ow_comms:
@@ -706,14 +705,20 @@ async def analysis(
             inline=ow_comms[key]["inline"],
         )
 
-    embeds = [embed_general, embed_split, embed_bastion, embed_ow]
-    for embed in embeds[1:]:
-        embed.set_footer(
-            text=constants.FOOTER_TEXT,
-            icon_url=constants.FOOTER_ICON,
-        )
+    embeds = {
+        "general": embed_general,
+        "splits": embed_split,
+        "ows": embed_ow,
+        "bastions": embed_bastion,
+    }
+    for embed in (embed_split, embed_ow, embed_bastion):
+        if embed is not None:
+            embed.set_footer(
+                text=constants.FOOTER_TEXT,
+                icon_url=constants.FOOTER_ICON,
+            )
 
-    images = [split_polygon, bastion_polygon, ow_polygon]
+    images = {"splits": split_polygon, "ows": ow_polygon, "bastions": bastion_polygon}
     view = Topics(interaction, embeds, images)
 
     await interaction.followup.send(
@@ -1543,7 +1548,7 @@ async def help(
     )
     embed.add_field(
         name="/analysis",
-        value="`Options: Minecraft username, season, number of games, rank filter`\n`Defaults: Connected user, current season, up to last 300 games, any rank`\n***Analyses your games*** to give feedback about splits, bastions and overworlds.",
+        value="`Options: Minecraft username, season data for player, season data for comparisons, number of games, rank filter`\n`Defaults: Connected user, current season, player season selection, up to last 300 games, any rank`\n***Analyses your games*** to give feedback about splits, bastions and overworlds.",
         inline=False,
     )
     embed.add_field(
@@ -1709,7 +1714,8 @@ async def fetch_loop():
     repeat = 900
     while True:
         not_latest_load = latest_load
-        latest_load = await load_matches.spam_redlime(latest_load, 1000)
+        await load_matches.spam_redlime(constants.FIRST_MATCHES[1], 500)
+        latest_load = await load_matches.spam_redlime(latest_load, 1500)
         with open(DATABASE_DIR / "last_id.txt", "w") as f:
             f.write(str(latest_load))
         await asyncio.sleep(repeat)
@@ -1721,7 +1727,7 @@ async def fetch_loop():
 
 
 async def suggestions_loop():
-    await asyncio.sleep(60)
+    await asyncio.sleep(15)
     while True:
         global player_list
         player_list = construct_players.construct_player_list()
@@ -1729,8 +1735,12 @@ async def suggestions_loop():
 
 
 async def analysis_loop():
-    await asyncio.sleep(120)
+    await asyncio.sleep(30)
     while True:
+        for season in ALL_SEASONS[:-1]:
+            playerbase_file = f"playerbase_s{season}.json"
+            if not (DATABASE_DIR / playerbase_file).exists():
+                await analyse_db.analyse(int(season), filename=playerbase_file)
         await analyse_db.analyse(constants.SEASON)
         await asyncio.sleep(86400)
 

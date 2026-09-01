@@ -32,11 +32,11 @@ SPLIT_NAMING = {
 }
 
 
-def main(uuid, detailed_matches, elo, season, num_comps, rank_filter):
+def main(uuid, detailed_matches, elo, player_season, num_comps, rank_filter, playerbase_file):
     number_splits, average_splits, average_deaths = get_avg_splits(
         uuid, detailed_matches
     )
-    ranked_splits = get_ranked_splits(average_splits, rank_filter)
+    ranked_splits = get_ranked_splits(average_splits, rank_filter, playerbase_file)
     polygon = get_polygon(ranked_splits)
     polygon = add_text(polygon, average_splits, ranked_splits, rank_filter)
 
@@ -47,10 +47,15 @@ def main(uuid, detailed_matches, elo, season, num_comps, rank_filter):
     )
     comments["count"] = get_count(number_splits)
     comments["best"], comments["worst"] = get_best_worst(ranked_splits)
-    if season != 1:
-        comments["player_deaths"], comments["rank_deaths"] = get_death_comments(
+    if int(player_season) != 1:
+        comments["player_deaths"], _ = get_death_comments(
             average_deaths, elo, rank_filter
         )
+    comments["opp_deaths"] = {  # temporary TODO remove
+        "name": "Opponent Death Rates",
+        "value": "Coming soon...",
+        "inline": True,
+    }
 
     return comments, polygon
 
@@ -164,7 +169,7 @@ def get_avg_splits(uuid, detailed_matches):
     return number_splits, average_splits, average_deaths
 
 
-def get_ranked_splits(average_splits, rank_filter):
+def get_ranked_splits(average_splits, rank_filter, playerbase_file):
     ranked_splits = {
         "ow": 0,
         "nether": 0,
@@ -184,7 +189,6 @@ def get_ranked_splits(average_splits, rank_filter):
         "end": [],
     }
 
-    playerbase_file = Path("src") / "database" / "playerbase.json"
     with open(playerbase_file, "r") as f:
         splits_final_boss = json.load(f)["split"]
 
@@ -393,12 +397,12 @@ def add_text(polygon, average_splits, ranked_splits, rank_filter):
 def get_sample_size(num_comps):
     if num_comps < 8:
         return (
-            "This is a very low sample size. Your lategame averages won't be reliable."
+            "This is a very low sample size. Lategame averages won't be reliable."
         )
     if num_comps < 20:
         return "This is an OK sample size."
     else:
-        return "This is a large sample size and the data will reflect your skill across each split properly."
+        return "This is a large sample size and the data will reflect skill-level across each split properly."
 
 
 def get_count(number_splits):
@@ -498,25 +502,25 @@ def get_death_comments(average_deaths, elo, rank_filter):
             max_split = split_key
 
     death_comment = {
-        "name": "Your Death Rates",
-        "value": [
+        "name": "Death Rates",
+        "value": "\n".join([
             (
                 f"`{' ' if average_deaths[split] < 0.1 else ''}"
                 f"{numb.round_sf(average_deaths[split] * 100, 3)}%` - {SPLIT_NAMING[split]}"
             )
             for split in average_deaths
-        ],
+        ]),
         "inline": True,
     }
     rank_comment = {
         "name": f"{player_rank} Death Rates",
-        "value": [
+        "value": "\n".join([
             (
                 f"`{' ' if overall_deaths[split] < 0.1 else ''}"
                 f"{numb.round_sf(overall_deaths[split] * 100, 3)}%` - {SPLIT_NAMING[split]}"
             )
             for split in overall_deaths
-        ],
+        ]),
         "inline": True,
     }
     return death_comment, rank_comment
