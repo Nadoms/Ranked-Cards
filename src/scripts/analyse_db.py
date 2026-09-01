@@ -68,32 +68,34 @@ def collect_matches(season, cursor):
                     bastion_entry = bastion_exit = 0
 
                 # Dealing with overworlds
-                if event["type"] == "story.enter_the_nether":
-                    ow_length = event["time"] - prev_time
-                    if uuid not in times["ow"][constants.OW_MAPPING[seed_type]]:
-                        times["ow"][constants.OW_MAPPING[seed_type]][uuid] = 0
-                        nums["ow"][constants.OW_MAPPING[seed_type]][uuid] = 0
-                    times["ow"][constants.OW_MAPPING[seed_type]][uuid] += ow_length
-                    nums["ow"][constants.OW_MAPPING[seed_type]][uuid] += 1
+                if seed_type is not None:
+                    if event["type"] == "story.enter_the_nether":
+                        ow_length = event["time"] - prev_time
+                        if uuid not in times["ow"][constants.OW_MAPPING[seed_type]]:
+                            times["ow"][constants.OW_MAPPING[seed_type]][uuid] = 0
+                            nums["ow"][constants.OW_MAPPING[seed_type]][uuid] = 0
+                        times["ow"][constants.OW_MAPPING[seed_type]][uuid] += ow_length
+                        nums["ow"][constants.OW_MAPPING[seed_type]][uuid] += 1
 
                 # Dealing with bastions
-                if event["type"] == "nether.find_bastion":
-                    bastion_entry = event["time"]
+                if bastion_type is not None:
+                    if event["type"] == "nether.find_bastion":
+                        bastion_entry = event["time"]
 
-                elif bastion_entry and not bastion_exit:
-                    if event["type"] in [
-                        "nether.find_fortress",
-                        "projectelo.timeline.blind_travel",
-                        "story.follow_ender_eye",
-                        "story.enter_the_end",
-                    ]:
-                        bastion_exit = event["time"]
-                        bastion_length = bastion_exit - bastion_entry
-                        if uuid not in times["bastion"][bastion_type.lower()]:
-                            times["bastion"][bastion_type.lower()][uuid] = 0
-                            nums["bastion"][bastion_type.lower()][uuid] = 0
-                        times["bastion"][bastion_type.lower()][uuid] += bastion_length
-                        nums["bastion"][bastion_type.lower()][uuid] += 1
+                    elif bastion_entry and not bastion_exit:
+                        if event["type"] in [
+                            "nether.find_fortress",
+                            "projectelo.timeline.blind_travel",
+                            "story.follow_ender_eye",
+                            "story.enter_the_end",
+                        ]:
+                            bastion_exit = event["time"]
+                            bastion_length = bastion_exit - bastion_entry
+                            if uuid not in times["bastion"][bastion_type.lower()]:
+                                times["bastion"][bastion_type.lower()][uuid] = 0
+                                nums["bastion"][bastion_type.lower()][uuid] = 0
+                            times["bastion"][bastion_type.lower()][uuid] += bastion_length
+                            nums["bastion"][bastion_type.lower()][uuid] += 1
 
                 # Dealing with splits
                 if event["type"] in SPLIT_MAPPING:
@@ -137,7 +139,7 @@ def collect_matches(season, cursor):
     return times, nums, sbs, elos, runs_processed
 
 
-async def analyse(season, filename="playerbase"):
+async def analyse(season, filename="playerbase.json"):
     print(f"\n***\nAnalysing database - {datetime.now()}\n***")
     ranked = {
         "split": {"ow": [], "nether": [], "bastion": [], "fortress": [], "blind": [], "stronghold": [], "end": []},
@@ -190,7 +192,7 @@ async def analyse(season, filename="playerbase"):
     ranked["sb"] = sorted(ranked["sb"], key=lambda x: x[0])
 
     # Construct performance rankings
-    for performance in ["split", "bastion", "ow"]:
+    for performance in ["split", "bastion", "ow"] if season >= 5 else ["split", "ow"]:
         print(f"\nProcessing {performance}s - {datetime.now()}")
         for item in times[performance]:
             print(f"Processing {item} {performance}s of {len(nums[performance][item])} players...")
@@ -206,17 +208,18 @@ async def analyse(season, filename="playerbase"):
             ranked[performance][item] = sorted(ranked[performance][item], key=lambda x: x[0])
 
     print(f"\nDumping insights into playerbase file - {datetime.now()}")
-    playerbase_file = PROJECT_DIR / "database" / f"{filename}.json"
+    playerbase_file = PROJECT_DIR / "database" / filename
     with open(playerbase_file, "w") as f:
         json.dump(ranked, f, indent=4)
 
-    print(f"\nTraining models - {datetime.now()}")
-    for data_oi in training_data:
-        train_model.train(
-            data_oi,
-            training_data[data_oi]
-        )
-        await asyncio.sleep(1)
+    if season == constants.SEASON:
+        print(f"\nTraining models - {datetime.now()}")
+        for data_oi in training_data:
+            train_model.train(
+                data_oi,
+                training_data[data_oi]
+            )
+            await asyncio.sleep(1)
 
     conn.close()
 

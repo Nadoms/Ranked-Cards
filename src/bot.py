@@ -47,11 +47,61 @@ bot = commands.Bot(
 class Topics(nextcord.ui.View):
     def __init__(self, interaction, embeds, images):
         super().__init__(timeout=840)
-        self.value = None
+        self.value = "splits"
         self.interaction = interaction
-        self.general_embed = embeds[0]
-        self.topic_embeds = embeds[1:]
+        self.general_embed = embeds["general"]
+        self.embeds = embeds
         self.images = images
+        self.button_labels = {
+            "splits": "Splits",
+            "ows": "Overworlds",
+            "bastions": "Bastions",
+        }
+        self.button_styles = {
+            "splits": nextcord.ButtonStyle.blurple,
+            "ows": nextcord.ButtonStyle.green,
+            "bastions": nextcord.ButtonStyle.gray,
+        }
+        self.buttons = {}
+
+        for name in ["splits", "ows", "bastions"]:
+            button = nextcord.ui.Button(
+                label=self.button_labels[name],
+                style=self.button_styles[name],
+            )
+            button.callback = self._make_callback(name)
+            button.disabled = self.embeds[name] is None
+            self.buttons[name] = button
+            self.add_item(button)
+
+        self.update_buttons()
+
+    def _make_callback(self, name):
+        async def callback(interaction: Interaction):
+            await self.switch_to(interaction, name)
+
+        return callback
+
+    def update_buttons(self):
+        for name, button in self.buttons.items():
+            is_current = name == self.value
+            button.disabled = is_current or self.embeds[name] is None
+            button.style = nextcord.ButtonStyle.grey if is_current else self.button_styles[name]
+
+    async def switch_to(self, interaction: Interaction, name: str):
+        if self.embeds[name] is None:
+            return
+
+        print(f"Flipping to {name} for {interaction.user.name}")
+        self.value = name
+        self.update_buttons()
+        file = self.set_embed_image(self.embeds[name], self.images[name])
+        await self.interaction.edit_original_message(
+            embeds=[self.general_embed, self.embeds[name]],
+            file=file,
+            view=self,
+        )
+        self._View__timeout_expiry -= self.timeout
 
     async def on_timeout(self):
         for item in self.children:
@@ -60,57 +110,13 @@ class Topics(nextcord.ui.View):
                 item.disabled = True
         await self.interaction.edit_original_message(view=self)
         for image in self.images:
-            image.close()
+            if self.images[image] is not None:
+                self.images[image].close()
 
     def set_embed_image(self, embed, image):
         file = image_to_file(image, f"{self.value}.png", close=False)
         embed.set_image(url=f"attachment://{self.value}.png")
         return file
-
-    @nextcord.ui.button(label="Splits", style=nextcord.ButtonStyle.blurple)
-    async def show_splits(
-        self,
-        button: nextcord.ui.Button,
-        interaction: Interaction,
-    ):
-        print(f"Flipping to splits for {interaction.user.name}")
-        self.value = "splits"
-        file = self.set_embed_image(self.topic_embeds[0], self.images[0])
-        await self.interaction.edit_original_message(
-            embeds=[self.general_embed, self.topic_embeds[0]],
-            file=file,
-        )
-        self._View__timeout_expiry -= self.timeout
-
-    @nextcord.ui.button(label="Bastions", style=nextcord.ButtonStyle.gray)
-    async def show_bastions(
-        self,
-        button: nextcord.ui.Button,
-        interaction: Interaction,
-    ):
-        print(f"Flipping to bastions for {interaction.user.name}")
-        self.value = "bastions"
-        file = self.set_embed_image(self.topic_embeds[1], self.images[1])
-        await self.interaction.edit_original_message(
-            embeds=[self.general_embed, self.topic_embeds[1]],
-            file=file,
-        )
-        self._View__timeout_expiry -= self.timeout
-
-    @nextcord.ui.button(label="Overworlds", style=nextcord.ButtonStyle.green)
-    async def show_overworlds(
-        self,
-        button: nextcord.ui.Button,
-        interaction: Interaction,
-    ):
-        print(f"Flipping to overworlds for {interaction.user.name}")
-        self.value = "ows"
-        file = self.set_embed_image(self.topic_embeds[2], self.images[2])
-        await self.interaction.edit_original_message(
-            embeds=[self.general_embed, self.topic_embeds[2]],
-            file=file,
-        )
-        self._View__timeout_expiry -= self.timeout
 
 
 class LBPage(nextcord.ui.View):
@@ -625,7 +631,8 @@ async def analysis(
             title=comments[type]["title"],
             description=comments[type]["description"],
             colour=nextcord.Colour.yellow(),
-        ) for type in embed_types
+        ) if comments[type] is not None else None
+        for type in embed_types
     ]
 
     embed_general.set_thumbnail(url=head)
@@ -682,28 +689,29 @@ async def analysis(
                 inline=False,
             )
 
-    bastion_comms = comments["bastion"]
-    for key in bastion_comms:
-        if key == "title" or key == "description":
-            continue
-        elif key == "player_deaths" or key == "rank_deaths":
-            embed_bastion.add_field(
-                name=bastion_comms[key]["name"],
-                value="\n".join(bastion_comms[key]["value"]),
-                inline=bastion_comms[key]["inline"],
-            )
-        else:
-            embed_bastion.add_field(
-                name=bastion_comms[key]["name"],
-                value=bastion_comms[key]["value"],
-                inline=bastion_comms[key]["inline"],
-            )
-        if key == "worst":
-            embed_bastion.add_field(
-                name="",
-                value="",
-                inline=False,
-            )
+    if int(player_season) >= 5 and int(compare_season) >= 5:
+        bastion_comms = comments["bastion"]
+        for key in bastion_comms:
+            if key == "title" or key == "description":
+                continue
+            elif key == "player_deaths" or key == "rank_deaths":
+                embed_bastion.add_field(
+                    name=bastion_comms[key]["name"],
+                    value="\n".join(bastion_comms[key]["value"]),
+                    inline=bastion_comms[key]["inline"],
+                )
+            else:
+                embed_bastion.add_field(
+                    name=bastion_comms[key]["name"],
+                    value=bastion_comms[key]["value"],
+                    inline=bastion_comms[key]["inline"],
+                )
+            if key == "worst":
+                embed_bastion.add_field(
+                    name="",
+                    value="",
+                    inline=False,
+                )
 
     ow_comms = comments["ow"]
     for key in ow_comms:
@@ -715,14 +723,20 @@ async def analysis(
             inline=ow_comms[key]["inline"],
         )
 
-    embeds = [embed_general, embed_split, embed_bastion, embed_ow]
-    for embed in embeds[1:]:
-        embed.set_footer(
-            text=constants.FOOTER_TEXT,
-            icon_url=constants.FOOTER_ICON,
-        )
+    embeds = {
+        "general": embed_general,
+        "splits": embed_split,
+        "ows": embed_ow,
+        "bastions": embed_bastion,
+    }
+    for embed in (embed_split, embed_ow, embed_bastion):
+        if embed is not None:
+            embed.set_footer(
+                text=constants.FOOTER_TEXT,
+                icon_url=constants.FOOTER_ICON,
+            )
 
-    images = [split_polygon, bastion_polygon, ow_polygon]
+    images = {"splits": split_polygon, "ows": ow_polygon, "bastions": bastion_polygon}
     view = Topics(interaction, embeds, images)
 
     await interaction.followup.send(
@@ -1731,7 +1745,7 @@ async def fetch_loop():
 
 
 async def suggestions_loop():
-    await asyncio.sleep(60)
+    await asyncio.sleep(15)
     while True:
         global player_list
         player_list = construct_players.construct_player_list()
@@ -1739,12 +1753,12 @@ async def suggestions_loop():
 
 
 async def analysis_loop():
-    await asyncio.sleep(120)
+    await asyncio.sleep(30)
     while True:
-        for season in range(ALL_SEASONS - 1):
+        for season in ALL_SEASONS[:-1]:
             playerbase_file = f"playerbase_s{season}.json"
-            if (DATABASE_DIR / playerbase_file).exists():
-                await analyse_db.analyse(season, filename=playerbase_file)
+            if not (DATABASE_DIR / playerbase_file).exists():
+                await analyse_db.analyse(int(season), filename=playerbase_file)
         await analyse_db.analyse(constants.SEASON)
         await asyncio.sleep(86400)
 
@@ -1753,4 +1767,5 @@ if not TESTING_MODE:
     bot.loop.create_task(fetch_loop())
     bot.loop.create_task(suggestions_loop())
     bot.loop.create_task(analysis_loop())
+bot.loop.create_task(analysis_loop()) ### remove
 bot.run(getenv(token))

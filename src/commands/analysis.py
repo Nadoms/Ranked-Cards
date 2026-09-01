@@ -24,7 +24,7 @@ def main(response, num_comps, detailed_matches, player_season, compare_season, r
     skin = get_skin.main(uuid)
     then = process_split(then, "Finding skin")
 
-    season_suffix = "" if compare_season == str(constants.SEASON) else f"_s{compare_season}"
+    season_suffix = "" if int(compare_season) == constants.SEASON else f"_s{compare_season}"
     playerbase_file = Path("src") / "database" / f"playerbase{season_suffix}.json"
     general_comments = get_comments.main(
         response, detailed_matches, elo, player_season, compare_season, rank_filter, playerbase_file
@@ -38,11 +38,13 @@ def main(response, num_comps, detailed_matches, player_season, compare_season, r
         uuid, detailed_matches, rank_filter, playerbase_file
     )
     then = process_split(then, "Recognising OW performance")
-    bastion_comm, bastion_polygon = bastion_insights.main(
-        uuid, detailed_matches, elo, player_season, rank_filter, playerbase_file
-    )
-    then = process_split(then, "Recognising bastion performance")
-    # polygons = combine.main(split_polygon, ow_polygon)
+    if int(player_season) >= 5 and int(compare_season) >= 5:
+        bastion_comm, bastion_polygon = bastion_insights.main(
+            uuid, detailed_matches, elo, player_season, rank_filter, playerbase_file
+        )
+        then = process_split(then, "Recognising bastion performance")
+    else:
+        bastion_comm = bastion_polygon = None
 
     comments = {
         "general": general_comments,

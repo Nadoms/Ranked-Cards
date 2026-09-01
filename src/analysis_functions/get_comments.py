@@ -37,15 +37,13 @@ COMMENTS = {
 
 def main(response, detailed_matches, elo, player_season, compare_season, rank_filter, playerbase_file):
     general_comments = {}
-    rank_filter_str = "" if rank_filter is None else f"{rank_filter}"
-    season_str = "" if compare_season == player_season else f"S{compare_season}"
-    comparison_str = "" if not rank_filter_str and not season_str else " against " + " ".join((season_str, rank_filter_str)) + " players"
+    rank_filter_str = "" if rank_filter is None else f", {rank_filter}"
+    season_str = f"S{compare_season}"
     general_comments["title"] = (
-        f"`{response['nickname']}`'s S{player_season} Performance{rank_filter_str}"
+        f"`{response['nickname']}`'s S{player_season} Performance against {season_str}{rank_filter_str} Players"
     )
-    playerbase_str = " against the entire playerbase" if rank_filter is None else f"{rank_filter_str}"
     general_comments["description"] = (
-        f"This is how `{response['nickname']}` stacks up{playerbase_str}. Each comparison references at most {get_player_count(rank_filter, playerbase_file)} players."
+        f"This is how `{response['nickname']}` stacks up against the {season_str}{rank_filter_str} playerbase. Each comparison references at most {get_player_count(rank_filter, playerbase_file)} players."
         f"\nClick [here](https://docs.google.com/document/d/e/2PACX-1vQvNO1Mmf7T2zfaij_rxDsOMUwaVavJcZG68Bfp8-9CkeGyJHoPrvBFxU69apix4E7gVsaV51BiCVwC/pub) for an explanation of this command."
     )
 
