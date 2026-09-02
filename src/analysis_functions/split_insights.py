@@ -200,6 +200,8 @@ def get_avg_splits(uuid, detailed_matches):
 
         prev_event = {"self": "ow", "opp": "ow"}
         prev_time = {"self": 0, "opp": 0}
+        death_splits["self"]["enters"]["ow"] += 1
+        death_splits["opp"]["enters"]["ow"] += 1
 
         for event in reversed(match["timelines"]):
             player_type = "self" if event["uuid"] == uuid else "opp"
