@@ -20,12 +20,15 @@ async def spam_redlime(start, limit):
     async def safe_get_async(id):
         try:
             return await api.Match(id=id).get_async()
-        except (api.APINotFoundError):
-            return None
+        except api.APINotFoundError:
+            print(f"Match {id} not found")
+            return
+        except api.APIError:
+            raise
         except Exception as e:
-            print("Error occurred during fetch of match", id, "skipping")
+            print(f"Error occurred during fetch of match {id}, skipping")
             print(e)
-            return None
+            return
 
     while True:
         print(f"Loading matches {i} to {i + step_size} / Total: {new_additions}")
