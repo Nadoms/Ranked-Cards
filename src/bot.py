@@ -1714,7 +1714,7 @@ async def fetch_loop():
 
 
 async def suggestions_loop():
-    await asyncio.sleep(15)
+    await asyncio.sleep(30)
     while True:
         global player_list
         player_list = construct_players.construct_player_list()
@@ -1722,7 +1722,7 @@ async def suggestions_loop():
 
 
 async def analysis_loop():
-    await asyncio.sleep(30)
+    await asyncio.sleep(60)
     while True:
         for season in ALL_SEASONS[:-1]:
             playerbase_file = f"playerbase_s{season}.json"
