@@ -1702,7 +1702,7 @@ async def fetch_loop():
     repeat = 900
     while True:
         not_latest_load = latest_load
-        await load_matches.spam_redlime(latest_load_early, 1000)
+        latest_load_early = await load_matches.spam_redlime(latest_load_early, 1000)
         latest_load = await load_matches.spam_redlime(latest_load, 1000)
         with open(DATABASE_DIR / "last_id.txt", "w") as f:
             f.write(f"{latest_load_early}\n{latest_load}")
