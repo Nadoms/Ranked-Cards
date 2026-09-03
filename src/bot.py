@@ -1697,11 +1697,12 @@ def image_to_file(image, filename, close=True):
 
 async def fetch_loop():
     with open(DATABASE_DIR / "last_id.txt") as f:
+        latest_load_early = int(f.readline())
         latest_load = int(f.readline())
     repeat = 900
     while True:
         not_latest_load = latest_load
-        await load_matches.spam_redlime(constants.FIRST_MATCHES[1], 500)
+        await load_matches.spam_redlime(latest_load_early, 500)
         latest_load = await load_matches.spam_redlime(latest_load, 1500)
         with open(DATABASE_DIR / "last_id.txt", "w") as f:
             f.write(str(latest_load))
