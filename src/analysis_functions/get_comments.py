@@ -60,12 +60,12 @@ def main(response, detailed_matches, elo, player_season, compare_season, rank_fi
     general_comments["avg"] = [
         f"Avg Finish: `{numb.digital_time(avg)}`",
         percentify(get_attr_ranked(avg, "avg", rank_filter, playerbase_file)),
-        f"Equal to {rank.get_elo_equivalent(avg, 'avg')} Elo now",
+        f"Equal to {rank.get_elo_equivalent(avg, 'avg', compare_season)} S{compare_season} Elo",
     ]
     general_comments["sb"] = [
         f"Season Best: `{numb.digital_time(sb)}`",
         percentify(get_attr_ranked(sb, "sb", rank_filter, playerbase_file)),
-        f"Equal to {rank.get_elo_equivalent(sb, 'sb')} Elo now",
+        f"Equal to {rank.get_elo_equivalent(sb, 'sb', compare_season)} S{compare_season} Elo",
     ]
     ffl = games.get_ff_loss(response, "season")
     general_comments["ffl"] = [f"Forfeit/Loss: `{ffl}%`", get_comments(ffl, "ffl")]

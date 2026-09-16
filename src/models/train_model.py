@@ -9,7 +9,7 @@ import sys
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 
 
-def train(data_oi, data):
+def train(data_oi, data, filename="models.json"):
     X_data = []
     Y_data = []
     for item in data:
@@ -52,7 +52,7 @@ def train(data_oi, data):
     plt.savefig(PROJECT_DIR / "models" / f"model_{data_oi}.png")
     plt.close()
 
-    update_weights(data_oi, W, y=True)
+    update_weights(data_oi, filename, W, y=True)
 
 
 def forward(X, W):
@@ -68,26 +68,33 @@ def criterion(Y_pred, Y):
     return np.mean(np.abs(Y_pred - Y))
 
 
-def update_weights(data_oi, W, y=False):
-    weight_mapping = "abcdefghijklmnopqrstuvwxyz"
+def update_weights(data_oi, filename: str, W, y=False):
+    weight_mapping = "abcdefghijklmnopqrstuvwxyz"  # ???
 
-    file = path.join(PROJECT_DIR / "models", "models.json")
-    with open(file, "r") as f:
-        models = json.load(f)
+    file = (PROJECT_DIR / "models" / filename)
+    if file.exists():
+        with open(file, "r") as f:
+            models = json.load(f)
 
-    print("Do you wanna update your model?\nOld and new values are:")
-    for key in models[data_oi]:
-        print(f"{models[data_oi][key]}\t", end="")
-    print()
-    for w in W:
-        print(f"{w.item()}\t", end="")
+        if data_oi in models:
+            print("Do you wanna update your model?\nOld and new values are:")
+            for key in models[data_oi]:
+                print(f"{models[data_oi][key]}\t", end="")
+            print()
+            for w in W:
+                print(f"{w.item()}\t", end="")
+    else:
+        models = {data_oi: {}}
 
-    if y or input("\n(Y) or (Any key) :: ") == "Y":
-        for i in range(len(W)):
-            models[data_oi][weight_mapping[i]] = W[i].item()
+    if y or input("\n(Y) or (Any key) :: ") == "Y" or not file.exists():
+        models.update({
+            data_oi: {
+                weight_mapping[i]: W[i].item()
+                for i in range(len(W))
+            }
+        })
         with open(file, "w") as f:
-            models_json = json.dumps(models, indent=4)
-            f.write(models_json)
+            json.dump(models, f, indent=4)
         print("Updated!")
     else:
         print("Okay...")

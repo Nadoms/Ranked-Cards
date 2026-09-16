@@ -1769,9 +1769,11 @@ async def analysis_loop():
     await asyncio.sleep(60)
     while True:
         for season in ALL_SEASONS[:-1]:
+            season = int(season)
             playerbase_file = f"playerbase_s{season}.json"
-            if not (DATABASE_DIR / playerbase_file).exists():
-                await analyse_db.analyse(int(season), filename=playerbase_file)
+            manual_analysis = []
+            if not (DATABASE_DIR / playerbase_file).exists() or season in manual_analysis:
+                await analyse_db.analyse(season, filename=playerbase_file)
         await analyse_db.analyse(constants.SEASON)
         await asyncio.sleep(86400)
 

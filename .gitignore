@@ -17,7 +17,7 @@ venv/
 # Database
 /src/database/*.db
 /src/database/playerbase*.json
-/src/models/models.json
+/src/models/models*.json
 /src/database/common.json
 
 

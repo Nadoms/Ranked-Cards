@@ -140,7 +140,7 @@ def collect_matches(season, cursor):
 
 
 async def analyse(season, filename="playerbase.json"):
-    print(f"\n***\nAnalysing database - {datetime.now()}\n***")
+    print(f"\n***\nAnalysing database (S{season}) - {datetime.now()}\n***")
     ranked = {
         "split": {"ow": [], "nether": [], "bastion": [], "fortress": [], "blind": [], "stronghold": [], "end": []},
         "bastion": {"bridge": [], "housing": [], "stables": [], "treasure": []},
@@ -212,18 +212,21 @@ async def analyse(season, filename="playerbase.json"):
     with open(playerbase_file, "w") as f:
         json.dump(ranked, f, indent=4)
 
-    if season == constants.SEASON:
-        print(f"\nTraining models - {datetime.now()}")
-        for data_oi in training_data:
-            train_model.train(
-                data_oi,
-                training_data[data_oi]
-            )
-            await asyncio.sleep(1)
+    print(f"\nTraining models - {datetime.now()}")
+    for data_oi in training_data:
+        filename = "models.json"
+        if season != constants.SEASON:
+            filename = f"models_s{season}.json"
+        train_model.train(
+            data_oi,
+            training_data[data_oi],
+            filename
+        )
+        await asyncio.sleep(1)
 
     conn.close()
 
-    print(f"\n***\nAnalysis and Training Complete - {datetime.now()}\n***\n")
+    print(f"\n***\nAnalysis and Training Complete (S{season}) - {datetime.now()}\n***\n")
 
 
 if __name__ == "__main__":
