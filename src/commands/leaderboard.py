@@ -261,7 +261,7 @@ COUNTRY_MAPPING = {
 def custom_leaderboard(leaderboard, lb_name, lb_desc, input_name, page):
     embed = Embed(
         title=f"{lb_name} Leaderboard - Page {page + 1}",
-        description=f"{lb_desc}\nThere are {len(leaderboard)} players on this leaderboard.\nNote: This is updated nightly.",
+        description=f"{lb_desc}\nThere are {len(leaderboard)} players on this leaderboard. This is updated nightly.",
         colour=Colour.blurple()
     )
 

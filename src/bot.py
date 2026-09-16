@@ -31,6 +31,7 @@ API_COOLDOWN_MSG = "Too many commands have been issued! The Ranked API is coolin
 GENERIC_ERROR_MSG = "An error has occurred. <@298936021557706754> fix it pls:"
 ROOT_DIR = Path(__file__).parent
 DATABASE_DIR = ROOT_DIR / "database"
+MAX_CUSTOM_LB = 50
 token = "TEST_TOKEN" if TESTING_MODE else "DISCORD_TOKEN"
 default_guild_ids = [735859906434957392] if TESTING_MODE else None
 player_list = []
@@ -127,7 +128,16 @@ class LBPage(nextcord.ui.View):
                 item.disabled = True
         await self.interaction.edit_original_message(view=self)
 
-    @nextcord.ui.button(label="Previous", style=nextcord.ButtonStyle.blurple)
+    @nextcord.ui.button(label="<<", style=nextcord.ButtonStyle.blurple)
+    async def previous_5(
+        self,
+        button: nextcord.ui.Button,
+        interaction: Interaction,
+    ):
+        self.page = (self.page - 5) % self.size
+        await self.update(interaction)
+
+    @nextcord.ui.button(label="<", style=nextcord.ButtonStyle.blurple)
     async def previous(
         self,
         button: nextcord.ui.Button,
@@ -136,13 +146,22 @@ class LBPage(nextcord.ui.View):
         self.page = (self.page - 1) % self.size
         await self.update(interaction)
 
-    @nextcord.ui.button(label="Next", style=nextcord.ButtonStyle.blurple)
+    @nextcord.ui.button(label=">", style=nextcord.ButtonStyle.blurple)
     async def next(
         self,
         button: nextcord.ui.Button,
         interaction: Interaction,
     ):
         self.page = (self.page + 1) % self.size
+        await self.update(interaction)
+
+    @nextcord.ui.button(label=">>", style=nextcord.ButtonStyle.blurple)
+    async def next_5(
+        self,
+        button: nextcord.ui.Button,
+        interaction: Interaction,
+    ):
+        self.page = (self.page + 5) % self.size
         await self.update(interaction)
 
     async def update(
@@ -988,6 +1007,12 @@ async def leaderboard_split(
         description="The split to display the leaderboard for.",
         choices=constants.SPLITS,
     ),
+    season: str = SlashOption(
+        "season",
+        required=True,
+        description="The season to display the leaderboard for.",
+        choices=ALL_SEASONS,
+    ),
     rank_filter: str = SlashOption(
         "rank_filter",
         required=False,
@@ -1010,7 +1035,7 @@ async def leaderboard_split(
 
     print(f"---\nFetching {split} Avg Leaderboard for rank {rank_filter}")
 
-    with open(DATABASE_DIR / "playerbase.json") as f:
+    with open(DATABASE_DIR / f"playerbase_s{season}.json") as f:
         lb = json.load(f)[lb_type][split]
     lower, upper = rank.get_boundaries(rank.str_to_rank(rank_filter))
     lb = [
@@ -1021,11 +1046,11 @@ async def leaderboard_split(
         )
     ]
 
-    leaderboard_size = min(math.ceil(len(lb) / 20), 10)
+    leaderboard_size = min(math.ceil(len(lb) / 20), MAX_CUSTOM_LB)
     leaderboard_embeds = []
-    lb_name = f"Average {split.capitalize()} Split"
+    lb_name = f"Average {split.capitalize()} Split S{season}"
     lb_desc = (
-        f"These are the fastest players during the {split} split"
+        f"These are the fastest players in the {split} split during S{season}"
         f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
         f" ({sample_size}+)"
     )
@@ -1066,6 +1091,12 @@ async def leaderboard_bastion(
         description="The bastion type to display the leaderboard for.",
         choices=[b.lower() for b in constants.BASTIONS],
     ),
+    season: str = SlashOption(
+        "season",
+        required=True,
+        description="The season to display the leaderboard for.",
+        choices=ALL_SEASONS,
+    ),
     rank_filter: str = SlashOption(
         "rank_filter",
         required=False,
@@ -1088,7 +1119,7 @@ async def leaderboard_bastion(
 
     print(f"---\nFetching {bastion} Avg Leaderboard for rank {rank_filter}")
 
-    with open(DATABASE_DIR / "playerbase.json") as f:
+    with open(DATABASE_DIR / f"playerbase_s{season}.json") as f:
         lb = json.load(f)[lb_type][bastion]
     lower, upper = rank.get_boundaries(rank.str_to_rank(rank_filter))
     lb = [
@@ -1099,11 +1130,11 @@ async def leaderboard_bastion(
         )
     ]
 
-    leaderboard_size = min(math.ceil(len(lb) / 20), 10)
+    leaderboard_size = min(math.ceil(len(lb) / 20), MAX_CUSTOM_LB)
     leaderboard_embeds = []
-    lb_name = f"Average {bastion.capitalize()} Bastion Split"
+    lb_name = f"Average {bastion.capitalize()} Bastion Split S{season}"
     lb_desc = (
-        f"These are the fastest players at routing a {bastion} bastion"
+        f"These are the fastest players at routing {bastion} bastions during  S{season}"
         f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
         f" ({sample_size}+)"
     )
@@ -1144,6 +1175,12 @@ async def leaderboard_overworld(
         description="The seed type to display the leaderboard for.",
         choices=[b.lower() for b in constants.OVERWORLDS],
     ),
+    season: str = SlashOption(
+        "season",
+        required=True,
+        description="The season to display the leaderboard for.",
+        choices=ALL_SEASONS,
+    ),
     rank_filter: str = SlashOption(
         "rank_filter",
         required=False,
@@ -1167,7 +1204,7 @@ async def leaderboard_overworld(
 
     print(f"---\nFetching {overworld} Avg Leaderboard for rank {rank_filter}")
 
-    with open(DATABASE_DIR / "playerbase.json") as f:
+    with open(DATABASE_DIR / f"playerbase_s{season}.json") as f:
         lb = json.load(f)[lb_type][constants.OW_MAPPING[overworld.upper()]]
     lower, upper = rank.get_boundaries(rank.str_to_rank(rank_filter))
     lb = [
@@ -1178,11 +1215,11 @@ async def leaderboard_overworld(
         )
     ]
 
-    leaderboard_size = min(math.ceil(len(lb) / 20), 10)
+    leaderboard_size = min(math.ceil(len(lb) / 20), MAX_CUSTOM_LB)
     leaderboard_embeds = []
-    lb_name = f"Average {ow_name.capitalize()} Overworld"
+    lb_name = f"Average {ow_name.capitalize()} Overworld S{season}"
     lb_desc = (
-        f"These are the fastest players at running {ow_name} overworlds"
+        f"These are the fastest players at running {ow_name} overworlds during S{season}"
         f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
         f" ({sample_size}+)"
     )
@@ -1217,6 +1254,12 @@ async def leaderboard_overworld(
 )
 async def leaderboard_average(
     interaction: Interaction,
+    season: str = SlashOption(
+        "season",
+        required=True,
+        description="The season to display the leaderboard for.",
+        choices=ALL_SEASONS,
+    ),
     rank_filter: str = SlashOption(
         "rank_filter",
         required=False,
@@ -1239,7 +1282,7 @@ async def leaderboard_average(
 
     print(f"---\nFetching Completion Avg Leaderboard for rank {rank_filter}")
 
-    with open(DATABASE_DIR / "playerbase.json") as f:
+    with open(DATABASE_DIR / f"playerbase_s{season}.json") as f:
         lb = json.load(f)[lb_type]
     lower, upper = rank.get_boundaries(rank.str_to_rank(rank_filter))
     lb = [
@@ -1250,11 +1293,11 @@ async def leaderboard_average(
         )
     ]
 
-    leaderboard_size = min(math.ceil(len(lb) / 20), 10)
+    leaderboard_size = min(math.ceil(len(lb) / 20), MAX_CUSTOM_LB)
     leaderboard_embeds = []
-    lb_name = "Average Completion"
+    lb_name = f"Average Completion S{season}"
     lb_desc = (
-        "These are the fastest players on average"
+        f"These are the fastest players on average during S{season}"
         f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
         f" ({sample_size}+)"
     )
