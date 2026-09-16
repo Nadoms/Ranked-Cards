@@ -40,7 +40,7 @@ def collect_matches(season, cursor):
 
     matches_info = db.query_db(
         cursor=cursor,
-        items="id, seedType, bastionType, result_uuid, forfeited, time",
+        items="m.id, m.seedType, m.bastionType, m.result_uuid, m.forfeited, m.time",
         season=season,
         type=2,
         decayed=False
