@@ -879,8 +879,9 @@ async def leaderboard_phasepoints(
     interaction: Interaction,
     season: str = SlashOption(
         "season",
-        required=True,
+        required=False,
         description="The season to display the leaderboard for.",
+        default=str(constants.SEASON),
         choices=ALL_SEASONS,
     ),
     country: str = SlashOption(
@@ -949,8 +950,9 @@ async def leaderboard_completion(
     interaction: Interaction,
     season: str = SlashOption(
         "season",
-        required=True,
+        required=False,
         description="The season to display the leaderboard for.",
+        default=str(constants.SEASON),
         choices=ALL_SEASONS + ["Lifetime"],
     ),
 ):
@@ -1009,8 +1011,9 @@ async def leaderboard_split(
     ),
     season: str = SlashOption(
         "season",
-        required=True,
+        required=False,
         description="The season to display the leaderboard for.",
+        default=str(constants.SEASON),
         choices=ALL_SEASONS,
     ),
     rank_filter: str = SlashOption(
@@ -1035,7 +1038,8 @@ async def leaderboard_split(
 
     print(f"---\nFetching {split} Avg Leaderboard for rank {rank_filter}")
 
-    with open(DATABASE_DIR / f"playerbase_s{season}.json") as f:
+    season_suffix = "" if int(season) == constants.SEASON else f"_s{season}"
+    with open(DATABASE_DIR / f"playerbase{season_suffix}.json") as f:
         lb = json.load(f)[lb_type][split]
     lower, upper = rank.get_boundaries(rank.str_to_rank(rank_filter))
     lb = [
@@ -1093,8 +1097,9 @@ async def leaderboard_bastion(
     ),
     season: str = SlashOption(
         "season",
-        required=True,
+        required=False,
         description="The season to display the leaderboard for.",
+        default=str(constants.SEASON),
         choices=ALL_SEASONS,
     ),
     rank_filter: str = SlashOption(
@@ -1119,7 +1124,8 @@ async def leaderboard_bastion(
 
     print(f"---\nFetching {bastion} Avg Leaderboard for rank {rank_filter}")
 
-    with open(DATABASE_DIR / f"playerbase_s{season}.json") as f:
+    season_suffix = "" if int(season) == constants.SEASON else f"_s{season}"
+    with open(DATABASE_DIR / f"playerbase{season_suffix}.json") as f:
         lb = json.load(f)[lb_type][bastion]
     lower, upper = rank.get_boundaries(rank.str_to_rank(rank_filter))
     lb = [
@@ -1171,8 +1177,9 @@ async def leaderboard_overworld(
     interaction: Interaction,
     overworld: str = SlashOption(
         "overworld",
-        required=True,
-        description="The seed type to display the leaderboard for.",
+        required=False,
+        description="The season to display the leaderboard for.",
+        default=str(constants.SEASON),
         choices=[b.lower() for b in constants.OVERWORLDS],
     ),
     season: str = SlashOption(
@@ -1204,7 +1211,8 @@ async def leaderboard_overworld(
 
     print(f"---\nFetching {overworld} Avg Leaderboard for rank {rank_filter}")
 
-    with open(DATABASE_DIR / f"playerbase_s{season}.json") as f:
+    season_suffix = "" if int(season) == constants.SEASON else f"_s{season}"
+    with open(DATABASE_DIR / f"playerbase{season_suffix}.json") as f:
         lb = json.load(f)[lb_type][constants.OW_MAPPING[overworld.upper()]]
     lower, upper = rank.get_boundaries(rank.str_to_rank(rank_filter))
     lb = [
@@ -1256,8 +1264,9 @@ async def leaderboard_average(
     interaction: Interaction,
     season: str = SlashOption(
         "season",
-        required=True,
+        required=False,
         description="The season to display the leaderboard for.",
+        default=str(constants.SEASON),
         choices=ALL_SEASONS,
     ),
     rank_filter: str = SlashOption(
@@ -1282,7 +1291,8 @@ async def leaderboard_average(
 
     print(f"---\nFetching Completion Avg Leaderboard for rank {rank_filter}")
 
-    with open(DATABASE_DIR / f"playerbase_s{season}.json") as f:
+    season_suffix = "" if int(season) == constants.SEASON else f"_s{season}"
+    with open(DATABASE_DIR / f"playerbase{season_suffix}.json") as f:
         lb = json.load(f)[lb_type]
     lower, upper = rank.get_boundaries(rank.str_to_rank(rank_filter))
     lb = [
