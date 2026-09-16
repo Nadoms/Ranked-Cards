@@ -24,7 +24,7 @@ from commands import (
 from rankedutils import games, api, rank, constants, word, numb
 from scripts import analyse_db, construct_players, load_matches
 
-TESTING_MODE = True
+TESTING_MODE = False
 ALL_SEASONS = [str(season) for season in range(1, constants.SEASON + 1)]
 ALL_COUNTRIES = [country for country in leading.COUNTRY_MAPPING]
 API_COOLDOWN_MSG = "Too many commands have been issued! The Ranked API is cooling down... (~10 mins)"
@@ -1745,7 +1745,7 @@ async def fetch_loop():
     repeat = 900
     while True:
         not_latest_load = latest_load
-        latest_load_early = await load_matches.spam_redlime(latest_load_early, 1000)
+        latest_load_early = await load_matches.spam_redlime(latest_load_early, 1500)
         latest_load = await load_matches.spam_redlime(latest_load, 1000)
         with open(DATABASE_DIR / "last_id.txt", "w") as f:
             f.write(f"{latest_load_early}\n{latest_load}")

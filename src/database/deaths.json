@@ -57,40 +57,40 @@
     },
     "bastions": {
         "0": {
-            "bridge": 1.0,
-            "housing": 1.0,
-            "stables": 1.0,
-            "treasure": 1.0
+            "bridge": 0.511,
+            "housing": 0.546,
+            "stables": 0.565,
+            "treasure": 0.518
         },
         "1": {
-            "bridge": 1.0,
-            "housing": 1.0,
-            "stables": 1.0,
-            "treasure": 1.0
+            "bridge": 0.422,
+            "housing": 0.445,
+            "stables": 0.464,
+            "treasure": 0.483
         },
         "2": {
-            "bridge": 1.0,
-            "housing": 1.0,
-            "stables": 1.0,
-            "treasure": 1.0
+            "bridge": 0.297,
+            "housing": 0.290,
+            "stables": 0.335,
+            "treasure": 0.345
         },
         "3": {
-            "bridge": 1.0,
-            "housing": 1.0,
-            "stables": 1.0,
-            "treasure": 1.0
+            "bridge": 0.190,
+            "housing": 0.174,
+            "stables": 0.219,
+            "treasure": 0.207
         },
         "4": {
-            "bridge": 1.0,
-            "housing": 1.0,
-            "stables": 1.0,
-            "treasure": 1.0
+            "bridge": 0.123,
+            "housing": 0.110,
+            "stables": 0.161,
+            "treasure": 0.127
         },
         "5": {
-            "bridge": 1.0,
-            "housing": 1.0,
-            "stables": 1.0,
-            "treasure": 1.0
+            "bridge": 0.070,
+            "housing": 0.087,
+            "stables": 0.099,
+            "treasure": 0.089
         }
     }
 }
