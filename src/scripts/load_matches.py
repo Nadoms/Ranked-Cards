@@ -52,9 +52,10 @@ async def spam_redlime(start, limit):
             return i
 
         new_additions = api.Match.commit() - old_additions
-        i += step_size
         if matches == []:
+            print("Up-to-date, total loaded:", new_additions)
             return i
+        i += step_size
 
 def main():
     asyncio.run(spam_redlime(1499237, 1000))
