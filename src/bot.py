@@ -24,7 +24,7 @@ from commands import (
 from rankedutils import games, api, rank, constants, word, numb
 from scripts import analyse_db, construct_players, load_matches
 
-TESTING_MODE = False
+TESTING_MODE = True
 ALL_SEASONS = [str(season) for season in range(1, constants.SEASON + 1)]
 ALL_COUNTRIES = [country for country in leading.COUNTRY_MAPPING]
 API_COOLDOWN_MSG = "Too many commands have been issued! The Ranked API is cooling down... (~10 mins)"
@@ -1177,15 +1177,15 @@ async def leaderboard_overworld(
     interaction: Interaction,
     overworld: str = SlashOption(
         "overworld",
-        required=False,
-        description="The season to display the leaderboard for.",
-        default=str(constants.SEASON),
+        required=True,
+        description="The seed type to display the leaderboard for.",
         choices=[b.lower() for b in constants.OVERWORLDS],
     ),
     season: str = SlashOption(
         "season",
-        required=True,
+        required=False,
         description="The season to display the leaderboard for.",
+        default=str(constants.SEASON),
         choices=ALL_SEASONS,
     ),
     rank_filter: str = SlashOption(
