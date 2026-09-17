@@ -36,105 +36,109 @@ def collect_matches(season, cursor):
     sbs = {}
     elos = {}
     last_ids = {}
+    last_runs_processed = 0
     runs_processed = 0
+    then = datetime.now()
 
-    matches_info = db.query_db(
+    run_info = db.query_db(
         cursor=cursor,
-        items="id, seedType, bastionType, result_uuid, forfeited, time",
-        season=season,
-        type=2,
-        decayed=False
+        table="matches m",
+        items=(
+            "m.id, m.seedType, m.bastionType, m.result_uuid, m.forfeited, m.time,"
+            "r.player_uuid, r.timeline, r.eloRate, r.change"
+        ),
+        join="runs r ON r.match_id = m.id",
+        where=f"m.season = {season} AND m.type = 2 AND m.decayed = 0",
     )
-    for match_info in matches_info:
-        match_id, seed_type, bastion_type, result_uuid, forfeited, result_time = match_info
-        runs = db.query_db(
-            cursor=cursor,
-            table="runs",
-            items="player_uuid, timeline, eloRate, change",
-            match_id=match_id,
-        )
+    for run in run_info:
+        if runs_processed % 10000 == 0:
+            now = datetime.now()
+            diff = (now - then).total_seconds()
+            diff_processed = runs_processed - last_runs_processed
+            print(f"{round(diff_processed / diff):>6} runs per second", end="\r")
+            then = now
+            last_runs_processed = runs_processed
+        runs_processed += 1
+        match_id, seed_type, bastion_type, result_uuid, forfeited, result_time, uuid, timeline, old_elo, change = run
+        timeline = json.loads(timeline)
+        curr_split = "ow"
+        prev_time = 0
+        bastion_entry = bastion_exit = 0
 
-        for run in runs:
-            uuid, timeline, old_elo, change = run
-            timeline = json.loads(timeline)
-            curr_split = "ow"
-            prev_time = 0
-            bastion_entry = bastion_exit = 0
+        for event in reversed(timeline):
+            if event["type"] == "projectelo.timeline.reset":
+                prev_time = event["time"]
+                curr_split = "ow"
+                bastion_entry = bastion_exit = 0
 
-            for event in reversed(timeline):
-                if event["type"] == "projectelo.timeline.reset":
-                    prev_time = event["time"]
-                    curr_split = "ow"
-                    bastion_entry = bastion_exit = 0
+            # Dealing with overworlds
+            if seed_type is not None:
+                if event["type"] == "story.enter_the_nether":
+                    ow_length = event["time"] - prev_time
+                    if uuid not in times["ow"][constants.OW_MAPPING[seed_type]]:
+                        times["ow"][constants.OW_MAPPING[seed_type]][uuid] = 0
+                        nums["ow"][constants.OW_MAPPING[seed_type]][uuid] = 0
+                    times["ow"][constants.OW_MAPPING[seed_type]][uuid] += ow_length
+                    nums["ow"][constants.OW_MAPPING[seed_type]][uuid] += 1
 
-                # Dealing with overworlds
-                if seed_type is not None:
-                    if event["type"] == "story.enter_the_nether":
-                        ow_length = event["time"] - prev_time
-                        if uuid not in times["ow"][constants.OW_MAPPING[seed_type]]:
-                            times["ow"][constants.OW_MAPPING[seed_type]][uuid] = 0
-                            nums["ow"][constants.OW_MAPPING[seed_type]][uuid] = 0
-                        times["ow"][constants.OW_MAPPING[seed_type]][uuid] += ow_length
-                        nums["ow"][constants.OW_MAPPING[seed_type]][uuid] += 1
+            # Dealing with bastions
+            if bastion_type is not None:
+                if event["type"] == "nether.find_bastion":
+                    bastion_entry = event["time"]
 
-                # Dealing with bastions
-                if bastion_type is not None:
-                    if event["type"] == "nether.find_bastion":
-                        bastion_entry = event["time"]
+                elif bastion_entry and not bastion_exit:
+                    if event["type"] in [
+                        "nether.find_fortress",
+                        "projectelo.timeline.blind_travel",
+                        "story.follow_ender_eye",
+                        "story.enter_the_end",
+                    ]:
+                        bastion_exit = event["time"]
+                        bastion_length = bastion_exit - bastion_entry
+                        if uuid not in times["bastion"][bastion_type.lower()]:
+                            times["bastion"][bastion_type.lower()][uuid] = 0
+                            nums["bastion"][bastion_type.lower()][uuid] = 0
+                        times["bastion"][bastion_type.lower()][uuid] += bastion_length
+                        nums["bastion"][bastion_type.lower()][uuid] += 1
 
-                    elif bastion_entry and not bastion_exit:
-                        if event["type"] in [
-                            "nether.find_fortress",
-                            "projectelo.timeline.blind_travel",
-                            "story.follow_ender_eye",
-                            "story.enter_the_end",
-                        ]:
-                            bastion_exit = event["time"]
-                            bastion_length = bastion_exit - bastion_entry
-                            if uuid not in times["bastion"][bastion_type.lower()]:
-                                times["bastion"][bastion_type.lower()][uuid] = 0
-                                nums["bastion"][bastion_type.lower()][uuid] = 0
-                            times["bastion"][bastion_type.lower()][uuid] += bastion_length
-                            nums["bastion"][bastion_type.lower()][uuid] += 1
-
-                # Dealing with splits
-                if event["type"] in SPLIT_MAPPING:
-                    split_length = event["time"] - prev_time
-                    if uuid not in times["split"][curr_split]:
-                        times["split"][curr_split][uuid] = 0
-                        nums["split"][curr_split][uuid] = 0
-
-                    times["split"][curr_split][uuid] += split_length
-                    nums["split"][curr_split][uuid] += 1
-
-                    prev_time = event["time"]
-                    curr_split = SPLIT_MAPPING[event["type"]]
-
-            if result_uuid == uuid and not forfeited:
-                split_length = result_time - prev_time
+            # Dealing with splits
+            if event["type"] in SPLIT_MAPPING:
+                split_length = event["time"] - prev_time
                 if uuid not in times["split"][curr_split]:
                     times["split"][curr_split][uuid] = 0
                     nums["split"][curr_split][uuid] = 0
+
                 times["split"][curr_split][uuid] += split_length
                 nums["split"][curr_split][uuid] += 1
 
-                if uuid not in times["completion"]:
-                    times["completion"][uuid] = 0
-                    nums["completion"][uuid] = 0
-                    sbs[uuid] = 100000000
-                times["completion"][uuid] += result_time
-                nums["completion"][uuid] += 1
-                if result_time < sbs[uuid]:
-                    sbs[uuid] = result_time
+                prev_time = event["time"]
+                curr_split = SPLIT_MAPPING[event["type"]]
 
-            if uuid not in last_ids:
-                last_ids[uuid] = 0
-                elos[uuid] = 0
-            if match_id > last_ids[uuid]:
-                last_ids[uuid] = match_id
-                elos[uuid] = old_elo + change if old_elo is not None else None
+        if result_uuid == uuid and not forfeited:
+            split_length = result_time - prev_time
+            if uuid not in times["split"][curr_split]:
+                times["split"][curr_split][uuid] = 0
+                nums["split"][curr_split][uuid] = 0
+            times["split"][curr_split][uuid] += split_length
+            nums["split"][curr_split][uuid] += 1
 
-            runs_processed += 1
+            if uuid not in times["completion"]:
+                times["completion"][uuid] = 0
+                nums["completion"][uuid] = 0
+                sbs[uuid] = 100000000
+            times["completion"][uuid] += result_time
+            nums["completion"][uuid] += 1
+            if result_time < sbs[uuid]:
+                sbs[uuid] = result_time
+
+        if uuid not in last_ids:
+            last_ids[uuid] = 0
+            elos[uuid] = 0
+        if match_id > last_ids[uuid]:
+            last_ids[uuid] = match_id
+            elos[uuid] = old_elo + change if old_elo is not None else None
+
+        runs_processed += 1
 
     return times, nums, sbs, elos, runs_processed
 
