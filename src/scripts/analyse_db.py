@@ -36,7 +36,9 @@ def collect_matches(season, cursor):
     sbs = {}
     elos = {}
     last_ids = {}
+    last_runs_processed = 0
     runs_processed = 0
+    then = datetime.now()
 
     run_info = db.query_db(
         cursor=cursor,
@@ -49,6 +51,14 @@ def collect_matches(season, cursor):
         where=f"m.season = {season} AND m.type = 2 AND m.decayed = 0",
     )
     for run in run_info:
+        if runs_processed % 10000 == 0:
+            now = datetime.now()
+            diff = (now - then).total_seconds()
+            diff_processed = runs_processed - last_runs_processed
+            print(f"{round(diff_processed / diff):>6} runs per second", end="\r")
+            then = now
+            last_runs_processed = runs_processed
+        runs_processed += 1
         match_id, seed_type, bastion_type, result_uuid, forfeited, result_time, uuid, timeline, old_elo, change = run
         timeline = json.loads(timeline)
         curr_split = "ow"
