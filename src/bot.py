@@ -24,7 +24,7 @@ from commands import (
 from rankedutils import games, api, rank, constants, word, numb
 from scripts import analyse_db, construct_players, load_matches
 
-TESTING_MODE = True
+TESTING_MODE = getenv("TESTING_MODE", "true").lower() == "true"
 ALL_SEASONS = [str(season) for season in range(1, constants.SEASON + 1)]
 ALL_COUNTRIES = [country for country in leading.COUNTRY_MAPPING]
 API_COOLDOWN_MSG = "Too many commands have been issued! The Ranked API is cooling down... (~10 mins)"
