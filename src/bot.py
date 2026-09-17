@@ -1100,7 +1100,7 @@ async def leaderboard_bastion(
         required=False,
         description="The season to display the leaderboard for.",
         default=str(constants.SEASON),
-        choices=ALL_SEASONS,
+        choices=ALL_SEASONS[4:],
     ),
     rank_filter: str = SlashOption(
         "rank_filter",
