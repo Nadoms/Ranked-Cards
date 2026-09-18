@@ -25,16 +25,26 @@ def collect_matches(season, cursor):
         "split": {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}},
         "bastion": {"bridge": {}, "housing": {}, "stables": {}, "treasure": {}},
         "ow": {"bt": {}, "dt": {}, "rp": {}, "ship": {}, "village": {}},
-        "completion": {},
     }
     nums = {
         "split": {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}},
         "bastion": {"bridge": {}, "housing": {}, "stables": {}, "treasure": {}},
         "ow": {"bt": {}, "dt": {}, "rp": {}, "ship": {}, "village": {}},
-        "completion": {},
     }
-    sbs = {}
-    elos = {}
+    stats = {
+        "elo": {},
+        "peak": {},
+        "sb": {},
+        "games": {},
+        "playtime": {},
+        "wins": {},
+        "draws": {},
+        "losses": {},
+        "forfeits": {},
+        "cmptime": {},
+        "completions": {},
+        "throws": {},
+    }
     last_ids = {}
     last_runs_processed = 0
     runs_processed = 0
@@ -51,25 +61,29 @@ def collect_matches(season, cursor):
         where=f"m.season = {season} AND m.type = 2 AND m.decayed = 0",
     )
     for run in run_info:
-        if runs_processed % 10000 == 0:
+        if runs_processed % 50000 == 0:
             now = datetime.now()
             diff = (now - then).total_seconds()
             diff_processed = runs_processed - last_runs_processed
             print(f"{round(diff_processed / diff):>6} runs per second", end="\r")
             then = now
             last_runs_processed = runs_processed
-        runs_processed += 1
+
         match_id, seed_type, bastion_type, result_uuid, forfeited, result_time, uuid, timeline, old_elo, change = run
         timeline = json.loads(timeline)
         curr_split = "ow"
         prev_time = 0
         bastion_entry = bastion_exit = 0
+        thrown = False
 
         for event in reversed(timeline):
             if event["type"] == "projectelo.timeline.reset":
                 prev_time = event["time"]
                 curr_split = "ow"
                 bastion_entry = bastion_exit = 0
+                thrown = True
+            if event["type"] == "projectelo.timeline.death":
+                thrown = True
 
             # Dealing with overworlds
             if seed_type is not None:
@@ -122,25 +136,51 @@ def collect_matches(season, cursor):
             times["split"][curr_split][uuid] += split_length
             nums["split"][curr_split][uuid] += 1
 
-            if uuid not in times["completion"]:
-                times["completion"][uuid] = 0
-                nums["completion"][uuid] = 0
-                sbs[uuid] = 100000000
-            times["completion"][uuid] += result_time
-            nums["completion"][uuid] += 1
-            if result_time < sbs[uuid]:
-                sbs[uuid] = result_time
+            if uuid not in stats["completions"]:
+                stats["cmptime"][uuid] = 0
+                stats["completions"][uuid] = 0
+                stats["sb"][uuid] = result_time
+            stats["cmptime"][uuid] += result_time
+            stats["completions"][uuid] += 1
+            if result_time < stats["sb"][uuid]:
+                stats["sb"][uuid] = result_time
 
         if uuid not in last_ids:
             last_ids[uuid] = 0
-            elos[uuid] = 0
+            stats["elo"][uuid] = None
+            stats["peak"][uuid] = None
+            stats["games"][uuid] = 0
+            stats["playtime"][uuid] = 0
+            stats["wins"][uuid] = 0
+            stats["draws"][uuid] = 0
+            stats["losses"][uuid] = 0
+            stats["forfeits"][uuid] = 0
+            stats["throws"][uuid] = 0
         if match_id > last_ids[uuid]:
             last_ids[uuid] = match_id
-            elos[uuid] = old_elo + change if old_elo is not None else None
+            stats["elo"][uuid] = old_elo + change if old_elo is not None else None
+
+        if old_elo is not None and (
+            stats["peak"][uuid] is None
+            or old_elo + change > stats["peak"][uuid]
+        ):
+            stats["peak"][uuid] = old_elo + change
+        stats["games"][uuid] += 1
+        stats["playtime"][uuid] += result_time
+        if result_uuid == uuid:
+            stats["wins"][uuid] += 1
+        elif result_uuid is None:
+            stats["draws"][uuid] += 1
+        else:
+            stats["losses"][uuid] += 1
+            if forfeited:
+                stats["forfeits"][uuid] += 1
+        if thrown:
+            stats["throws"][uuid] += 1
 
         runs_processed += 1
 
-    return times, nums, sbs, elos, runs_processed
+    return times, nums, stats, runs_processed
 
 
 async def analyse(season, filename="playerbase.json"):
@@ -149,51 +189,87 @@ async def analyse(season, filename="playerbase.json"):
         "split": {"ow": [], "nether": [], "bastion": [], "fortress": [], "blind": [], "stronghold": [], "end": []},
         "bastion": {"bridge": [], "housing": [], "stables": [], "treasure": []},
         "ow": {"bt": [], "dt": [], "rp": [], "ship": [], "village": []},
-        "elo": [],
-        "avg": [],
-        "sb": []
+        "stats": {
+            "elo": [],
+            "peak": [],
+            "avg": [],
+            "sb": [],
+            "games": [],
+            "playtime": [],
+            "winrate": [],
+            "ffl": [],
+            "cmpr": [],
+            "trwr": [],
+            # "wins": [],
+            # "draws": [],
+            # "losses": [],
+            # "forfeits": [],
+            # "throws": [],
+        }
     }
 
     conn, cursor = db.start(PROJECT_DIR / "database" / "ranked.db")
     print(f"\nCollecting runs - {datetime.now()}")
-    times, nums, sbs, elos, runs = collect_matches(season, cursor)
+    times, nums, stats, runs = collect_matches(season, cursor)
     print(f"Finished collecting {runs} runs")
-
-    # Get the elo of every player accounted for
-    # print(f"\nFetching elos of {len(nums['split']['ow'])} players - {datetime.now()}")
-    # all_elos = {}
-    # for uuid in nums["split"]["ow"]:
-    #     all_elos[uuid] = db.get_elo(cursor, uuid, season)
-    #     await asyncio.sleep(0.001)
 
     training_data = {
         "avg": [],
         "sb": [],
     }
 
-    # Construct training data and avg / sb ranking
-    print(f"\nProcessing completions of {len(nums['completion'])} players - {datetime.now()}")
-    for uuid in times["completion"]:
-        elo = elos[uuid]
-        avg = round(times["completion"][uuid] / nums["completion"][uuid])
-        sb = sbs[uuid] # db.get_sb(cursor, uuid, season)
-
-        if not sb:
-            print(uuid, sb, elo, nums["completion"])
+    # Construct training data and stat rankings
+    print(f"\nProcessing matches of {len(stats['games'])} players - {datetime.now()}")
+    for uuid in stats["games"]:
+        elo = stats["elo"][uuid]
         if elo:
-            training_data["avg"].append((avg * 1e-6, elo * 1e-3))
-            training_data["sb"].append((sb * 1e-6, elo * 1e-3))
-            ranked["elo"].append(elo)
+            ranked["stats"]["elo"].append(elo)
+            ranked["stats"]["peak"].append((stats["peak"][uuid], elo, uuid))
+        # for stat in ("peak", "wins", "draws", "losses", "forfeits", "throws"):
+        #     ranked["stats"][stat].append((stats[stat][uuid], elo, uuid))
+        if stats["wins"][uuid] + stats["losses"][uuid] > 0:
+            ranked["stats"]["winrate"].append((
+                round(stats["wins"][uuid] / (stats["wins"][uuid] + stats["losses"][uuid]), 3),
+                elo,
+                uuid
+            ))
+        if stats["losses"][uuid] > 0:
+            ranked["stats"]["ffl"].append((
+                round(stats["forfeits"][uuid] / stats["losses"][uuid], 3),
+                elo,
+                uuid
+            ))
+        ranked["stats"]["trwr"].append((
+            round(stats["throws"][uuid] / stats["games"][uuid], 3),
+            elo,
+            uuid
+        ))
 
-        if nums["completion"][uuid] >= 3:
-            ranked["avg"].append((avg, elo, nums["completion"][uuid], uuid))
+        # Process completion related info
+        if stats["completions"].get(uuid):
+            avg = round(stats["cmptime"][uuid] / stats["completions"][uuid])
+            sb = stats["sb"][uuid]
 
-        ranked["sb"].append((sb, elo, uuid))
-        await asyncio.sleep(0.001)
+            if elo:
+                training_data["avg"].append((avg * 1e-6, elo * 1e-3))
+                training_data["sb"].append((sb * 1e-6, elo * 1e-3))
 
-    ranked["elo"].sort(reverse=True)
-    ranked["avg"] = sorted(ranked["avg"], key=lambda x: x[0])
-    ranked["sb"] = sorted(ranked["sb"], key=lambda x: x[0])
+            if stats["completions"][uuid] >= 3:
+                ranked["stats"]["avg"].append((avg, elo, stats["completions"][uuid], uuid))
+
+            ranked["stats"]["sb"].append((sb, elo, uuid))
+            ranked["stats"]["cmpr"].append((
+                round(stats["completions"][uuid] / stats["games"][uuid], 3),
+                elo,
+                uuid
+            ))
+
+    ranked["stats"]["elo"].sort(reverse=True)
+    for key in list(ranked["stats"].keys())[1:]:
+        reverse = True
+        if key in ("avg", "sb", "ffl", "trwr"):
+            reverse = False
+        ranked["stats"][key].sort(key=lambda x: x[0], reverse=reverse)
 
     # Construct performance rankings
     for performance in ["split", "bastion", "ow"] if season >= 5 else ["split", "ow"]:
@@ -207,7 +283,7 @@ async def analyse(season, filename="playerbase.json"):
                         / nums[performance][item][uuid]
                     )
                     ranked[performance][item].append(
-                        (item_avg, elos[uuid], nums[performance][item][uuid], uuid)
+                        (item_avg, stats["elo"][uuid], nums[performance][item][uuid], uuid)
                     )
             ranked[performance][item] = sorted(ranked[performance][item], key=lambda x: x[0])
 
