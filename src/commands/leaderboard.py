@@ -271,7 +271,7 @@ def custom_leaderboard(leaderboard, lb_name, lb_desc, input_name, page):
 
     conn, cursor = db.start()
     for position, entry in enumerate(leaderboard):
-        name = db.get_nick(cursor, entry[3])
+        name = db.get_nick(cursor, entry[2])
         if position < start or position >= end:
             if name.lower() == input_name.lower():
                 lb_txt += f" .... | ................ | ..{'.' if lb_name == 'Average Completion' else ''}.. | ......\n"
@@ -282,10 +282,10 @@ def custom_leaderboard(leaderboard, lb_name, lb_desc, input_name, page):
         duration = str(timedelta(seconds=entry[0] // 1000))[2:]
         if duration[0] == "0" and lb_name != "Average Completion":
             duration = duration[1:]
-        count = f"{entry[2]} c"
+        count = f"({entry[3]})"
         spacing_1 = " " * (3 - len(str(position + 1)))
         spacing_2 = " " * (16 - len(name))
-        line = f"{highlight}{spacing_1}#{position + 1} | {name}{spacing_2} | {duration} | {count}\n"
+        line = f"{highlight}{spacing_1}#{position + 1} | {name}{spacing_2} | {duration} {count}\n"
         if position < start:
             lb_txt = line + lb_txt
         else:

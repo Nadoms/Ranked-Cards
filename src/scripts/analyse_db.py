@@ -225,24 +225,29 @@ async def analyse(season, filename="playerbase.json"):
         if elo:
             ranked["stats"]["elo"].append(elo)
             ranked["stats"]["peak"].append((stats["peak"][uuid], elo, uuid))
-        # for stat in ("peak", "wins", "draws", "losses", "forfeits", "throws"):
-        #     ranked["stats"][stat].append((stats[stat][uuid], elo, uuid))
+
+        ranked["stats"]["games"].append((stats["games"][uuid], elo, uuid))
+        ranked["stats"]["playtime"].append((stats["playtime"][uuid], elo, uuid))
+
         if stats["wins"][uuid] + stats["losses"][uuid] > 0:
             ranked["stats"]["winrate"].append((
                 round(stats["wins"][uuid] / (stats["wins"][uuid] + stats["losses"][uuid]), 3),
                 elo,
-                uuid
+                uuid,
+                stats["wins"][uuid] + stats["losses"][uuid]
             ))
         if stats["losses"][uuid] > 0:
             ranked["stats"]["ffl"].append((
                 round(stats["forfeits"][uuid] / stats["losses"][uuid], 3),
                 elo,
-                uuid
+                uuid,
+                stats["losses"][uuid]
             ))
         ranked["stats"]["trwr"].append((
             round(stats["throws"][uuid] / stats["games"][uuid], 3),
             elo,
-            uuid
+            uuid,
+            stats["games"][uuid]
         ))
 
         # Process completion related info
@@ -255,13 +260,14 @@ async def analyse(season, filename="playerbase.json"):
                 training_data["sb"].append((sb * 1e-6, elo * 1e-3))
 
             if stats["completions"][uuid] >= 3:
-                ranked["stats"]["avg"].append((avg, elo, stats["completions"][uuid], uuid))
+                ranked["stats"]["avg"].append((avg, elo, uuid, stats["completions"][uuid]))
 
             ranked["stats"]["sb"].append((sb, elo, uuid))
             ranked["stats"]["cmpr"].append((
                 round(stats["completions"][uuid] / stats["games"][uuid], 3),
                 elo,
-                uuid
+                uuid,
+                stats["completions"][uuid]
             ))
 
     ranked["stats"]["elo"].sort(reverse=True)
@@ -283,7 +289,7 @@ async def analyse(season, filename="playerbase.json"):
                         / nums[performance][item][uuid]
                     )
                     ranked[performance][item].append(
-                        (item_avg, stats["elo"][uuid], nums[performance][item][uuid], uuid)
+                        (item_avg, stats["elo"][uuid], uuid, nums[performance][item][uuid])
                     )
             ranked[performance][item] = sorted(ranked[performance][item], key=lambda x: x[0])
 

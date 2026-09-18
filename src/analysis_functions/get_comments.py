@@ -79,7 +79,7 @@ def main(response, detailed_matches, elo, player_season, compare_season, rank_fi
 
 def get_player_count(rank_filter, playerbase_file):
     with open(playerbase_file, "r") as f:
-        elos = json.load(f)["elo"]
+        elos = json.load(f)["stats"]["elo"]
     lower, upper = rank.get_boundaries(rank_filter)
     player_count = sum(1 for elo in elos if lower <= elo < upper)
     return player_count
@@ -87,8 +87,8 @@ def get_player_count(rank_filter, playerbase_file):
 
 def get_attr_ranked(value, attr_type, rank_filter, playerbase_file):
     with open(playerbase_file, "r") as f:
-        attrs = json.load(f)[attr_type]
-    if attr_type == "elo":
+        attrs = json.load(f)["stats"][attr_type]
+    if attr_type in ("elo", "avg", "sb", "ffl", "trwr"):
         attrs = list(reversed(attrs))
 
     lower, upper = rank.get_boundaries(rank_filter)

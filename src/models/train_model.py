@@ -105,8 +105,8 @@ def main(data_oi):
     with open(playerbase_file, "r") as f:
         playerbase_data = json.load(f)
 
-    data_ois = playerbase_data[data_oi]
-    elos = playerbase_data["elo"]
+    data_ois = playerbase_data["stats"][data_oi]
+    elos = playerbase_data["stats"]["elo"]
     uuids = list(data_ois.keys()) if data_oi == "avg" else list(elos.keys())
 
     train(

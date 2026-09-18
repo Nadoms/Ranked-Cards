@@ -1046,7 +1046,7 @@ async def leaderboard_split(
         entry for entry in lb
         if (
             (rank.str_to_rank(rank_filter) is None or (entry[1] and lower <= entry[1] < upper))
-            and (entry[2] >= sample_size)
+            and (entry[3] >= sample_size)
         )
     ]
 
@@ -1132,7 +1132,7 @@ async def leaderboard_bastion(
         entry for entry in lb
         if (
             (rank.str_to_rank(rank_filter) is None or (entry[1] and lower <= entry[1] < upper))
-            and (entry[2] >= sample_size)
+            and (entry[3] >= sample_size)
         )
     ]
 
@@ -1219,7 +1219,7 @@ async def leaderboard_overworld(
         entry for entry in lb
         if (
             (rank.str_to_rank(rank_filter) is None or (entry[1] and lower <= entry[1] < upper))
-            and (entry[2] >= sample_size)
+            and (entry[3] >= sample_size)
         )
     ]
 
@@ -1293,13 +1293,13 @@ async def leaderboard_average(
 
     season_suffix = "" if int(season) == constants.SEASON else f"_s{season}"
     with open(DATABASE_DIR / f"playerbase{season_suffix}.json") as f:
-        lb = json.load(f)[lb_type]
+        lb = json.load(f)["stats"][lb_type]
     lower, upper = rank.get_boundaries(rank.str_to_rank(rank_filter))
     lb = [
         entry for entry in lb
         if (
             (rank.str_to_rank(rank_filter) is None or (entry[1] and lower <= entry[1] < upper))
-            and (entry[2] >= sample_size)
+            and (entry[3] >= sample_size)
         )
     ]
 
