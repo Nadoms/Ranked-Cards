@@ -1498,7 +1498,7 @@ async def leaderboard_ffl(
 
 @leaderboard.subcommand(
     name="chokerate",
-    description="Returns the leaderboard of the lowest chokerates.",
+    description="Returns the leaderboard of the lowest choke srates.",
 )
 async def leaderboard_chokerate(
     interaction: Interaction,
