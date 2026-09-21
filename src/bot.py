@@ -1546,7 +1546,7 @@ async def leaderboard_chokerate(
 
 
 @leaderboard.subcommand(
-    name="completion rate",
+    name="comprate",
     description="Returns the leaderboard of the highest completion rates.",
 )
 async def leaderboard_comprate(

@@ -326,6 +326,7 @@ class CustomLBEmbeds(LBEmbeds):
         user_row = None
         user_rank = None
         lb_rows = []
+        self.description += f" There are {len(leaderboard)} players in this leaderboard."
 
         for position, entry in enumerate(leaderboard):
             name = db.get_nick(cursor, entry[2])
