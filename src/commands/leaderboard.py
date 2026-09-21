@@ -314,7 +314,7 @@ class CustomLBEmbeds(LBEmbeds):
         self.needs_samples = self.is_time or self.is_ratio
         header_value = "time " if self.is_time else f"{lb_type} "
         header_samples = " (samples)" if self.needs_samples else ""
-        header = f" rank  | username         | {header_value}{header_samples}"
+        header = f" rank  | username         | {header_value}"
         description = f"{description}\nThis leaderboard is updated nightly."
         title = f"{lb_name} Leaderboard"
         self.lb_name = lb_name
