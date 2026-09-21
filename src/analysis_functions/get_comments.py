@@ -88,7 +88,7 @@ def get_player_count(rank_filter, playerbase_file):
 def get_attr_ranked(value, attr_type, rank_filter, playerbase_file):
     with open(playerbase_file, "r") as f:
         attrs = json.load(f)["stats"][attr_type]
-    if attr_type in ("elo", "avg", "sb", "ffl", "chokerate"):
+    if attr_type in ("elo", "peak", "games", "playtime", "winrate", "comprate"):
         attrs = list(reversed(attrs))
 
     lower, upper = rank.get_boundaries(rank_filter)
@@ -104,7 +104,7 @@ def get_attr_ranked(value, attr_type, rank_filter, playerbase_file):
         raise FileExistsError("No players found in this rank to compare to.")
 
     ranked_attr = round(np.searchsorted(attrs, value) / len(attrs), 3)
-    if attr_type != "elo":
+    if attr_type not in ("elo", "peak", "games", "playtime", "winrate", "comprate"):
         ranked_attr = 1 - ranked_attr
     return ranked_attr
 
