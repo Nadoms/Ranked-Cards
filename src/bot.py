@@ -1060,16 +1060,8 @@ async def leaderboard_split(
     )
 
     try:
-        for page in range(0, leaderboard_size):
-            leaderboard_embeds.append(
-                leading.custom_leaderboard(
-                    lb,
-                    lb_name,
-                    lb_desc,
-                    input_name,
-                    page
-                )
-            )
+        lb_embeds = leading.CustomLBEmbeds(leaderboard_size, lb_name, lb_desc, lb_type)
+        leaderboard_embeds = lb_embeds.extract_lb(lb, input_name)
     except Exception:
         print("Error caught!")
         traceback.print_exc()
@@ -1146,16 +1138,8 @@ async def leaderboard_bastion(
     )
 
     try:
-        for page in range(0, leaderboard_size):
-            leaderboard_embeds.append(
-                leading.custom_leaderboard(
-                    lb,
-                    lb_name,
-                    lb_desc,
-                    input_name,
-                    page
-                )
-            )
+        lb_embeds = leading.CustomLBEmbeds(leaderboard_size, lb_name, lb_desc, lb_type)
+        leaderboard_embeds = lb_embeds.extract_lb(lb, input_name)
     except Exception:
         print("Error caught!")
         traceback.print_exc()
@@ -1233,16 +1217,8 @@ async def leaderboard_overworld(
     )
 
     try:
-        for page in range(0, leaderboard_size):
-            leaderboard_embeds.append(
-                leading.custom_leaderboard(
-                    lb,
-                    lb_name,
-                    lb_desc,
-                    input_name,
-                    page
-                )
-            )
+        lb_embeds = leading.CustomLBEmbeds(leaderboard_size, lb_name, lb_desc, lb_type)
+        leaderboard_embeds = lb_embeds.extract_lb(lb, input_name)
     except Exception:
         print("Error caught!")
         traceback.print_exc()
@@ -1313,16 +1289,8 @@ async def leaderboard_average(
     )
 
     try:
-        for page in range(0, leaderboard_size):
-            leaderboard_embeds.append(
-                leading.custom_leaderboard(
-                    lb,
-                    lb_name,
-                    lb_desc,
-                    input_name,
-                    page
-                )
-            )
+        lb_embeds = leading.CustomLBEmbeds(leaderboard_size, lb_name, lb_desc, lb_type)
+        leaderboard_embeds = lb_embeds.extract_lb(lb, input_name)
     except Exception:
         print("Error caught!")
         traceback.print_exc()

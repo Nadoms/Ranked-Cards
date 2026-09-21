@@ -272,7 +272,7 @@ class LBEmbeds():
         self.embeds = []
 
     def construct_lb(self, lb_rows, user_rank = None, user_row = None):
-        embeds = []
+        self.embeds = []
         for page in range(self.max_page):
             page_title = f"{self.title} ({page + 1}/{self.max_page})"
 
@@ -300,15 +300,20 @@ class LBEmbeds():
                         page_rows.append(user_row)
                 value = "```" + "\n".join(page_rows) + "```"
             embed.add_field(name="", value=value, inline=False)
-            embeds.append(embed)
+            self.embeds.append(embed)
 
-        return embeds
+        return self.embeds
 
 
 class CustomLBEmbeds(LBEmbeds):
 
-    def __init__(self, max_page, lb_name, description):
-        header = " rank  | username         | time  (samples)"
+    def __init__(self, max_page, lb_name, description, lb_type):
+        self.is_time = lb_type in ("avg", "split", "bastion", "ow")
+        self.is_ratio = lb_type in ("winrate", "ffl", "trwr")
+        self.needs_samples = self.is_time or self.is_ratio
+        header_value = "time " if self.is_time else f"{lb_type} "
+        header_samples = " (samples)" if self.needs_samples else ""
+        header = f" rank  | username         | {header_value}{header_samples}"
         description = f"{description}\nThis leaderboard is updated nightly."
         title = f"{lb_name} Leaderboard"
         self.lb_name = lb_name
@@ -323,11 +328,17 @@ class CustomLBEmbeds(LBEmbeds):
 
         for position, entry in enumerate(leaderboard):
             name = db.get_nick(cursor, entry[2])
-            duration = numb.digital_time(entry[0])
+            if self.is_time:
+                value = numb.digital_time(entry[0])
+            elif self.is_ratio:
+                value = f"{round(entry[0] * 100, 1)}%"
+            else:
+                value = entry[0]
             highlight = ">" if name.lower() == input_name.lower() else " "
+            samples = f" ({entry[3]})" if self.needs_samples else ""
             lb_row = (
                 f"{highlight}{'#' + str(position + 1):>5} | "
-                f"{name:<16} | {duration:>5} ({entry[3]})"
+                f"{name:<16} | {value:>5}{samples}"
             )
 
             if name.lower() == input_name.lower():
