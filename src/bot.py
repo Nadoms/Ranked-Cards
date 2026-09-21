@@ -552,7 +552,7 @@ async def analysis(
     rank_filter: str = SlashOption(
         "rank_filter",
         required=False,
-        description="What caliber of player to compare your stats to.",
+        description="What calibre of player to compare your stats to.",
         default="All",
         choices=["All"] + rank.RANKS[:-1]
     ),
@@ -999,7 +999,7 @@ async def leaderboard_completion(
 
 @leaderboard.subcommand(
     name="split",
-    description="Returns the leaderboard of fastest mean times for a given split.",
+    description="Returns the leaderboard of the fastest mean times for a given split.",
 )
 async def leaderboard_split(
     interaction: Interaction,
@@ -1019,7 +1019,7 @@ async def leaderboard_split(
     rank_filter: str = SlashOption(
         "rank_filter",
         required=False,
-        description="What caliber of player to filter for.",
+        description="What calibre of player to filter for.",
         default="All",
         choices=["All"] + rank.RANKS[:-1]
     ),
@@ -1056,7 +1056,7 @@ async def leaderboard_split(
     lb_desc = (
         f"These are the fastest players in the {split} split during S{season}"
         f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
-        f" ({sample_size}+)"
+        f" ({sample_size}+ samples)"
     )
 
     try:
@@ -1077,7 +1077,7 @@ async def leaderboard_split(
 
 @leaderboard.subcommand(
     name="bastion",
-    description="Returns the leaderboard of fastest mean times for a given bastion.",
+    description="Returns the leaderboard of the fastest mean times for a given bastion.",
 )
 async def leaderboard_bastion(
     interaction: Interaction,
@@ -1097,7 +1097,7 @@ async def leaderboard_bastion(
     rank_filter: str = SlashOption(
         "rank_filter",
         required=False,
-        description="What caliber of player to filter for.",
+        description="What calibre of player to filter for.",
         default="All",
         choices=["All"] + rank.RANKS[:-1]
     ),
@@ -1134,7 +1134,7 @@ async def leaderboard_bastion(
     lb_desc = (
         f"These are the fastest players at routing {bastion} bastions during  S{season}"
         f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
-        f" ({sample_size}+)"
+        f" ({sample_size}+ samples)"
     )
 
     try:
@@ -1155,7 +1155,7 @@ async def leaderboard_bastion(
 
 @leaderboard.subcommand(
     name="overworld",
-    description="Returns the leaderboard of fastest mean times for a given overworld.",
+    description="Returns the leaderboard of the fastest mean times for a given overworld.",
 )
 async def leaderboard_overworld(
     interaction: Interaction,
@@ -1175,7 +1175,7 @@ async def leaderboard_overworld(
     rank_filter: str = SlashOption(
         "rank_filter",
         required=False,
-        description="What caliber of player to filter for.",
+        description="What calibre of player to filter for.",
         default="All",
         choices=["All"] + rank.RANKS[:-1]
     ),
@@ -1213,7 +1213,7 @@ async def leaderboard_overworld(
     lb_desc = (
         f"These are the fastest players at running {ow_name} overworlds during S{season}"
         f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
-        f" ({sample_size}+)"
+        f" ({sample_size}+ samples)"
     )
 
     try:
@@ -1234,7 +1234,7 @@ async def leaderboard_overworld(
 
 @leaderboard.subcommand(
     name="average",
-    description="Returns the leaderboard of fastest average completion times.",
+    description="Returns the leaderboard of the fastest average completion times.",
 )
 async def leaderboard_average(
     interaction: Interaction,
@@ -1248,7 +1248,7 @@ async def leaderboard_average(
     rank_filter: str = SlashOption(
         "rank_filter",
         required=False,
-        description="What caliber of player to filter for.",
+        description="What calibre of player to filter for.",
         default="All",
         choices=["All"] + rank.RANKS[:-1]
     ),
@@ -1262,11 +1262,348 @@ async def leaderboard_average(
     ),
 ):
     lb_type = "avg"
-    input_name = get_name(interaction)
     await interaction.response.defer()
-
     print(f"---\nFetching Completion Avg Leaderboard for rank {rank_filter}")
+    lb_name = f"Average Completion S{season}"
+    lb_desc = (
+        f"These are the fastest players on average during S{season}"
+        f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
+        f" ({sample_size}+ samples)"
+    )
+    await generic_lb_response(
+        interaction,
+        season,
+        rank_filter,
+        lb_type,
+        lb_name,
+        lb_desc,
+        sample_size=sample_size,
+    )
 
+
+@leaderboard.subcommand(
+    name="peak",
+    description="Returns the leaderboard of the highest peak elos.",
+)
+async def leaderboard_peak(
+    interaction: Interaction,
+    season: str = SlashOption(
+        "season",
+        required=False,
+        description="The season to display the leaderboard for.",
+        default=str(constants.SEASON),
+        choices=ALL_SEASONS,
+    ),
+    rank_filter: str = SlashOption(
+        "rank_filter",
+        required=False,
+        description="What calibre of player to filter for.",
+        default="All",
+        choices=["All"] + rank.RANKS[:-1]
+    )
+):
+    lb_type = "peak"
+    await interaction.response.defer()
+    print(f"---\nFetching Peak Elo Leaderboard for rank {rank_filter}")
+    lb_name = f"Peak Elo S{season}"
+    lb_desc = (
+        f"These are the players with the greatest peak elo during S{season}"
+        f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
+    )
+    await generic_lb_response(
+        interaction,
+        season,
+        rank_filter,
+        lb_type,
+        lb_name,
+        lb_desc,
+    )
+
+
+@leaderboard.subcommand(
+    name="matches",
+    description="Returns the leaderboard of the most matches played.",
+)
+async def leaderboard_games(
+    interaction: Interaction,
+    season: str = SlashOption(
+        "season",
+        required=False,
+        description="The season to display the leaderboard for.",
+        default=str(constants.SEASON),
+        choices=ALL_SEASONS,
+    ),
+    rank_filter: str = SlashOption(
+        "rank_filter",
+        required=False,
+        description="What calibre of player to filter for.",
+        default="All",
+        choices=["All"] + rank.RANKS[:-1]
+    ),
+):
+    lb_type = "games"
+    await interaction.response.defer()
+    print(f"---\nFetching Matches Played Leaderboard for rank {rank_filter}")
+    lb_name = f"Matches Played S{season}"
+    lb_desc = (
+        f"These are the fastest players on average during S{season}"
+        f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
+    )
+    await generic_lb_response(
+        interaction,
+        season,
+        rank_filter,
+        lb_type,
+        lb_name,
+        lb_desc,
+    )
+
+
+@leaderboard.subcommand(
+    name="playtime",
+    description="Returns the leaderboard of the highest playtimes.",
+)
+async def leaderboard_playtime(
+    interaction: Interaction,
+    season: str = SlashOption(
+        "season",
+        required=False,
+        description="The season to display the leaderboard for.",
+        default=str(constants.SEASON),
+        choices=ALL_SEASONS,
+    ),
+    rank_filter: str = SlashOption(
+        "rank_filter",
+        required=False,
+        description="What calibre of player to filter for.",
+        default="All",
+        choices=["All"] + rank.RANKS[:-1]
+    ),
+):
+    lb_type = "playtime"
+    await interaction.response.defer()
+    print(f"---\nFetching Playtime Leaderboard for rank {rank_filter}")
+    lb_name = f"Playtime S{season}"
+    lb_desc = (
+        f"These are the players who touched the least grass during S{season}"
+        f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
+    )
+    await generic_lb_response(
+        interaction,
+        season,
+        rank_filter,
+        lb_type,
+        lb_name,
+        lb_desc,
+    )
+
+
+@leaderboard.subcommand(
+    name="winrate",
+    description="Returns the leaderboard of the highest winrates.",
+)
+async def leaderboard_winrate(
+    interaction: Interaction,
+    season: str = SlashOption(
+        "season",
+        required=False,
+        description="The season to display the leaderboard for.",
+        default=str(constants.SEASON),
+        choices=ALL_SEASONS,
+    ),
+    rank_filter: str = SlashOption(
+        "rank_filter",
+        required=False,
+        description="What calibre of player to filter for.",
+        default="All",
+        choices=["All"] + rank.RANKS[:-1]
+    ),
+    sample_size: int = SlashOption(
+        "sample_size",
+        required=False,
+        description="The minimum sample size to require of players.",
+        min_value=1,
+        max_value=100,
+        default=5,
+    ),
+):
+    lb_type = "winrate"
+    await interaction.response.defer()
+    print(f"---\nFetching Winrate Leaderboard for rank {rank_filter}")
+    lb_name = f"Winrate S{season}"
+    lb_desc = (
+        f"These are the players with the highest winrates during S{season}"
+        f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
+        f" ({sample_size}+ samples)"
+    )
+    await generic_lb_response(
+        interaction,
+        season,
+        rank_filter,
+        lb_type,
+        lb_name,
+        lb_desc,
+        sample_size=sample_size,
+    )
+
+
+@leaderboard.subcommand(
+    name="forfeit_loss",
+    description="Returns the leaderboard of the lowest forfeit-loss ratios.",
+)
+async def leaderboard_ffl(
+    interaction: Interaction,
+    season: str = SlashOption(
+        "season",
+        required=False,
+        description="The season to display the leaderboard for.",
+        default=str(constants.SEASON),
+        choices=ALL_SEASONS,
+    ),
+    rank_filter: str = SlashOption(
+        "rank_filter",
+        required=False,
+        description="What calibre of player to filter for.",
+        default="All",
+        choices=["All"] + rank.RANKS[:-1]
+    ),
+    sample_size: int = SlashOption(
+        "sample_size",
+        required=False,
+        description="The minimum sample size to require of players.",
+        min_value=1,
+        max_value=100,
+        default=5,
+    ),
+):
+    lb_type = "ffl"
+    await interaction.response.defer()
+    print(f"---\nFetching Forfeit Loss Leaderboard for rank {rank_filter}")
+    lb_name = f"Forfeit / Loss S{season}"
+    lb_desc = (
+        f"These are the players with the greatest mental fortitude during S{season}"
+        f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
+        f" ({sample_size}+ samples)"
+    )
+    await generic_lb_response(
+        interaction,
+        season,
+        rank_filter,
+        lb_type,
+        lb_name,
+        lb_desc,
+        sample_size=sample_size,
+    )
+
+
+@leaderboard.subcommand(
+    name="throwrate",
+    description="Returns the leaderboard of the lowest throwrates.",
+)
+async def leaderboard_throwrate(
+    interaction: Interaction,
+    season: str = SlashOption(
+        "season",
+        required=False,
+        description="The season to display the leaderboard for.",
+        default=str(constants.SEASON),
+        choices=ALL_SEASONS,
+    ),
+    rank_filter: str = SlashOption(
+        "rank_filter",
+        required=False,
+        description="What calibre of player to filter for.",
+        default="All",
+        choices=["All"] + rank.RANKS[:-1]
+    ),
+    sample_size: int = SlashOption(
+        "sample_size",
+        required=False,
+        description="The minimum sample size to require of players.",
+        min_value=1,
+        max_value=100,
+        default=5,
+    ),
+):
+    lb_type = "throwrate"
+    await interaction.response.defer()
+    print(f"---\nFetching Throwrate Leaderboard for rank {rank_filter}")
+    lb_name = f"Throwrate S{season}"
+    lb_desc = (
+        f"These are the most consistent players during S{season}"
+        f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
+        f" ({sample_size}+ samples)"
+    )
+    await generic_lb_response(
+        interaction,
+        season,
+        rank_filter,
+        lb_type,
+        lb_name,
+        lb_desc,
+        sample_size=sample_size,
+    )
+
+
+@leaderboard.subcommand(
+    name="completion rate",
+    description="Returns the leaderboard of the highest completion rates.",
+)
+async def leaderboard_comprate(
+    interaction: Interaction,
+    season: str = SlashOption(
+        "season",
+        required=False,
+        description="The season to display the leaderboard for.",
+        default=str(constants.SEASON),
+        choices=ALL_SEASONS,
+    ),
+    rank_filter: str = SlashOption(
+        "rank_filter",
+        required=False,
+        description="What calibre of player to filter for.",
+        default="All",
+        choices=["All"] + rank.RANKS[:-1]
+    ),
+    sample_size: int = SlashOption(
+        "sample_size",
+        required=False,
+        description="The minimum sample size to require of players.",
+        min_value=1,
+        max_value=100,
+        default=5,
+    ),
+):
+    lb_type = "comprate"
+    await interaction.response.defer()
+    print(f"---\nFetching Completion Rate Leaderboard for rank {rank_filter}")
+    lb_name = f"Completion Rate S{season}"
+    lb_desc = (
+        f"These are the most consistent players during S{season}"
+        f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
+        f" ({sample_size}+ samples)"
+    )
+    await generic_lb_response(
+        interaction,
+        season,
+        rank_filter,
+        lb_type,
+        lb_name,
+        lb_desc,
+        sample_size=sample_size,
+    )
+
+
+async def generic_lb_response(
+    interaction: Interaction,
+    season: str,
+    rank_filter: str,
+    lb_type: str,
+    lb_name: str,
+    lb_desc: str,
+    sample_size: int | None = None,
+):
+    input_name = get_name(interaction)
     season_suffix = "" if int(season) == constants.SEASON else f"_s{season}"
     with open(DATABASE_DIR / f"playerbase{season_suffix}.json") as f:
         lb = json.load(f)["stats"][lb_type]
@@ -1275,18 +1612,12 @@ async def leaderboard_average(
         entry for entry in lb
         if (
             (rank.str_to_rank(rank_filter) is None or (entry[1] and lower <= entry[1] < upper))
-            and (entry[3] >= sample_size)
+            and (sample_size is None or entry[3] >= sample_size)
         )
     ]
 
     leaderboard_size = min(math.ceil(len(lb) / 20), MAX_CUSTOM_LB)
     leaderboard_embeds = []
-    lb_name = f"Average Completion S{season}"
-    lb_desc = (
-        f"These are the fastest players on average during S{season}"
-        f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
-        f" ({sample_size}+)"
-    )
 
     try:
         lb_embeds = leading.CustomLBEmbeds(leaderboard_size, lb_name, lb_desc, lb_type)
