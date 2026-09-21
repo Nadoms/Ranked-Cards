@@ -3,7 +3,7 @@ import re
 
 from nextcord import Embed, Colour
 
-from rankedutils import constants, db
+from rankedutils import constants, db, numb
 
 
 COUNTRY_MAPPING = {
@@ -305,105 +305,78 @@ class LBEmbeds():
         return embeds
 
 
-def custom_leaderboard(leaderboard, lb_name, lb_desc, input_name, page):
-    embed = Embed(
-        title=f"{lb_name} Leaderboard - Page {page + 1}",
-        description=f"{lb_desc}\nThere are {len(leaderboard)} players on this leaderboard. This is updated nightly.",
-        colour=Colour.blurple()
-    )
+class CustomLBEmbeds(LBEmbeds):
 
-    lb_txt = ""
-    start = page * 20
-    end = (page + 1) * 20
+    def __init__(self, max_page, lb_name, description):
+        header = " rank  | username         | time  (samples)"
+        description = f"{description}\nThis leaderboard is updated nightly."
+        title = f"{lb_name} Leaderboard"
+        self.lb_name = lb_name
+        super().__init__(max_page, title, description, header)
 
-    conn, cursor = db.start()
-    for position, entry in enumerate(leaderboard):
-        name = db.get_nick(cursor, entry[2])
-        if position < start or position >= end:
+    def extract_lb(self, leaderboard, input_name):
+        conn, cursor = db.start()
+
+        user_row = None
+        user_rank = None
+        lb_rows = []
+
+        for position, entry in enumerate(leaderboard):
+            name = db.get_nick(cursor, entry[2])
+            duration = numb.digital_time(entry[0])
+            highlight = ">" if name.lower() == input_name.lower() else " "
+            lb_row = (
+                f"{highlight}{'#' + str(position + 1):>5} | "
+                f"{name:<16} | {duration:>5} ({entry[3]})"
+            )
+
             if name.lower() == input_name.lower():
-                lb_txt += f" ..... | ................ | ..{'.' if lb_name == 'Average Completion' else ''}.. | ......\n"
-            else:
-                continue
-        highlight = ">" if name.lower() == input_name.lower() else " "
+                user_row = lb_row
+                user_rank = position
+            lb_rows.append(lb_row)
 
-        duration = str(timedelta(seconds=entry[0] // 1000))[2:]
-        if duration[0] == "0" and lb_name != "Average Completion":
-            duration = duration[1:]
-        count = f"({entry[3]})"
-        spacing_1 = " " * (4 - len(str(position + 1)))
-        spacing_2 = " " * (16 - len(name))
-        line = f"{highlight}{spacing_1}#{position + 1} | {name}{spacing_2} | {duration} {count}\n"
-        if position < start:
-            lb_txt = line + lb_txt
+        conn.close()
+        return self.construct_lb(lb_rows, user_rank, user_row)
+
+
+class CompletionTimeLBEmbeds(LBEmbeds):
+
+    def __init__(self, max_page, season):
+        title = "Completion Time Leaderboard"
+        if season:
+            title += f" in Season {season}"
         else:
-            lb_txt += line
+            title = "Lifetime " + title
+        header = " rank  | username         | time  (age)"
+        description = "These are the fastest completions."
+        super().__init__(max_page, title, description, header)
 
-    if not lb_txt:
-        lb_txt = "Nothing to see here."
-    embed.add_field(name="", value=f"```{lb_txt}```", inline=False)
+    def extract_lb(self, leaderboard, input_name):
+        now = datetime.now(timezone.utc)
 
-    embed.set_footer(
-            text=constants.FOOTER_TEXT,
-            icon_url=constants.FOOTER_ICON,
-    )
-    conn.close()
+        user_row = None
+        user_rank = None
+        lb_rows = []
 
-    return embed
+        for position, entry in enumerate(leaderboard):
+            name = entry["user"]["nickname"]
+            duration = numb.digital_time(entry["time"])
+            days = (now - datetime.fromtimestamp(
+                entry["date"],
+                tz=timezone.utc
+            )).days
+            highlight = ">" if name.lower() == input_name.lower() else " "
+            lb_row = (
+                f"{highlight}{'#' + str(position + 1):>5} | "
+                f"{name:<16} | {duration} ({days:>3}d ago)"
+            )
 
-
-def completion_time_leaderboard(leaderboard, input_name, season, page):
-    title = "Completion Time Leaderboard"
-    if season:
-        title += f" in Season {season}"
-    else:
-        title = "Lifetime " + title
-    title += f" - Page {page + 1}"
-
-    description = "These are the fastest completions."
-
-    embed = Embed(
-        title=title, description=description, colour=Colour.blurple()
-    )
-
-    lb_txt = ""
-    now = datetime.now(timezone.utc)
-    start = page * 20
-    end = (page + 1) * 20
-
-    for position, entry in enumerate(leaderboard):
-        name = entry["user"]["nickname"]
-        if position < start or position >= end:
             if name.lower() == input_name.lower():
-                lb_txt += f" ..... | ................ | .... | ......\n"
-            else:
-                continue
-        highlight = ">" if name.lower() == input_name.lower() else " "
+                user_row = lb_row
+                user_rank = position
+            lb_rows.append(lb_row)
 
-        attribute = str(timedelta(seconds=entry["time"] // 1000))[2:]
-        if attribute[0] == "0":
-            attribute = attribute[1:]
-        then = datetime.fromtimestamp(entry["date"], tz=timezone.utc)
-        days = str((now - then).days)
-        spacing_0 = " " * (3 - len(days))
-        ago = f" | {spacing_0}{days}d ago"
-        spacing_1 = " " * (4 - len(str(position + 1)))
-        spacing_2 = " " * (16 - len(name))
-        line = f"{highlight}{spacing_1}#{position + 1} | {name}{spacing_2} | {attribute}{ago}\n"
-        if position < start:
-            lb_txt = line + lb_txt
-        else:
-            lb_txt += line
-
-    if not lb_txt:
-        lb_txt = "Nothing to see here."
-    embed.add_field(name="", value=f"```{lb_txt}```", inline=False)
-
-    embed.set_footer(
-            text=constants.FOOTER_TEXT,
-            icon_url=constants.FOOTER_ICON,
-    )
-
-    return embed
+        return self.construct_lb(lb_rows, user_rank, user_row)
 
 
 class EloLBEmbeds(LBEmbeds):
@@ -425,10 +398,15 @@ class EloLBEmbeds(LBEmbeds):
         user_row = None
         user_rank = None
         lb_rows = []
+
         for position, entry in enumerate(leaderboard["users"]):
             name = entry["nickname"]
             highlight = ">" if name.lower() == input_name.lower() else " "
-            lb_row = f"{highlight}{'#' + str(position + 1):>5} | {name:<16} | {entry["seasonResult"]["eloRate"]}"
+            lb_row = (
+                f"{highlight}{'#' + str(position + 1):>5} | "
+                f"{name:<16} | {entry["seasonResult"]["eloRate"]}"
+            )
+
             if name.lower() == input_name.lower():
                 user_row = lb_row
                 user_rank = position
@@ -437,51 +415,37 @@ class EloLBEmbeds(LBEmbeds):
         return self.construct_lb(lb_rows, user_rank, user_row)
 
 
-def phase_points_leaderboard(leaderboard, input_name, season, country, page):
-    title = f"Phase Points Leaderboard in Season {season}"
-    if country:
-        title += f" - {country}"
-    title += f" - Page {page + 1}"
+class PhasePointsLBEmbeds(LBEmbeds):
 
-    ends_at = leaderboard["phase"]["endsAt"]
-    phase = leaderboard["phase"]["number"]
-    if ends_at:
-        description = f"Phase {phase} will end <t:{ends_at}:R>."
-    else:
-        description = f"This is taken from the very end of the season."
+    def __init__(self, max_page, season, country=None):
+        title = f"Phase Points Leaderboard in Season {season}"
+        if country:
+            title += f" - {country}"
+        header = " rank  | username         | pts "
+        description = "This is taken from the very end of the season."
+        super().__init__(max_page, title, description, header)
 
-    embed = Embed(
-        title=title, description=description, colour=Colour.blurple()
-    )
+    def extract_lb(self, leaderboard, input_name):
+        ends_at = leaderboard["phase"]["endsAt"]
+        phase = leaderboard["phase"]["number"]
+        if ends_at:
+            self.description = f"Phase {phase} will end <t:{ends_at}:R>."
 
-    lb_txt = ""
-    start = page * 20
-    end = (page + 1) * 20
+        user_row = None
+        user_rank = None
+        lb_rows = []
 
-    for position, entry in enumerate(leaderboard["users"]):
-        name = entry["nickname"]
-        if position < start or position >= end:
+        for position, entry in enumerate(leaderboard["users"]):
+            name = entry["nickname"]
+            highlight = ">" if name.lower() == input_name.lower() else " "
+            lb_row = (
+                f"{highlight}{'#' + str(position + 1):>5} | "
+                f"{name:<16} | {entry['seasonResult']['phasePoint']} pts"
+            )
+
             if name.lower() == input_name.lower():
-                lb_txt += f" ..... | ................ | ....\n"
-            else:
-                continue
-        highlight = ">" if name.lower() == input_name.lower() else " "
+                user_row = lb_row
+                user_rank = position
+            lb_rows.append(lb_row)
 
-        spacing_1 = " " * (4 - len(str(position + 1)))
-        spacing_2 = " " * (16 - len(name))
-        line = f"{highlight}{spacing_1}#{position + 1} | {name}{spacing_2} | {entry["seasonResult"]["phasePoint"]} pts\n"
-        if position < start:
-            lb_txt = line + lb_txt
-        else:
-            lb_txt += line
-
-    if not lb_txt:
-        lb_txt = "Nothing to see here."
-    embed.add_field(name="", value=f"```{lb_txt}```", inline=False)
-
-    embed.set_footer(
-        text=constants.FOOTER_TEXT,
-        icon_url=constants.FOOTER_ICON,
-    )
-
-    return embed
+        return self.construct_lb(lb_rows, user_rank, user_row)
