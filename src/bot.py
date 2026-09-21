@@ -1527,8 +1527,8 @@ async def leaderboard_chokerate(
 ):
     lb_type = "chokerate"
     await interaction.response.defer()
-    print(f"---\nFetching Chokerate Leaderboard for rank {rank_filter}")
-    lb_name = f"Chokerate S{season}"
+    print(f"---\nFetching Choke Rate Leaderboard for rank {rank_filter}")
+    lb_name = f"Choke Rate S{season}"
     lb_desc = (
         f"These are the most consistent players during S{season}"
         f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
