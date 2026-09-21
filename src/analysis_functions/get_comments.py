@@ -17,7 +17,7 @@ COMMENTS = {
         80: "Could try playing more seeds out.",
         100: "Despair...",
     },
-    "cmpr": {
+    "comprate": {
         10: "", # Barely ever finishes a game.",
         20: "", # Gets to see the end sometimes.",
         30: "", # Worth knowing zero at this point.",
@@ -25,7 +25,7 @@ COMMENTS = {
         50: "", # Highly confident in completing seeds.",
         100: "", # Plays ranked like no-reset.",
     },
-    "trwr": {
+    "chokerate": {
         10: "", # Can't get more consistent.",
         25: "", # Goes deathless most games.",
         40: "", # Throws easy wins pretty often.",
@@ -69,10 +69,10 @@ def main(response, detailed_matches, elo, player_season, compare_season, rank_fi
     ]
     ffl = games.get_ff_loss(response, "season")
     general_comments["ffl"] = [f"Forfeit/Loss: `{ffl}%`", get_comments(ffl, "ffl")]
-    cmpr = games.get_completion_rate(response, "season")
-    general_comments["cmpr"] = [f"Completion Rate: `{cmpr}%`", get_comments(cmpr, "cmpr")]
-    trwr = insight.get_throw_rate(response["uuid"], detailed_matches)
-    general_comments["trwr"] = [f"Throw Rate: `{trwr}%`", get_comments(trwr, "trwr")]
+    comprate = games.get_completion_rate(response, "season")
+    general_comments["comprate"] = [f"Completion Rate: `{comprate}%`", get_comments(comprate, "comprate")]
+    chokerate = insight.get_choke_rate(response["uuid"], detailed_matches)
+    general_comments["chokerate"] = [f"Choke Rate: `{chokerate}%`", get_comments(chokerate, "chokerate")]
 
     return general_comments
 
@@ -88,7 +88,7 @@ def get_player_count(rank_filter, playerbase_file):
 def get_attr_ranked(value, attr_type, rank_filter, playerbase_file):
     with open(playerbase_file, "r") as f:
         attrs = json.load(f)["stats"][attr_type]
-    if attr_type in ("elo", "avg", "sb", "ffl", "trwr"):
+    if attr_type in ("elo", "avg", "sb", "ffl", "chokerate"):
         attrs = list(reversed(attrs))
 
     lower, upper = rank.get_boundaries(rank_filter)

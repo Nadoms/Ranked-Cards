@@ -309,7 +309,8 @@ class CustomLBEmbeds(LBEmbeds):
 
     def __init__(self, max_page, lb_name, description, lb_type):
         self.is_time = lb_type in ("avg", "split", "bastion", "ow")
-        self.is_ratio = lb_type in ("winrate", "ffl", "trwr")
+        self.is_ratio = lb_type in ("winrate", "ffl", "comprate", "chokerate")
+        self.is_long_time = lb_type in ("playtime")
         self.needs_samples = self.is_time or self.is_ratio
         header_value = "time " if self.is_time else f"{lb_type} "
         header_samples = " (samples)" if self.needs_samples else ""
@@ -332,6 +333,8 @@ class CustomLBEmbeds(LBEmbeds):
                 value = numb.digital_time(entry[0])
             elif self.is_ratio:
                 value = f"{round(entry[0] * 100, 1)}%"
+            elif self.is_long_time:
+                value = f"{round(timedelta(milliseconds=entry[0]).total_seconds() / 3600, 1)}h"
             else:
                 value = entry[0]
             highlight = ">" if name.lower() == input_name.lower() else " "

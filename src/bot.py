@@ -661,7 +661,7 @@ async def analysis(
             continue
         elif len(gen_comms[key]) == 1:
             value = ""
-        elif key not in ["ffl", "cmpr", "trwr"]:
+        elif key not in ["ffl", "comprate", "chokerate"]:
             value = f"➢ {gen_comms[key][1]}\n➢ {gen_comms[key][2]}"
         else:
             value = gen_comms[key][1]
@@ -1497,10 +1497,10 @@ async def leaderboard_ffl(
 
 
 @leaderboard.subcommand(
-    name="throwrate",
-    description="Returns the leaderboard of the lowest throwrates.",
+    name="chokerate",
+    description="Returns the leaderboard of the lowest chokerates.",
 )
-async def leaderboard_throwrate(
+async def leaderboard_chokerate(
     interaction: Interaction,
     season: str = SlashOption(
         "season",
@@ -1525,10 +1525,10 @@ async def leaderboard_throwrate(
         default=5,
     ),
 ):
-    lb_type = "throwrate"
+    lb_type = "chokerate"
     await interaction.response.defer()
-    print(f"---\nFetching Throwrate Leaderboard for rank {rank_filter}")
-    lb_name = f"Throwrate S{season}"
+    print(f"---\nFetching Chokerate Leaderboard for rank {rank_filter}")
+    lb_name = f"Chokerate S{season}"
     lb_desc = (
         f"These are the most consistent players during S{season}"
         f"{' in ' + rank_filter if rank_filter != 'All' else ''}."

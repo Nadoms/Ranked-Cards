@@ -43,7 +43,7 @@ def collect_matches(season, cursor):
         "forfeits": {},
         "cmptime": {},
         "completions": {},
-        "throws": {},
+        "chokes": {},
     }
     last_ids = {}
     last_runs_processed = 0
@@ -74,16 +74,16 @@ def collect_matches(season, cursor):
         curr_split = "ow"
         prev_time = 0
         bastion_entry = bastion_exit = 0
-        thrown = False
+        choked = False
 
         for event in reversed(timeline):
             if event["type"] == "projectelo.timeline.reset":
                 prev_time = event["time"]
                 curr_split = "ow"
                 bastion_entry = bastion_exit = 0
-                thrown = True
+                choked = True
             if event["type"] == "projectelo.timeline.death":
-                thrown = True
+                choked = True
 
             # Dealing with overworlds
             if seed_type is not None:
@@ -155,7 +155,7 @@ def collect_matches(season, cursor):
             stats["draws"][uuid] = 0
             stats["losses"][uuid] = 0
             stats["forfeits"][uuid] = 0
-            stats["throws"][uuid] = 0
+            stats["chokes"][uuid] = 0
         if match_id > last_ids[uuid]:
             last_ids[uuid] = match_id
             stats["elo"][uuid] = old_elo + change if old_elo is not None else None
@@ -175,8 +175,8 @@ def collect_matches(season, cursor):
             stats["losses"][uuid] += 1
             if forfeited:
                 stats["forfeits"][uuid] += 1
-        if thrown:
-            stats["throws"][uuid] += 1
+        if choked:
+            stats["chokes"][uuid] += 1
 
         runs_processed += 1
 
@@ -198,13 +198,13 @@ async def analyse(season, filename="playerbase.json"):
             "playtime": [],
             "winrate": [],
             "ffl": [],
-            "cmpr": [],
-            "trwr": [],
+            "comprate": [],
+            "chokerate": [],
             # "wins": [],
             # "draws": [],
             # "losses": [],
             # "forfeits": [],
-            # "throws": [],
+            # "chokes": [],
         }
     }
 
@@ -243,8 +243,8 @@ async def analyse(season, filename="playerbase.json"):
                 uuid,
                 stats["losses"][uuid]
             ))
-        ranked["stats"]["trwr"].append((
-            round(stats["throws"][uuid] / stats["games"][uuid], 3),
+        ranked["stats"]["chokerate"].append((
+            round(stats["chokes"][uuid] / stats["games"][uuid], 3),
             elo,
             uuid,
             stats["games"][uuid]
@@ -263,7 +263,7 @@ async def analyse(season, filename="playerbase.json"):
                 ranked["stats"]["avg"].append((avg, elo, uuid, stats["completions"][uuid]))
 
             ranked["stats"]["sb"].append((sb, elo, uuid))
-            ranked["stats"]["cmpr"].append((
+            ranked["stats"]["comprate"].append((
                 round(stats["completions"][uuid] / stats["games"][uuid], 3),
                 elo,
                 uuid,
@@ -273,7 +273,7 @@ async def analyse(season, filename="playerbase.json"):
     ranked["stats"]["elo"].sort(reverse=True)
     for key in list(ranked["stats"].keys())[1:]:
         reverse = True
-        if key in ("avg", "sb", "ffl", "trwr"):
+        if key in ("avg", "sb", "ffl", "chokerate"):
             reverse = False
         ranked["stats"][key].sort(key=lambda x: x[0], reverse=reverse)
 
