@@ -268,7 +268,7 @@ class LBEmbeds():
         self.header = header
         temp = header.replace(" | ", "/")[1:]
         temp = re.sub(r"(\w|\s)", ".", temp)
-        temp = header.replace("/", " | ")[1:]
+        temp = temp.replace("/", " | ")
         self.separator = " " + temp
         self.embeds = []
 
