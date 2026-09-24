@@ -71,25 +71,24 @@ def main(response, detailed_matches, elo, player_season, compare_season, rank_fi
         f"Equal to {rank.get_elo_equivalent(sb, 'sb', compare_season)} S{compare_season} Elo",
     ]
     general_comments["ffl"] = [
-        f"Forfeit/Loss: `{ffl}%`",
+        f"Forfeit/Loss: `{ffl * 100}%`",
         percentify(get_attr_ranked(ffl, "ffl", rank_filter, playerbase_file)),
-        get_comments(ffl, "ffl"),
     ]
     general_comments["comprate"] = [
-        f"Completion Rate: `{comprate}%`",
+        f"Completion Rate: `{comprate * 100}%`",
         percentify(get_attr_ranked(comprate, "comprate", rank_filter, playerbase_file)),
-        get_comments(comprate, "comprate")
     ]
     general_comments["chokerate"] = [
-        f"Choke Rate: `{chokerate}%`",
+        f"Choke Rate: `{chokerate * 100}%`",
         percentify(get_attr_ranked(chokerate, "chokerate", rank_filter, playerbase_file)),
-        get_comments(chokerate, "chokerate")
     ]
     general_comments["resilience"] = [
-        f"Resilience: `{resilience}%`"
+        f"Resilience: `{resilience * 100}%`",
+        percentify(get_attr_ranked(resilience, "resilience", rank_filter, playerbase_file)),
     ]
     general_comments["momentum"] = [
-        f"Momentum: `{momentum}`"
+        f"Momentum: `{momentum}`",
+        percentify(get_attr_ranked(momentum, "momentum", rank_filter, playerbase_file)),
     ]
 
     return general_comments

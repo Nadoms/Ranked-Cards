@@ -7,7 +7,7 @@ import sys
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(1, str(PROJECT_DIR))
-from rankedutils import constants, db
+from rankedutils import constants, db, insights
 from models import train_model
 
 SPLIT_MAPPING = {
@@ -44,8 +44,12 @@ def collect_matches(season, cursor):
         "cmptime": {},
         "completions": {},
         "chokes": {},
+        "comebacks": {},
+        "winwin": {},
+        "lossloss": {},
     }
     last_ids = {}
+    last_results = {}
     last_runs_processed = 0
     runs_processed = 0
     then = datetime.now()
@@ -75,6 +79,7 @@ def collect_matches(season, cursor):
         prev_time = 0
         bastion_entry = bastion_exit = 0
         choked = False
+        won = result_uuid == uuid
 
         for event in reversed(timeline):
             if event["type"] == "projectelo.timeline.reset":
@@ -128,7 +133,7 @@ def collect_matches(season, cursor):
                 prev_time = event["time"]
                 curr_split = SPLIT_MAPPING[event["type"]]
 
-        if result_uuid == uuid and not forfeited:
+        if won and not forfeited:
             split_length = result_time - prev_time
             if uuid not in times["split"][curr_split]:
                 times["split"][curr_split][uuid] = 0
@@ -147,6 +152,7 @@ def collect_matches(season, cursor):
 
         if uuid not in last_ids:
             last_ids[uuid] = 0
+            last_results[uuid] = None
             stats["elo"][uuid] = None
             stats["peak"][uuid] = None
             stats["games"][uuid] = 0
@@ -156,6 +162,9 @@ def collect_matches(season, cursor):
             stats["losses"][uuid] = 0
             stats["forfeits"][uuid] = 0
             stats["chokes"][uuid] = 0
+            stats["comebacks"][uuid] = 0
+            stats["winwin"][uuid] = 0
+            stats["lossloss"][uuid] = 0
         if match_id > last_ids[uuid]:
             last_ids[uuid] = match_id
             stats["elo"][uuid] = old_elo + change if old_elo is not None else None
@@ -167,16 +176,24 @@ def collect_matches(season, cursor):
             stats["peak"][uuid] = old_elo + change
         stats["games"][uuid] += 1
         stats["playtime"][uuid] += result_time
-        if result_uuid == uuid:
+        if won:
             stats["wins"][uuid] += 1
+            if last_results[uuid] == "win":
+                stats["winwin"] += 1
+            last_results[uuid] = "win"
         elif result_uuid is None:
             stats["draws"][uuid] += 1
         else:
             stats["losses"][uuid] += 1
             if forfeited:
                 stats["forfeits"][uuid] += 1
+            if last_results[uuid] == "loss":
+                stats["lossloss"] += 1
+            last_results[uuid] = "loss"
         if choked:
             stats["chokes"][uuid] += 1
+            if won:
+                stats["comebacks"][uuid] += 1
 
         runs_processed += 1
 
@@ -200,6 +217,8 @@ async def analyse(season, filename="playerbase.json"):
             "ffl": [],
             "comprate": [],
             "chokerate": [],
+            "resilience": [],
+            "momentum": [],
             # "wins": [],
             # "draws": [],
             # "losses": [],
@@ -230,11 +249,23 @@ async def analyse(season, filename="playerbase.json"):
         ranked["stats"]["playtime"].append((stats["playtime"][uuid], elo, uuid))
 
         if stats["wins"][uuid] + stats["losses"][uuid] > 0:
+            winrate = stats["wins"][uuid] / (stats["wins"][uuid] + stats["losses"][uuid])
             ranked["stats"]["winrate"].append((
-                round(stats["wins"][uuid] / (stats["wins"][uuid] + stats["losses"][uuid]), 3),
+                round(winrate, 3),
                 elo,
                 uuid,
                 stats["wins"][uuid] + stats["losses"][uuid]
+            ))
+            ranked["stats"]["momentum"].append((
+                insights.calc_momentum(
+                    stats["winwin"][uuid],
+                    stats["lossloss"][uuid],
+                    stats["wins"][uuid] + stats["losses"][uuid] - 1,
+                    winrate,
+                ),
+                elo,
+                uuid,
+                stats["wins"][uuid] + stats["losses"][uuid] - 1
             ))
         if stats["losses"][uuid] > 0:
             ranked["stats"]["ffl"].append((
@@ -248,6 +279,12 @@ async def analyse(season, filename="playerbase.json"):
             elo,
             uuid,
             stats["games"][uuid]
+        ))
+        ranked["stats"]["resilience"].append((
+            round(stats["comebacks"][uuid] / stats["chokes"][uuid], 3),
+            elo,
+            uuid,
+            stats["chokes"][uuid]
         ))
 
         # Process completion related info
