@@ -4,6 +4,8 @@ from io import BytesIO
 import requests
 from PIL import Image
 
+from rankedutils import constants
+
 
 def write(graph, uuid):
     skin = get_skin(uuid)
@@ -14,7 +16,7 @@ def write(graph, uuid):
 def get_skin(uuid):
     try:
         headers = {
-            "User-Agent": "ranked-cards/1.0 (+https://github.com/nadoms/Ranked-Cards; @nadoms / @naddy_mc)"
+            "User-Agent": constants.USER_AGENT
         }
         response = requests.get(
             f"https://visage.surgeplay.com/head/120/{uuid}?y=65&p=15",

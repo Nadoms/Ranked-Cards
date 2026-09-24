@@ -4,6 +4,8 @@ from os import path
 
 from PIL import Image
 
+from rankedutils import constants
+
 
 def write(chart, uuids):
     middle = 600
@@ -24,7 +26,7 @@ def get_skin(uuid, i):
     try:
         yaw = yaws[i]
         headers = {
-            "User-Agent": "ranked-cards/1.0 (+https://github.com/nadoms/Ranked-Cards; @nadoms / @naddy_mc)"
+            "User-Agent": constants.USER_AGENT
         }
         response = requests.get(
             f"https://visage.surgeplay.com/head/250/{uuid}?y={yaw}&p=15",
