@@ -265,7 +265,7 @@ def get_season_stats(response):
     plays = str(response["statistics"]["season"]["playedMatches"]["ranked"])
     draws = str(int(plays) - int(wins) - int(losses))
     best_elo = str(response["seasonResult"]["highest"])
-    ff_loss = str(games.get_ff_loss(response, "season") * 100)
+    ff_loss = str(round(games.get_ff_loss(response, "season") * 100, 1))
     avg_completion = numb.digital_time(games.get_avg_completion(response, "season"))
 
     return [

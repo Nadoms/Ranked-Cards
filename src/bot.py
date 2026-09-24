@@ -1588,6 +1588,104 @@ async def leaderboard_comprate(
     )
 
 
+@leaderboard.subcommand(
+    name="resilience",
+    description="Returns the leaderboard of the highest resiliences (comeback rates).",
+)
+async def leaderboard_resilience(
+    interaction: Interaction,
+    season: str = SlashOption(
+        "season",
+        required=False,
+        description="The season to display the leaderboard for.",
+        default=str(constants.SEASON),
+        choices=ALL_SEASONS,
+    ),
+    rank_filter: str = SlashOption(
+        "rank_filter",
+        required=False,
+        description="What calibre of player to filter for.",
+        default="All",
+        choices=["All"] + rank.RANKS[:-1]
+    ),
+    sample_size: int = SlashOption(
+        "sample_size",
+        required=False,
+        description="The minimum sample size to require of players.",
+        min_value=1,
+        max_value=100,
+        default=5,
+    ),
+):
+    lb_type = "resilience"
+    await interaction.response.defer()
+    print(f"---\nFetching Resilience Leaderboard for rank {rank_filter}")
+    lb_name = f"Resilience (Comeback Rate) S{season}"
+    lb_desc = (
+        f"These are the most resilient players during S{season}"
+        f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
+        f" ({sample_size}+ samples)"
+    )
+    await generic_lb_response(
+        interaction,
+        season,
+        rank_filter,
+        lb_type,
+        lb_name,
+        lb_desc,
+        sample_size=sample_size,
+    )
+
+
+@leaderboard.subcommand(
+    name="momentum",
+    description="Returns the leaderboard of the biggest win/loss-streakers",
+)
+async def leaderboard_momentum(
+    interaction: Interaction,
+    season: str = SlashOption(
+        "season",
+        required=False,
+        description="The season to display the leaderboard for.",
+        default=str(constants.SEASON),
+        choices=ALL_SEASONS,
+    ),
+    rank_filter: str = SlashOption(
+        "rank_filter",
+        required=False,
+        description="What calibre of player to filter for.",
+        default="All",
+        choices=["All"] + rank.RANKS[:-1]
+    ),
+    sample_size: int = SlashOption(
+        "sample_size",
+        required=False,
+        description="The minimum sample size to require of players.",
+        min_value=1,
+        max_value=100,
+        default=5,
+    ),
+):
+    lb_type = "momentum"
+    await interaction.response.defer()
+    print(f"---\nFetching Momentum Leaderboard for rank {rank_filter}")
+    lb_name = f"Momentum ('Streakiness') S{season}"
+    lb_desc = (
+        f"These are the streakiest players during S{season}"
+        f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
+        f" ({sample_size}+ samples)"
+    )
+    await generic_lb_response(
+        interaction,
+        season,
+        rank_filter,
+        lb_type,
+        lb_name,
+        lb_desc,
+        sample_size=sample_size,
+    )
+
+
 async def generic_lb_response(
     interaction: Interaction,
     season: str,
@@ -2069,7 +2167,7 @@ async def suggestions_loop():
 
 
 async def analysis_loop():
-    await asyncio.sleep(60)
+    # await asyncio.sleep(60)
     while True:
         for season in ALL_SEASONS[:-1]:
             season = int(season)
@@ -2084,5 +2182,5 @@ async def analysis_loop():
 if not TESTING_MODE:
     bot.loop.create_task(fetch_loop())
     bot.loop.create_task(suggestions_loop())
-    bot.loop.create_task(analysis_loop())
+bot.loop.create_task(analysis_loop())
 bot.run(getenv(token))

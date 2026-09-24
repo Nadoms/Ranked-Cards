@@ -310,9 +310,10 @@ class CustomLBEmbeds(LBEmbeds):
 
     def __init__(self, max_page, lb_name, description, lb_type):
         self.is_time = lb_type in ("avg", "split", "bastion", "ow")
-        self.is_ratio = lb_type in ("winrate", "ffl", "comprate", "chokerate")
+        self.is_percentage = lb_type in ("winrate", "ffl", "comprate", "chokerate", "resilience")
+        self.is_ratio = lb_type in ("momentum")
         self.is_long_time = lb_type in ("playtime")
-        self.needs_samples = self.is_time or self.is_ratio
+        self.needs_samples = self.is_time or self.is_percentage or self.is_ratio
         header_value = "time " if self.is_time else f"{lb_type} "
         header_samples = " (samples)" if self.needs_samples else ""
         header = f" rank  | username         | {header_value}"
@@ -333,8 +334,10 @@ class CustomLBEmbeds(LBEmbeds):
             name = db.get_nick(cursor, entry[2])
             if self.is_time:
                 value = numb.digital_time(entry[0])
+            elif self.is_percentage:
+                value = f"{entry[0]:.1%}"
             elif self.is_ratio:
-                value = f"{round(entry[0] * 100, 1)}%"
+                value = f"{entry[0]:.3f}"
             elif self.is_long_time:
                 value = f"{round(timedelta(milliseconds=entry[0]).total_seconds() / 3600, 1)}h"
             else:

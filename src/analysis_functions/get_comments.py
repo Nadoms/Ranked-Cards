@@ -71,23 +71,23 @@ def main(response, detailed_matches, elo, player_season, compare_season, rank_fi
         f"Equal to {rank.get_elo_equivalent(sb, 'sb', compare_season)} S{compare_season} Elo",
     ]
     general_comments["ffl"] = [
-        f"Forfeit/Loss: `{ffl * 100}%`",
+        f"Forfeit/Loss: `{ffl:.1%}`",
         percentify(get_attr_ranked(ffl, "ffl", rank_filter, playerbase_file)),
     ]
     general_comments["comprate"] = [
-        f"Completion Rate: `{comprate * 100}%`",
+        f"Completion Rate: `{comprate:.1%}`",
         percentify(get_attr_ranked(comprate, "comprate", rank_filter, playerbase_file)),
     ]
     general_comments["chokerate"] = [
-        f"Choke Rate: `{chokerate * 100}%`",
+        f"Choke Rate: `{chokerate:.1%}`",
         percentify(get_attr_ranked(chokerate, "chokerate", rank_filter, playerbase_file)),
     ]
     general_comments["resilience"] = [
-        f"Resilience: `{resilience * 100}%`",
+        f"Resilience: `{resilience:.1%}`",
         percentify(get_attr_ranked(resilience, "resilience", rank_filter, playerbase_file)),
     ]
     general_comments["momentum"] = [
-        f"Momentum: `{momentum}`",
+        f"Momentum: `{momentum:.3f}`",
         percentify(get_attr_ranked(momentum, "momentum", rank_filter, playerbase_file)),
     ]
 
@@ -105,7 +105,8 @@ def get_player_count(rank_filter, playerbase_file):
 def get_attr_ranked(value, attr_type, rank_filter, playerbase_file):
     with open(playerbase_file, "r") as f:
         attrs = json.load(f)["stats"][attr_type]
-    if attr_type in ("elo", "peak", "games", "playtime", "winrate", "comprate"):
+    higher_is_better = ("elo", "peak", "games", "playtime", "winrate", "comprate", "resilience", "momentum")
+    if attr_type in higher_is_better:
         attrs = list(reversed(attrs))
 
     lower, upper = rank.get_boundaries(rank_filter)
@@ -121,7 +122,7 @@ def get_attr_ranked(value, attr_type, rank_filter, playerbase_file):
         raise FileExistsError("No players found in this rank to compare to.")
 
     ranked_attr = round(np.searchsorted(attrs, value) / len(attrs), 3)
-    if attr_type not in ("elo", "peak", "games", "playtime", "winrate", "comprate"):
+    if attr_type not in higher_is_better:
         ranked_attr = 1 - ranked_attr
     return ranked_attr
 
