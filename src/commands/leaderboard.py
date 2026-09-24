@@ -316,7 +316,7 @@ class CustomLBEmbeds(LBEmbeds):
         self.needs_samples = self.is_time or self.is_percentage or self.is_ratio
         header_value = "time " if self.is_time else f"{lb_type} "
         header_samples = " (samples)" if self.needs_samples else ""
-        header = f" rank  | username         | {header_value}"
+        header = f"  rank | username         | {header_value}"
         description = f"{description}\nThis leaderboard is updated nightly."
         title = f"{lb_name} Leaderboard"
         self.lb_name = lb_name
@@ -337,7 +337,7 @@ class CustomLBEmbeds(LBEmbeds):
             elif self.is_percentage:
                 value = f"{entry[0]:.1%}"
             elif self.is_ratio:
-                value = f"{entry[0]:.3f}"
+                value = f"{entry[0]:>6.3f}"
             elif self.is_long_time:
                 value = f"{round(timedelta(milliseconds=entry[0]).total_seconds() / 3600, 1)}h"
             else:

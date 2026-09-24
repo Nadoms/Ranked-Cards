@@ -43,33 +43,33 @@ def main(response, detailed_matches, elo, player_season, compare_season, rank_fi
         f"`{response['nickname']}`'s S{player_season} Performance against {season_str}{rank_filter_str} Players"
     )
     general_comments["description"] = (
-        f"This is how `{response['nickname']}` stacks up against the {season_str}{rank_filter_str} playerbase. Each comparison references at most {get_player_count(rank_filter, playerbase_file)} players."
-        f"\nClick [here](https://docs.google.com/document/d/e/2PACX-1vQvNO1Mmf7T2zfaij_rxDsOMUwaVavJcZG68Bfp8-9CkeGyJHoPrvBFxU69apix4E7gVsaV51BiCVwC/pub) for an explanation of the stats below."
+        f"This is how `{response['nickname']}` stacks up against the {season_str}{rank_filter_str} playerbase. "
+        f"Each comparison references at most {get_player_count(rank_filter, playerbase_file)} players."
+        "\nClick [here](https://docs.google.com/document/d/e/2PACX-1vQvNO1Mmf7T2zfaij_rxDsOMUwaVavJcZG68Bfp8-9CkeGyJHoPrvBFxU69apix4E7gVsaV51BiCVwC/pub) for an explanation of what's below. "
+        "[<3](https://ko-fi.com/naddy_mc)"
     )
-
-    if not elo:
-        general_comments["elo"] = [f"Elo: `-`"]
-    else:
-        general_comments["elo"] = [
-            f"Elo: `{elo}`",
-            percentify(get_attr_ranked(elo, "elo", rank_filter, playerbase_file)),
-            get_elo_info(elo),
-        ]
-    avg = games.get_avg_completion(response, "season")
     sb = int(response["statistics"]["season"]["bestTime"]["ranked"])
+    avg = games.get_avg_completion(response, "season")
     ffl = games.get_ff_loss(response, "season")
     comprate = games.get_completion_rate(response, "season")
     chokerate, resilience, momentum = insight.fast_misc_stats(response["uuid"], detailed_matches)
-    general_comments["avg"] = [
-        f"Avg Finish: `{numb.digital_time(avg)}`",
-        percentify(get_attr_ranked(avg, "avg", rank_filter, playerbase_file)),
-        f"Equal to {rank.get_elo_equivalent(avg, 'avg', compare_season)} S{compare_season} Elo",
-    ]
     general_comments["sb"] = [
         f"Season Best: `{numb.digital_time(sb)}`",
         percentify(get_attr_ranked(sb, "sb", rank_filter, playerbase_file)),
         f"Equal to {rank.get_elo_equivalent(sb, 'sb', compare_season)} S{compare_season} Elo",
     ]
+    general_comments["avg"] = [
+        f"Avg Finish: `{numb.digital_time(avg)}`",
+        percentify(get_attr_ranked(avg, "avg", rank_filter, playerbase_file)),
+        f"Equal to {rank.get_elo_equivalent(avg, 'avg', compare_season)} S{compare_season} Elo",
+    ]
+    if not elo:
+        general_comments["elo"] = [f"Elo: `-`"]
+    else:
+        general_comments["elo"] = [
+            f"Elo: `{elo}`",
+            percentify(get_attr_ranked(elo, "elo", rank_filter, playerbase_file))
+        ]
     general_comments["ffl"] = [
         f"Forfeit/Loss: `{ffl:.1%}`",
         percentify(get_attr_ranked(ffl, "ffl", rank_filter, playerbase_file)),
