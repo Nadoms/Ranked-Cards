@@ -2167,7 +2167,7 @@ async def suggestions_loop():
 
 
 async def analysis_loop():
-    # await asyncio.sleep(60)
+    await asyncio.sleep(60)
     while True:
         for season in ALL_SEASONS[:-1]:
             season = int(season)
@@ -2182,5 +2182,5 @@ async def analysis_loop():
 if not TESTING_MODE:
     bot.loop.create_task(fetch_loop())
     bot.loop.create_task(suggestions_loop())
-bot.loop.create_task(analysis_loop())
+    bot.loop.create_task(analysis_loop())
 bot.run(getenv(token))
