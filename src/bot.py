@@ -597,13 +597,13 @@ async def analysis(
 
     target_games = int(selection[5:])
     num_comps, detailed_matches = await games.get_detailed_matches(
-        response, player_season, 5, target_games
+        response, player_season, 3, target_games
     )
 
     if detailed_matches == -1:
         print("Player does not have enough completions.")
         await interaction.followup.send(
-            f"{input_name} needs a minimum of 5 completions from their last {target_games} games of season {player_season} to analyse. (Has {num_comps})",
+            f"{input_name} needs a minimum of 3 completions from their last {target_games} games of season {player_season} to analyse. (Has {num_comps})",
         )
         update_records(interaction, "analysis", input_name, False)
         return
@@ -655,27 +655,22 @@ async def analysis(
     split_file = image_to_file(split_polygon, f"split_{input_name}.png", close=False)
     embed_split.set_image(url=f"attachment://split_{input_name}.png")
 
+    field_no = 0
     gen_comms = comments["general"]
     for key in gen_comms:
         if key == "title" or key == "description":
             continue
-        elif len(gen_comms[key]) == 1:
-            value = ""
-        elif key not in ["ffl", "comprate", "chokerate"]:
-            value = f"➢ {gen_comms[key][1]}\n➢ {gen_comms[key][2]}"
         else:
-            value = gen_comms[key][1]
+            value = "\n".join(f"➢ {v}" for v in gen_comms[key][1:])
 
         embed_general.add_field(
             name=gen_comms[key][0],
             value=value,
             inline=True,
         )
+        field_no += 1
 
-        if key == "avg":
-            embed_general.add_field(name="", value="", inline=False)
-
-        if key == "ffl":
+        if field_no % 2 == 0:
             embed_general.add_field(name="", value="", inline=False)
 
     split_comms = comments["splits"]
@@ -694,12 +689,11 @@ async def analysis(
         for key in bastion_comms:
             if key == "title" or key == "description":
                 continue
-            else:
-                embed_bastion.add_field(
-                    name=bastion_comms[key]["name"],
-                    value=bastion_comms[key]["value"],
-                    inline=bastion_comms[key]["inline"],
-                )
+            embed_bastion.add_field(
+                name=bastion_comms[key]["name"],
+                value=bastion_comms[key]["value"],
+                inline=bastion_comms[key]["inline"],
+            )
 
     ow_comms = comments["ow"]
     for key in ow_comms:

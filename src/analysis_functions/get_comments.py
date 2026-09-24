@@ -10,27 +10,27 @@ from rankedutils.word import percentify
 
 COMMENTS = {
     "ffl": {
-        0: "Absolutely unyielding 👑",
-        20: "Will persevere as long as there's a chance.",
-        40: "Good mental while not afraid to go next.",
-        60: "Willing to take some Ls for sanity.",
-        80: "Could try playing more seeds out.",
-        100: "Despair...",
+        0: "", # "Absolutely unyielding 👑",
+        20: "", # "Will persevere as long as there's a chance.",
+        40: "", # "Good mental while not afraid to go next.",
+        60: "", # "Willing to take some Ls for sanity.",
+        80: "", # "Could try playing more seeds out.",
+        100: "", # "Despair...",
     },
     "comprate": {
-        10: "", # Barely ever finishes a game.",
-        20: "", # Gets to see the end sometimes.",
-        30: "", # Worth knowing zero at this point.",
-        40: "", # Consistent throughout the run.",
-        50: "", # Highly confident in completing seeds.",
-        100: "", # Plays ranked like no-reset.",
+        10: "", # "Barely ever finishes a game.",
+        20: "", # "Gets to see the end sometimes.",
+        30: "", # "Worth knowing zero at this point.",
+        40: "", # "Consistent throughout the run.",
+        50: "", # "Highly confident in completing seeds.",
+        100: "", # "Plays ranked like no-reset.",
     },
     "chokerate": {
-        10: "", # Can't get more consistent.",
-        25: "", # Goes deathless most games.",
-        40: "", # Throws easy wins pretty often.",
-        55: "", # Needs to work on playing safer.",
-        100: "", # Stop dying!!!!",
+        10: "", # "Can't get more consistent.",
+        25: "", # "Goes deathless most games.",
+        40: "", # "Throws easy wins pretty often.",
+        55: "", # "Needs to work on playing safer.",
+        100: "", # "Stop dying!!!!",
     },
 }
 
@@ -44,7 +44,7 @@ def main(response, detailed_matches, elo, player_season, compare_season, rank_fi
     )
     general_comments["description"] = (
         f"This is how `{response['nickname']}` stacks up against the {season_str}{rank_filter_str} playerbase. Each comparison references at most {get_player_count(rank_filter, playerbase_file)} players."
-        f"\nClick [here](https://docs.google.com/document/d/e/2PACX-1vQvNO1Mmf7T2zfaij_rxDsOMUwaVavJcZG68Bfp8-9CkeGyJHoPrvBFxU69apix4E7gVsaV51BiCVwC/pub) for an explanation of this command."
+        f"\nClick [here](https://docs.google.com/document/d/e/2PACX-1vQvNO1Mmf7T2zfaij_rxDsOMUwaVavJcZG68Bfp8-9CkeGyJHoPrvBFxU69apix4E7gVsaV51BiCVwC/pub) for an explanation of the stats below."
     )
 
     if not elo:
@@ -57,6 +57,9 @@ def main(response, detailed_matches, elo, player_season, compare_season, rank_fi
         ]
     avg = games.get_avg_completion(response, "season")
     sb = int(response["statistics"]["season"]["bestTime"]["ranked"])
+    ffl = games.get_ff_loss(response, "season")
+    comprate = games.get_completion_rate(response, "season")
+    chokerate, resilience, momentum = insight.fast_misc_stats(response["uuid"], detailed_matches)
     general_comments["avg"] = [
         f"Avg Finish: `{numb.digital_time(avg)}`",
         percentify(get_attr_ranked(avg, "avg", rank_filter, playerbase_file)),
@@ -67,12 +70,27 @@ def main(response, detailed_matches, elo, player_season, compare_season, rank_fi
         percentify(get_attr_ranked(sb, "sb", rank_filter, playerbase_file)),
         f"Equal to {rank.get_elo_equivalent(sb, 'sb', compare_season)} S{compare_season} Elo",
     ]
-    ffl = games.get_ff_loss(response, "season")
-    general_comments["ffl"] = [f"Forfeit/Loss: `{ffl}%`", get_comments(ffl, "ffl")]
-    comprate = games.get_completion_rate(response, "season")
-    general_comments["comprate"] = [f"Completion Rate: `{comprate}%`", get_comments(comprate, "comprate")]
-    chokerate = insight.get_choke_rate(response["uuid"], detailed_matches)
-    general_comments["chokerate"] = [f"Choke Rate: `{chokerate}%`", get_comments(chokerate, "chokerate")]
+    general_comments["ffl"] = [
+        f"Forfeit/Loss: `{ffl}%`",
+        percentify(get_attr_ranked(ffl, "ffl", rank_filter, playerbase_file)),
+        get_comments(ffl, "ffl"),
+    ]
+    general_comments["comprate"] = [
+        f"Completion Rate: `{comprate}%`",
+        percentify(get_attr_ranked(comprate, "comprate", rank_filter, playerbase_file)),
+        get_comments(comprate, "comprate")
+    ]
+    general_comments["chokerate"] = [
+        f"Choke Rate: `{chokerate}%`",
+        percentify(get_attr_ranked(chokerate, "chokerate", rank_filter, playerbase_file)),
+        get_comments(chokerate, "chokerate")
+    ]
+    general_comments["resilience"] = [
+        f"Resilience: `{resilience}%`"
+    ]
+    general_comments["momentum"] = [
+        f"Momentum: `{momentum}`"
+    ]
 
     return general_comments
 
