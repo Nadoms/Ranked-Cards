@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-from rankedutils import constants, word, numb, rank
+from rankedutils import constants, word, numb, rank, insight
 from analysis_functions.bastion_insights import add_rank_img
 
 SIDES = 7
@@ -30,6 +30,9 @@ SPLIT_NAMING = {
     "stronghold": "Stronghold",
     "end": "The End",
 }
+EMPTY_SPLITS = {split: 0 for split in SPLIT_NAMING}
+EMPTY_SPLITS_ENDLESS = {split: 0 for split in SPLIT_NAMING if split != "end"}
+NULL_SPLITS_ENDLESS = {split: None for split in SPLIT_NAMING if split != "end"}
 
 
 def main(uuid, detailed_matches, elo, player_season, num_comps, rank_filter, playerbase_file):
@@ -39,6 +42,12 @@ def main(uuid, detailed_matches, elo, player_season, num_comps, rank_filter, pla
     ranked_splits = get_ranked_splits(info_splits["self"]["avg"], rank_filter, playerbase_file)
     polygon = get_polygon(ranked_splits)
     polygon = add_text(polygon, info_splits["self"]["avg"], ranked_splits, rank_filter)
+    chart = get_chart(
+        info_splits["timesaves"],
+        info_splits["self"]["wins"],
+        info_splits["opp"]["wins"],
+        insight.get_avg_opponent_elo(detailed_matches)
+    )
 
     comments = {}
     comments["title"] = f"Split Performance"
@@ -52,139 +61,39 @@ def main(uuid, detailed_matches, elo, player_season, num_comps, rank_filter, pla
         )
     comments["best"], comments["worst"] = get_best_worst(ranked_splits, info_splits["self"]["avg"])
 
-    return comments, polygon
+    return comments, polygon, chart
 
 
 def get_avg_splits(uuid, detailed_matches):
     info_splits = {
         "self": {
-            "completions": {
-                "ow": 0,
-                "nether": 0,
-                "bastion": 0,
-                "fortress": 0,
-                "blind": 0,
-                "stronghold": 0,
-                "end": 0,
-            },
-                "time": {
-                "ow": 0,
-                "nether": 0,
-                "bastion": 0,
-                "fortress": 0,
-                "blind": 0,
-                "stronghold": 0,
-                "end": 0,
-            },
-                "avg": {
-                "ow": 0,
-                "nether": 0,
-                "bastion": 0,
-                "fortress": 0,
-                "blind": 0,
-                "stronghold": 0,
-                "end": 0,
-            },
+            "completions": EMPTY_SPLITS.copy(),
+            "time": EMPTY_SPLITS.copy(),
+            "avg": EMPTY_SPLITS.copy(),
+            "wins": EMPTY_SPLITS_ENDLESS.copy(),
         },
         "opp": {
-            "completions": {
-                "ow": 0,
-                "nether": 0,
-                "bastion": 0,
-                "fortress": 0,
-                "blind": 0,
-                "stronghold": 0,
-                "end": 0,
-            },
-                "time": {
-                "ow": 0,
-                "nether": 0,
-                "bastion": 0,
-                "fortress": 0,
-                "blind": 0,
-                "stronghold": 0,
-                "end": 0,
-            },
-                "avg": {
-                "ow": 0,
-                "nether": 0,
-                "bastion": 0,
-                "fortress": 0,
-                "blind": 0,
-                "stronghold": 0,
-                "end": 0,
-            },
-        }
+            "completions": EMPTY_SPLITS.copy(),
+            "time": EMPTY_SPLITS.copy(),
+            "avg": EMPTY_SPLITS.copy(),
+            "wins": EMPTY_SPLITS_ENDLESS.copy(),
+        },
+        "timesaves": None
     }
     death_splits = {
         "self": {
-            "count": {
-                "ow": 0,
-                "nether": 0,
-                "bastion": 0,
-                "fortress": 0,
-                "blind": 0,
-                "stronghold": 0,
-                "end": 0,
-            },
-            "enters": {
-                "ow": 0,
-                "nether": 0,
-                "bastion": 0,
-                "fortress": 0,
-                "blind": 0,
-                "stronghold": 0,
-                "end": 0,
-            },
-            "rate": {
-                "ow": 0,
-                "nether": 0,
-                "bastion": 0,
-                "fortress": 0,
-                "blind": 0,
-                "stronghold": 0,
-                "end": 0,
-            },
+            "count": EMPTY_SPLITS.copy(),
+            "enters": EMPTY_SPLITS.copy(),
+            "rate": EMPTY_SPLITS.copy(),
         },
         "opp": {
-            "count": {
-                "ow": 0,
-                "nether": 0,
-                "bastion": 0,
-                "fortress": 0,
-                "blind": 0,
-                "stronghold": 0,
-                "end": 0,
-            },
-            "enters": {
-                "ow": 0,
-                "nether": 0,
-                "bastion": 0,
-                "fortress": 0,
-                "blind": 0,
-                "stronghold": 0,
-                "end": 0,
-            },
-            "rate": {
-                "ow": 0,
-                "nether": 0,
-                "bastion": 0,
-                "fortress": 0,
-                "blind": 0,
-                "stronghold": 0,
-                "end": 0,
-            },
+            "count": EMPTY_SPLITS.copy(),
+            "enters": EMPTY_SPLITS.copy(),
+            "rate": EMPTY_SPLITS.copy(),
         }
     }
-    death_opportunities = {
-        "ow": 0,
-        "nether": 0,
-        "bastion": 0,
-        "fortress": 0,
-        "blind": 0,
-        "stronghold": 0,
-        "end": 0,
-    }
+    death_opportunities = EMPTY_SPLITS.copy()
+    timesaves = {split: [] for split in NULL_SPLITS_ENDLESS}
     event_mapping = {
         "story.enter_the_nether": "nether",
         "nether.find_bastion": "bastion",
@@ -203,6 +112,10 @@ def get_avg_splits(uuid, detailed_matches):
         death_splits["self"]["enters"]["ow"] += 1
         death_splits["opp"]["enters"]["ow"] += 1
 
+        prev_event_persistent = {"self": "ow", "opp": "ow"}
+        prev_time_persistent = {"self": 0, "opp": 0}
+        split_times_persistent = {"self": NULL_SPLITS_ENDLESS.copy(), "opp": NULL_SPLITS_ENDLESS.copy()}
+
         for event in reversed(match["timelines"]):
             player_type = "self" if event["uuid"] == uuid else "opp"
 
@@ -214,11 +127,14 @@ def get_avg_splits(uuid, detailed_matches):
 
             elif event["type"] in event_mapping:
                 split_length = event["time"] - prev_time[player_type]
+                split_length_persistent = event["time"] - prev_time_persistent[player_type]
+
                 info_splits[player_type]["time"][prev_event[player_type]] += split_length
                 info_splits[player_type]["completions"][prev_event[player_type]] += 1
+                split_times_persistent[player_type][prev_event_persistent[player_type]] = split_length_persistent
 
-                prev_time[player_type] = event["time"]
-                prev_event[player_type] = event_mapping[event["type"]]
+                prev_time_persistent[player_type] = prev_time[player_type] = event["time"]
+                prev_event_persistent[player_type] = prev_event[player_type] = event_mapping[event["type"]]
                 death_splits[player_type]["enters"][prev_event[player_type]] += 1
                 death_opportunities[prev_event[player_type]] += 1
 
@@ -230,6 +146,19 @@ def get_avg_splits(uuid, detailed_matches):
             split_length = match["result"]["time"] - prev_time[player_type]
             info_splits[player_type]["time"][prev_event[player_type]] += split_length
             info_splits[player_type]["completions"][prev_event[player_type]] += 1
+
+        for split in NULL_SPLITS_ENDLESS:
+            self_time = split_times_persistent["self"][split]
+            opp_time = split_times_persistent["opp"][split]
+            if self_time is None or opp_time is None:
+                continue
+            timesave = opp_time - self_time
+            winner = "self" if timesave < 0 else "opp"
+            info_splits[winner]["wins"][split] += 1
+            timesaves[split].append(timesave)
+
+    info_splits["timesaves"] = {split: round(np.median(timesaves[split])) for split in timesaves}
+    print(json.dumps(info_splits, indent=4))
 
     for player_type in ("self", "opp"):
         for split in SPLIT_NAMING:
@@ -246,15 +175,7 @@ def get_avg_splits(uuid, detailed_matches):
 
 
 def get_ranked_splits(average_splits, rank_filter, playerbase_file):
-    ranked_splits = {
-        "ow": 0,
-        "nether": 0,
-        "bastion": 0,
-        "fortress": 0,
-        "blind": 0,
-        "stronghold": 0,
-        "end": 0,
-    }
+    ranked_splits = EMPTY_SPLITS.copy()
     splits_final_boss = {
         "ow": [],
         "nether": [],
@@ -470,6 +391,30 @@ def add_text(polygon, average_splits, ranked_splits, rank_filter):
     return polygon
 
 
+def get_chart(timesaves, self_wins, opp_wins, avg_opp_elo):
+    chart_frame = Image.new("RGBA", (IMG_SIZE_X, IMG_SIZE_Y), (0, 0, 0, 0))
+    frame_draw = ImageDraw.Draw(chart_frame)
+
+    # do whatever bg thing is needed, perhaps as a footprint of each bar
+    chart_stats = chart_frame.copy()
+    stats_draw = ImageDraw.Draw(chart_frame)
+
+    # produce bar chart showing timesaves. timesaves can be negative or positive (negative if subject saved time, pos if opponent saved time)
+    # and are in ms. the bar chart should be scaled with the maximum timesave magnitude.
+    # the bar chart should have an axis on the left saying timesave and some axis ticks / labels
+    # the same bar chart should also have an axis on the right saying winrate from x% at the top and 1-x% at the bottom
+    # the x axis should be split into 6 sections with no buffer between each bar, one for each split (endless)
+    # the x axis should be positioned in the centre, showing the line where there would be 0s timesave
+    # like this |------|
+    # positive timesaves should be blue, negative should be orange
+    # same opacity and text style should be used as in the get_polygon above, try to be consistent
+    # only edit this function nothing else
+    # if pillow image library is not good enough, you may use seaborn (i have it installed)
+    # to be clear, each bar represents the timesave. to represent winrate, you may use a horizontal line
+
+    return chart
+
+
 def get_sample_size(num_comps):
     if num_comps < 8:
         return (
@@ -538,15 +483,7 @@ def get_best_worst(ranked_splits, avg_splits):
 
 def get_death_comments(death_splits, elo, rank_filter):
     # Redundant atm
-    differences = {
-        "ow": 0,
-        "nether": 0,
-        "bastion": 0,
-        "fortress": 0,
-        "blind": 0,
-        "stronghold": 0,
-        "end": 0,
-    }
+    differences = EMPTY_SPLITS.copy()
 
     if rank_filter is None:
         player_rank = rank.get_rank(elo)
