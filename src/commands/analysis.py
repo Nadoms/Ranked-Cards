@@ -30,7 +30,7 @@ def main(response, num_comps, detailed_matches, player_season, compare_season, r
         response, detailed_matches, elo, player_season, compare_season, rank_filter, playerbase_file
     )
     then = process_split(then, "Generating insights")
-    split_comm, split_polygon = split_insights.main(
+    split_comm, split_polygon, split_chart = split_insights.main(
         uuid, detailed_matches, elo, player_season, num_comps, rank_filter, playerbase_file
     )
     then = process_split(then, "Recognising split performance")
@@ -53,7 +53,7 @@ def main(response, num_comps, detailed_matches, player_season, compare_season, r
         "bastion": bastion_comm,
     }
 
-    return skin, comments, split_polygon, ow_polygon, bastion_polygon
+    return skin, comments, split_polygon, split_chart, ow_polygon, bastion_polygon
 
 
 if __name__ == "__main__":
