@@ -48,54 +48,75 @@ bot = commands.Bot(
 class Topics(nextcord.ui.View):
     def __init__(self, interaction, embeds, images):
         super().__init__(timeout=840)
-        self.value = "splits"
+        self.tab = "split"
+        self.mode = "playerbase"
+        self.tabs = ["split", "ow", "bastion"]
+        self.modes = ["playerbase", "opponent"]
         self.interaction = interaction
         self.general_embed = embeds["general"]
         self.embeds = embeds
         self.images = images
         self.button_labels = {
-            "splits": "Splits",
-            "ows": "Overworlds",
-            "bastions": "Bastions",
+            "playerbase": "Playerbase",
+            "opponent": "Opponent",
+            "split": "Splits",
+            "ow": "Overworlds",
+            "bastion": "Bastions",
         }
         self.button_styles = {
-            "splits": nextcord.ButtonStyle.blurple,
-            "ows": nextcord.ButtonStyle.green,
-            "bastions": nextcord.ButtonStyle.gray,
+            "playerbase": nextcord.ButtonStyle.red,
+            "opponent": nextcord.ButtonStyle.red,
+            "split": nextcord.ButtonStyle.blurple,
+            "ow": nextcord.ButtonStyle.green,
+            "bastion": nextcord.ButtonStyle.gray,
         }
         self.buttons = {}
 
-        for name in self.button_labels:
-            if self.embeds[name] is None:
+        for mode in self.modes:
+            button = nextcord.ui.Button(
+                label=self.button_labels[mode],
+                style=self.button_styles[mode],
+            )
+            button.callback = self._make_callback(mode=mode)
+            self.buttons[mode] = button
+
+        for tab in self.tabs:
+            if self.embeds[tab] is None:
                 continue
             button = nextcord.ui.Button(
-                label=self.button_labels[name],
-                style=self.button_styles[name],
+                label=self.button_labels[tab],
+                style=self.button_styles[tab],
             )
-            button.callback = self._make_callback(name)
-            self.buttons[name] = button
+            button.callback = self._make_callback(tab=tab)
+            self.buttons[tab] = button
 
         self.update_buttons()
 
-    def _make_callback(self, name):
+    def _make_callback(self, tab: str | None = None, mode: str | None = None):
         async def callback(interaction: Interaction):
-            await self.switch_to(interaction, name)
+            await self.switch_to(interaction, tab=tab, mode=mode)
 
         return callback
 
     def update_buttons(self):
         self.clear_items()
-        for name in self.buttons:
-            if name != self.value:
-                self.add_item(self.buttons[name])
+        for key in self.buttons:
+            if key != self.tab and key != self.mode:
+                self.add_item(self.buttons[key])
 
-    async def switch_to(self, interaction: Interaction, name: str):
-        print(f"Flipping to {name} for {interaction.user.name}")
-        self.value = name
+    async def switch_to(
+        self,
+        interaction: Interaction,
+        tab: str | None,
+        mode: str | None,
+    ):
+        self.tab = tab if tab else self.tab
+        self.mode = mode if mode else self.mode
+        print(f"Flipping to {self.tab} / {self.mode} for {interaction.user.name}")
         self.update_buttons()
-        file = self.set_embed_image(self.embeds[name], self.images[name])
-        await self.interaction.edit_original_message(
-            embeds=[self.general_embed, self.embeds[name]],
+        file = self.set_embed_image(self.embeds[self.tab], self.images[self.tab][self.mode])
+        await interaction.response.edit_message(
+            embeds=[self.general_embed, self.embeds[self.tab]],
             file=file,
             view=self,
         )
@@ -103,13 +124,15 @@ class Topics(nextcord.ui.View):
     async def on_timeout(self):
         self.clear_items()
         await self.interaction.edit_original_message(view=self)
-        for image in self.images:
-            if self.images[image] is not None:
-                self.images[image].close()
+        for tab in self.images:
+            for mode in self.images[tab]:
+                if self.images[tab][mode] is not None:
+                    self.images[tab][mode].close()
 
     def set_embed_image(self, embed, image):
-        file = image_to_file(image, f"{self.value}.png", close=False)
-        embed.set_image(url=f"attachment://{self.value}.png")
+        filename = f"{self.tab}_{self.mode[0]}.png"
+        file = image_to_file(image, filename, close=False)
+        embed.set_image(url=f"attachment://{filename}")
         return file
 
 
@@ -169,7 +192,7 @@ class LBPage(nextcord.ui.View):
         interaction: Interaction,
     ):
         print(f"Flipping to page {self.page} for {interaction.user.name}")
-        await self.interaction.edit_original_message(embeds=[self.embeds[self.page]])
+        await interaction.response.edit_message(embeds=[self.embeds[self.page]])
         self._View__timeout_expiry -= self.timeout
 
 
@@ -707,9 +730,9 @@ async def analysis(
 
     embeds = {
         "general": embed_general,
-        "splits": embed_split,
-        "ows": embed_ow,
-        "bastions": embed_bastion,
+        "split": embed_split,
+        "ow": embed_ow,
+        "bastion": embed_bastion,
     }
     for embed in (embed_split, embed_ow, embed_bastion):
         if embed is not None:
@@ -718,7 +741,11 @@ async def analysis(
                 icon_url=constants.FOOTER_ICON,
             )
 
-    images = {"splits": split_polygon, "ows": ow_polygon, "bastions": bastion_polygon}
+    images = {
+        "split": {"playerbase": split_polygon, "opponent": split_chart},
+        "ow": {"playerbase": ow_polygon, "opponent": ow_chart},
+        "bastion": {"playerbase": bastion_polygon, "opponent": bastion_chart}
+    }
     view = Topics(interaction, embeds, images)
 
     await interaction.followup.send(
