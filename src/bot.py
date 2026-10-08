@@ -48,23 +48,23 @@ class Topics(nextcord.ui.View):
     def __init__(self, interaction, embeds, images):
         super().__init__(timeout=840)
         self.tab = "split"
-        self.mode = "playerbase"
+        self.mode = "performance"
         self.tabs = ["split", "ow", "bastion"]
-        self.modes = ["playerbase", "opponent"]
+        self.modes = ["performance", "timesaves"]
         self.interaction = interaction
         self.general_embed = embeds["general"]
         self.embeds = embeds
         self.images = images
         self.button_labels = {
-            "playerbase": "Playerbase",
-            "opponent": "Opponent",
+            "performance": "Performance",
+            "timesaves": "Timesaves",
             "split": "Splits",
             "ow": "Overworlds",
             "bastion": "Bastions",
         }
         self.button_styles = {
-            "playerbase": nextcord.ButtonStyle.red,
-            "opponent": nextcord.ButtonStyle.red,
+            "performance": nextcord.ButtonStyle.red,
+            "timesaves": nextcord.ButtonStyle.red,
             "split": nextcord.ButtonStyle.blurple,
             "ow": nextcord.ButtonStyle.green,
             "bastion": nextcord.ButtonStyle.gray,
@@ -741,9 +741,9 @@ async def analysis(
             )
 
     images = {
-        "split": {"playerbase": split_polygon, "opponent": split_chart},
-        "ow": {"playerbase": ow_polygon, "opponent": ow_chart},
-        "bastion": {"playerbase": bastion_polygon, "opponent": bastion_chart}
+        "split": {"performance": split_polygon, "timesaves": split_chart},
+        "ow": {"performance": ow_polygon, "timesaves": ow_chart},
+        "bastion": {"performance": bastion_polygon, "timesaves": bastion_chart}
     }
     view = Topics(interaction, embeds, images)
 
