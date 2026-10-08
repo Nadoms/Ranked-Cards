@@ -1,7 +1,6 @@
 import json
 from os import path
 import math
-from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -24,11 +23,11 @@ ANGLES.insert(0, ANGLES.pop())
 BASTION_TYPES = ["bridge", "housing", "stables", "treasure"]
 
 
-def main(uuid, detailed_matches, elo, player_season, rank_filter, playerbase_file):
+def main(uuid, detailed_matches, elo, player_season, rank_filter, bastions_final_boss):
     info_bastions, death_bastions = get_avg_bastions(
         uuid, detailed_matches
     )
-    ranked_bastions = get_ranked_bastions(info_bastions["self"]["avg"], rank_filter, playerbase_file)
+    ranked_bastions = get_ranked_bastions(info_bastions["self"]["avg"], rank_filter, bastions_final_boss)
     polygon = get_polygon(ranked_bastions)
     polygon = add_text(polygon, info_bastions["self"]["avg"], ranked_bastions, rank_filter)
     sum_bastions = sum(info_bastions["self"]["completions"].values())
@@ -139,11 +138,8 @@ def get_avg_bastions(uuid, detailed_matches):
     return info_bastions, death_bastions
 
 
-def get_ranked_bastions(average_bastions, rank_filter, playerbase_file):
+def get_ranked_bastions(average_bastions, rank_filter, bastions_final_boss):
     ranked_bastions = {"bridge": 0, "housing": 0, "stables": 0, "treasure": 0}
-
-    with open(playerbase_file, "r") as f:
-        bastions_final_boss = json.load(f)["bastion"]
 
     lower, upper = rank.get_boundaries(rank_filter)
 

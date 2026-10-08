@@ -1,10 +1,6 @@
-import json
-import math
-from os import path
-
 import numpy as np
 
-from rankedutils import constants, games, insight, rank, numb
+from rankedutils import games, insight, rank, numb
 from rankedutils.word import percentify
 
 
@@ -35,7 +31,7 @@ COMMENTS = {
 }
 
 
-def main(response, detailed_matches, elo, player_season, compare_season, rank_filter, playerbase_file):
+def main(response, detailed_matches, elo, player_season, compare_season, rank_filter, stats):
     general_comments = {}
     rank_filter_str = "" if rank_filter is None else f" {rank_filter}"
     season_str = f"S{compare_season}"
@@ -44,7 +40,7 @@ def main(response, detailed_matches, elo, player_season, compare_season, rank_fi
     )
     general_comments["description"] = (
         f"This is how `{response['nickname']}` stacks up against the {season_str}{rank_filter_str} playerbase. "
-        f"Each comparison references at most {get_player_count(rank_filter, playerbase_file)} players."
+        f"Each comparison references at most {get_player_count(rank_filter, stats['elo'])} players."
         "\nClick [here](https://docs.google.com/document/d/e/2PACX-1vQvNO1Mmf7T2zfaij_rxDsOMUwaVavJcZG68Bfp8-9CkeGyJHoPrvBFxU69apix4E7gVsaV51BiCVwC/pub) for an explanation of what's below. "
         "[<3](https://ko-fi.com/naddy_mc)"
     )
@@ -55,12 +51,12 @@ def main(response, detailed_matches, elo, player_season, compare_season, rank_fi
     chokerate, resilience, momentum = insight.fast_misc_stats(response["uuid"], detailed_matches)
     general_comments["sb"] = [
         f"Season Best: `{numb.digital_time(sb)}`",
-        percentify(get_attr_ranked(sb, "sb", rank_filter, playerbase_file)),
+        percentify(get_attr_ranked(sb, "sb", rank_filter, stats)),
         f"Equal to {rank.get_elo_equivalent(sb, 'sb', compare_season)} S{compare_season} Elo",
     ]
     general_comments["avg"] = [
         f"Avg Finish: `{numb.digital_time(avg)}`",
-        percentify(get_attr_ranked(avg, "avg", rank_filter, playerbase_file)),
+        percentify(get_attr_ranked(avg, "avg", rank_filter, stats)),
         f"Equal to {rank.get_elo_equivalent(avg, 'avg', compare_season)} S{compare_season} Elo",
     ]
     if not elo:
@@ -68,43 +64,40 @@ def main(response, detailed_matches, elo, player_season, compare_season, rank_fi
     else:
         general_comments["elo"] = [
             f"Elo: `{elo}`",
-            percentify(get_attr_ranked(elo, "elo", rank_filter, playerbase_file))
+            percentify(get_attr_ranked(elo, "elo", rank_filter, stats))
         ]
     general_comments["ffl"] = [
         f"Forfeit/Loss: `{ffl:.1%}`",
-        percentify(get_attr_ranked(ffl, "ffl", rank_filter, playerbase_file)),
+        percentify(get_attr_ranked(ffl, "ffl", rank_filter, stats)),
     ]
     general_comments["comprate"] = [
         f"Completion Rate: `{comprate:.1%}`",
-        percentify(get_attr_ranked(comprate, "comprate", rank_filter, playerbase_file)),
+        percentify(get_attr_ranked(comprate, "comprate", rank_filter, stats)),
     ]
     general_comments["chokerate"] = [
         f"Choke Rate: `{chokerate:.1%}`",
-        percentify(get_attr_ranked(chokerate, "chokerate", rank_filter, playerbase_file)),
+        percentify(get_attr_ranked(chokerate, "chokerate", rank_filter, stats)),
     ]
     general_comments["resilience"] = [
         f"Resilience: `{resilience:.1%}`",
-        percentify(get_attr_ranked(resilience, "resilience", rank_filter, playerbase_file)),
+        percentify(get_attr_ranked(resilience, "resilience", rank_filter, stats)),
     ]
     general_comments["momentum"] = [
         f"Momentum: `{momentum:.3f}`",
-        percentify(get_attr_ranked(momentum, "momentum", rank_filter, playerbase_file)),
+        percentify(get_attr_ranked(momentum, "momentum", rank_filter, stats)),
     ]
 
     return general_comments
 
 
-def get_player_count(rank_filter, playerbase_file):
-    with open(playerbase_file, "r") as f:
-        elos = json.load(f)["stats"]["elo"]
+def get_player_count(rank_filter, elos):
     lower, upper = rank.get_boundaries(rank_filter)
     player_count = sum(1 for elo in elos if lower <= elo < upper)
     return player_count
 
 
-def get_attr_ranked(value, attr_type, rank_filter, playerbase_file):
-    with open(playerbase_file, "r") as f:
-        attrs = json.load(f)["stats"][attr_type]
+def get_attr_ranked(value, attr_type, rank_filter, stats):
+    attrs = stats[attr_type]
     higher_is_better = ("elo", "peak", "games", "playtime", "winrate", "comprate", "resilience", "momentum")
     if attr_type in higher_is_better:
         attrs = list(reversed(attrs))

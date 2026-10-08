@@ -1,7 +1,6 @@
 import json
 from os import path
 import math
-from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -32,11 +31,11 @@ SPLIT_NAMING = {
 }
 
 
-def main(uuid, detailed_matches, elo, player_season, num_comps, rank_filter, playerbase_file):
+def main(uuid, detailed_matches, elo, player_season, num_comps, rank_filter, splits_final_boss):
     info_splits, death_splits = get_avg_splits(
         uuid, detailed_matches
     )
-    ranked_splits = get_ranked_splits(info_splits["self"]["avg"], rank_filter, playerbase_file)
+    ranked_splits = get_ranked_splits(info_splits["self"]["avg"], rank_filter, splits_final_boss)
     polygon = get_polygon(ranked_splits)
     polygon = add_text(polygon, info_splits["self"]["avg"], ranked_splits, rank_filter)
 
@@ -245,7 +244,7 @@ def get_avg_splits(uuid, detailed_matches):
     return info_splits, death_splits
 
 
-def get_ranked_splits(average_splits, rank_filter, playerbase_file):
+def get_ranked_splits(average_splits, rank_filter, splits_final_boss):
     ranked_splits = {
         "ow": 0,
         "nether": 0,
@@ -255,18 +254,6 @@ def get_ranked_splits(average_splits, rank_filter, playerbase_file):
         "stronghold": 0,
         "end": 0,
     }
-    splits_final_boss = {
-        "ow": [],
-        "nether": [],
-        "bastion": [],
-        "fortress": [],
-        "blind": [],
-        "stronghold": [],
-        "end": [],
-    }
-
-    with open(playerbase_file, "r") as f:
-        splits_final_boss = json.load(f)["split"]
 
     lower, upper = rank.get_boundaries(rank_filter)
 
