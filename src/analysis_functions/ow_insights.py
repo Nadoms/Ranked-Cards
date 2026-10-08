@@ -12,7 +12,7 @@ IMG_SIZE_X = 960
 IMG_SIZE_Y = 760
 MIDDLE = IMG_SIZE_Y / 2
 OFFSET_X = (IMG_SIZE_X - IMG_SIZE_Y) / 2
-OFFSET_Y = 60
+OFFSET_Y = 40
 ANGLES = [
     (i * (2 * math.pi)) / SIDES - math.pi / 2 + 2 * math.pi / SIDES
     for i in range(SIDES)
@@ -213,7 +213,7 @@ def get_polygon(ranked_ows):
     edge_distance = MIDDLE / INIT_PROP * math.cos(math.pi / SIDES)
     distance = np.max([xs * math.cos(angle) + ys * math.sin(angle) for angle in edge_angles], axis=0) / edge_distance
 
-    stops = {0: PERCENTILE_COLOURS[1], 0.5: PERCENTILE_COLOURS[2], 1: PERCENTILE_COLOURS[4]}
+    stops = {0: PERCENTILE_COLOURS[1], 0.25: PERCENTILE_COLOURS[2], 1: PERCENTILE_COLOURS[4]}
     rgb = np.array([ImageColor.getrgb(colour) for colour in stops.values()])
     gradient = np.dstack([np.interp(distance, list(stops), rgb[:, channel]) for channel in range(3)])
 
@@ -221,7 +221,7 @@ def get_polygon(ranked_ows):
     mask = Image.new("L", (IMG_SIZE_X, IMG_SIZE_Y))
     ImageDraw.Draw(mask).polygon(xy, fill=255)
     polygon_frame.paste(Image.fromarray(gradient.astype(np.uint8)), mask=mask)
-    stats_draw.polygon(xy, outline="#a1d3f8", width=4)
+    stats_draw.polygon(xy, outline="#c0e4ff", width=4)
 
     polygon = Image.blend(polygon_frame, polygon_stats, 0.4)
 
@@ -231,7 +231,7 @@ def get_polygon(ranked_ows):
 def add_text(polygon, average_ows, ranked_ows, rank_filter):
     text_prop = INIT_PROP * 0.95
     xy = []
-    titles = (OW_NAMING.values())
+    titles = list(OW_NAMING.values())
 
     big_size = 50
     big_font = ImageFont.truetype("minecraft_font.ttf", big_size)
@@ -337,7 +337,7 @@ def get_chart(timesaves, self_wins, opp_wins, avg_opp_elo):
     muted = "#b3c4c9"
     self_colour = "#3f82ff"
     opp_colour = "#f12d2d"
-    bar_stroke = "#a1d3f8"
+    bar_stroke = "#c0e4ff"
     winrate_colour = "#ffff40A0"
     bg_colour = "#413348"
     bg__stroke = "#515368"
@@ -435,10 +435,10 @@ def get_chart(timesaves, self_wins, opp_wins, avg_opp_elo):
         draw.text((centre_x, bottom + x_axis_offset), OW_NAMING[split], font=small_font, anchor="mt", **outline)
 
         if timesave is None:
-            draw.text((centre_x, zero_y - 2), "No data", muted, small_font, "mm", **outline)
+            draw.text((centre_x, zero_y - 2), "No data", muted, label_font, "mm", **outline)
         else:
             y = zero_y - timesave / timesave_limit * half_height
-            colour = tuple(min(col + 100, 255) for col in gradient.getpixel((centre_x, y - top)))
+            colour = tuple(min(col + 128, 255) for col in gradient.getpixel((centre_x, y - top)))
             draw.text(
                 (centre_x, y - 2),
                 format_time(timesave),
@@ -483,14 +483,6 @@ def get_count(number_ows):
 
 
 def get_best_worst(ranked_ows, avg_ows):
-    OW_NAMING = {
-        "bt": "Buried Treasure",
-        "dt": "Desert Temple",
-        "rp": "Ruined Portal",
-        "ship": "Shipwreck",
-        "village": "Village",
-    }
-
     max_key = ""
     max_val = -1
     min_key = ""
