@@ -1,46 +1,46 @@
 {
     "stats": {
-        "totalCommands": 295919,
-        "totalGenerated": 284719,
-        "connectedUsers": 5248,
+        "totalCommands": 306459,
+        "totalGenerated": 295055,
+        "connectedUsers": 5387,
         "totalHidden": 2070,
         "cards": {
-            "success": 27908,
-            "fail": 1909
+            "success": 28341,
+            "fail": 1956
         },
         "plots": {
-            "success": 13170,
-            "fail": 489
+            "success": 13432,
+            "fail": 494
         },
         "matches": {
-            "success": 3166,
-            "fail": 456
+            "success": 3236,
+            "fail": 463
         },
         "analyses": {
-            "success": 194959,
-            "fail": 22203
+            "success": 202544,
+            "fail": 22720
         },
         "races": {
-            "success": 207,
+            "success": 208,
             "fail": 1
         },
         "leaderboards": {
-            "success": 15977,
-            "fail": 10
+            "success": 17327,
+            "fail": 50
         },
         "lives": {
-            "success": 1295,
+            "success": 1314,
             "fail": 0
         },
         "connects": {
-            "success": 3883,
-            "fail": 1308
+            "success": 3970,
+            "fail": 1364
         },
         "disconnects": {
-            "success": 152,
-            "fail": 10
+            "success": 155,
+            "fail": 11
         },
-        "backgrounds": 1043,
-        "helps": 955
+        "backgrounds": 1065,
+        "helps": 990
     }
 }

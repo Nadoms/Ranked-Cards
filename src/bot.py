@@ -2173,7 +2173,7 @@ async def fetch_loop():
     repeat = 900
     while True:
         not_latest_load = latest_load
-        latest_load_early = await load_matches.spam_redlime(latest_load_early, 1500)
+        # latest_load_early = await load_matches.spam_redlime(latest_load_early, 1500)
         latest_load = await load_matches.spam_redlime(latest_load, 1000)
         with open(DATABASE_DIR / "last_id.txt", "w") as f:
             f.write(f"{latest_load_early}\n{latest_load}")
@@ -2196,13 +2196,13 @@ async def suggestions_loop():
 async def analysis_loop():
     await asyncio.sleep(60)
     while True:
+        await analyse_db.analyse(constants.SEASON)
         for season in ALL_SEASONS[:-1]:
             season = int(season)
             playerbase_file = f"playerbase_s{season}.json"
             manual_analysis = []
             if not (DATABASE_DIR / playerbase_file).exists() or season in manual_analysis:
                 await analyse_db.analyse(season, filename=playerbase_file)
-        await analyse_db.analyse(constants.SEASON)
         await asyncio.sleep(86400)
 
 
