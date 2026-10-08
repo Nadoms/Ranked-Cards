@@ -397,15 +397,18 @@ def add_text(polygon, average_splits, ranked_splits, rank_filter):
 
 def get_chart(timesaves, self_wins, opp_wins, avg_opp_elo):
     left, right = 120, IMG_SIZE_X - 110
-    top, bottom = 150, 690
+    top, bottom = 160, 700
     zero_y = (top + bottom) / 2
     half_height = (bottom - top) / 2
     col_width = (right - left) / len(EMPTY_SPLITS_ENDLESS)
     muted = "#b3c4c9"
+    self_colour = "#4f7fd9"
+    opp_colour = "#d9823b"
+    winrate_colour = "#ffff40A0"
     outline = {"stroke_fill": "#000000", "stroke_width": 2}
 
-    label_font = ImageFont.truetype("minecraft_font.ttf", 18)
-    small_font = ImageFont.truetype("minecraft_font.ttf", 16)
+    label_font = ImageFont.truetype("minecraft_font.ttf", 21)
+    small_font = ImageFont.truetype("minecraft_font.ttf", 18)
     big_font = ImageFont.truetype("minecraft_font.ttf", 50)
 
     winrates = {
@@ -414,22 +417,19 @@ def get_chart(timesaves, self_wins, opp_wins, avg_opp_elo):
     }
 
     max_timesave = max((abs(timesave) for timesave in timesaves.values() if timesave is not None), default=0)
-    if max_timesave <= 30000:
-        timesave_limit = next(limit for limit in (5000, 10000, 20000, 30000) if limit >= max_timesave)
-    else:
-        # Doubles from 30s onwards: 60s, 120s, 240s...
-        timesave_limit = 30000 * 2 ** math.ceil(math.log2(max_timesave / 30000))
+    step = 2000 if max_timesave <= 10000 else 10000
+    timesave_limit = math.ceil(max_timesave / step) * step if max_timesave else 2000
     max_dev = max((abs(wr - 0.5) for wr in winrates.values() if wr is not None), default=0)
-    wr_limit = next((limit for limit in (0.1, 0.2, 0.3, 0.4) if limit > max_dev + 1e-9), 0.5)
+    wr_limit = math.ceil(max_dev * 10) / 10 if max_dev else 0.1
 
-    def format_time(ms):
-        sign = "+" if ms > 0 else "-" if ms < 0 else ""
-        ms = abs(ms)
-        if ms >= 10000 or ms % 1000 == 0:
-            return f"{sign}{round(ms / 1000)}s"
-        return f"{sign}{ms / 1000:.1f}s"
+    def format_time(time):
+        sign = "+" if time > 0 else "-" if time < 0 else ""
+        time = abs(time)
+        if time >= 10000 or time % 1000 == 0:
+            return f"{sign}{round(time / 1000)}s"
+        return f"{sign}{time / 1000:.1f}s"
 
-    chart_frame = Image.new("RGBA", (IMG_SIZE_X, IMG_SIZE_Y), (0, 0, 0, 0))
+    chart_frame = Image.new("RGBA", (IMG_SIZE_X, IMG_SIZE_Y))
     frame_draw = ImageDraw.Draw(chart_frame)
 
     # Footprint
@@ -445,62 +445,58 @@ def get_chart(timesaves, self_wins, opp_wins, avg_opp_elo):
 
     # Timesave bars
     for i, timesave in enumerate(timesaves.values()):
-        if timesave:
-            y = zero_y - max(-1, min(1, timesave / timesave_limit)) * half_height
-            frame_draw.rectangle(
-                (round(left + i * col_width), round(min(y, zero_y)), round(left + (i + 1) * col_width), round(max(y, zero_y))),
-                fill="#4f7fd9" if timesave < 0 else "#d9823b",
-                outline="#a1d3f8" if timesave < 0 else "#ffd29e",
-                width=4,
-            )
+        if not timesave:
+            continue
+        y = zero_y - timesave / timesave_limit * half_height
+        frame_draw.rectangle(
+            (left + i * col_width, min(y, zero_y), left + (i + 1) * col_width, max(y, zero_y)),
+            fill=self_colour if timesave < 0 else opp_colour,
+            outline=muted,
+            width=4,
+        )
 
     chart = Image.blend(chart_frame, chart_stats, 0.4)
-    draw = ImageDraw.Draw(chart, "RGBA")
+    draw = ImageDraw.Draw(chart)
 
     # Axes
-    draw.line([(left, top), (left, bottom)], fill="#ffffff", width=4)
-    draw.line([(right, top), (right, bottom)], fill="#ffffff", width=4)
-    draw.line([(left, zero_y), (right, zero_y)], fill="#ffffff", width=4)
+    draw.line([(left, top), (left, bottom)], width=4)
+    draw.line([(right, top), (right, bottom)], width=4)
+    draw.line([(left, zero_y), (right, zero_y)], width=4)
 
+    y_axis_offset = 10
     for i in (-2, -1, 0, 1, 2):
         y = zero_y - i / 2 * half_height
-        draw.text((left - 10, y), format_time(timesave_limit * i / 2), muted, small_font, "rm", **outline)
-        draw.text((right + 10, y), f"{round((0.5 - wr_limit * i / 2) * 100)}%", muted, small_font, "lm", **outline)
+        draw.text((left - y_axis_offset, y), format_time(timesave_limit * i / 2), muted, small_font, "rm", **outline)
+        draw.text((right + y_axis_offset, y), f"{round((0.5 - wr_limit * i / 2) * 100)}%", muted, small_font, "lm", **outline)
 
-    # Titles
-    sideways = Image.new("RGBA", (IMG_SIZE_Y, IMG_SIZE_X), (0, 0, 0, 0))
+    # Axes titles
+    sideways = Image.new("RGBA", (IMG_SIZE_Y, IMG_SIZE_X))
     sideways_draw = ImageDraw.Draw(sideways)
-    sideways_draw.text((IMG_SIZE_Y - zero_y, 35), "Timesave", "#ffffff", label_font, "mm", **outline)
-    sideways_draw.text((IMG_SIZE_Y - zero_y, IMG_SIZE_X - 30), "Winrate", "#ffffff", label_font, "mm", **outline)
+    sideways_draw.text((IMG_SIZE_Y - zero_y, 35), "Median Timesave", font=label_font, anchor="mm", **outline)
+    sideways_draw.text((IMG_SIZE_Y - zero_y, IMG_SIZE_X - 30), "Winrate", font=label_font, anchor="mm", **outline)
     chart.alpha_composite(sideways.rotate(90, expand=True))
 
+    # Timesave and axis labels
     for i, split in enumerate(EMPTY_SPLITS_ENDLESS):
         x0, x1 = left + i * col_width, left + (i + 1) * col_width
         centre_x = (x0 + x1) / 2
         timesave = timesaves[split]
 
+        x_axis_offset = 15
         if winrates[split] is not None:
             y = zero_y + (winrates[split] - 0.5) / wr_limit * half_height
-            draw.line([(x0 + 14, y), (x1 - 14, y)], fill=(255, 215, 0, 170), width=3)
+            draw.line([(x0 + 15, y), (x1 - 15, y)], fill=winrate_colour, width=4)
 
-        draw.text((centre_x, bottom + 14), SPLIT_NAMING[split], "#ffffff", label_font, "mt", **outline)
+        draw.text((centre_x, bottom + x_axis_offset), SPLIT_NAMING[split], font=small_font, anchor="mt", **outline)
 
         if timesave is None:
-            draw.text((centre_x, zero_y - 8), "No data", muted, small_font, "mb", **outline)
+            draw.text((centre_x, zero_y - 2), "No data", muted, small_font, "mm", **outline)
         else:
-            y = zero_y - max(-1, min(1, timesave / timesave_limit)) * half_height
-            above = (timesave >= 0) == (top + 30 <= y <= bottom - 30)
-            draw.text(
-                (centre_x, y - 8 if above else y + 8),
-                format_time(timesave),
-                "#ffffff",
-                label_font,
-                "mb" if above else "mt",
-                **outline,
-            )
+            y = zero_y - timesave / timesave_limit * half_height
+            draw.text((centre_x, y - 2), format_time(timesave), font=label_font, anchor="mm", **outline)
 
-    draw.text((IMG_SIZE_X / 2, OFFSET_Y), "Split Timesaves", "#ffffff", big_font, "ma", **outline)
-    draw.text((IMG_SIZE_X / 2, 122), f"vs opponents averaging {avg_opp_elo} elo", muted, label_font, "mm", **outline)
+    draw.text((IMG_SIZE_X / 2, OFFSET_Y), "Split Timesaves", font=big_font, anchor="ma", **outline)
+    draw.text((IMG_SIZE_X / 2, OFFSET_Y + 85), f"vs opponents averaging {avg_opp_elo} elo", muted, label_font, "mm", **outline)
 
     return chart
 
