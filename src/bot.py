@@ -37,7 +37,6 @@ default_guild_ids = [735859906434957392] if TESTING_MODE else None
 player_list = []
 
 intents = nextcord.Intents.default()
-intents.members = True
 bot = commands.Bot(
     command_prefix="=",
     intents=intents,
@@ -1915,8 +1914,9 @@ async def connect(interaction: Interaction, input_name: str):
             user_exists = True
             user_id = users["users"].index(user)
         elif input_name.lower() == user["minecraft"].lower():
+            other = await bot.fetch_user(int(user["discord"]))
             await interaction.response.send_message(
-                f"`{input_name}` is already connected to {bot.get_user(int(user['discord']))}."
+                f"`{input_name}` is already connected to {other}."
             )
             update_records(interaction, "connect", input_name, False)
             return
