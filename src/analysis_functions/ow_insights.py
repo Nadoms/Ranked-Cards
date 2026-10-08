@@ -1,7 +1,4 @@
-import json
-from os import path
 import math
-from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -24,9 +21,9 @@ ANGLES.insert(0, ANGLES.pop())
 OWS = list(constants.OW_MAPPING.values())
 
 
-def main(uuid, detailed_matches, rank_filter, playerbase_file):
+def main(uuid, detailed_matches, rank_filter, ows_final_boss):
     number_ows, average_ows = get_avg_ows(uuid, detailed_matches)
-    ranked_ows = get_ranked_ows(average_ows, rank_filter, playerbase_file)
+    ranked_ows = get_ranked_ows(average_ows, rank_filter, ows_final_boss)
     polygon = get_polygon(ranked_ows)
     polygon = add_text(polygon, average_ows, ranked_ows, rank_filter)
 
@@ -73,11 +70,8 @@ def get_avg_ows(uuid, detailed_matches):
     return number_ows, average_ows
 
 
-def get_ranked_ows(average_ows, rank_filter, playerbase_file):
+def get_ranked_ows(average_ows, rank_filter, ows_final_boss):
     ranked_ows = {"bt": 0, "dt": 0, "rp": 0, "ship": 0, "village": 0}
-
-    with open(playerbase_file, "r") as f:
-        ows_final_boss = json.load(f)["ow"]
 
     lower, upper = rank.get_boundaries(rank_filter)
 

@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 from pathlib import Path
 
 import requests
@@ -26,21 +27,24 @@ def main(response, num_comps, detailed_matches, player_season, compare_season, r
 
     season_suffix = "" if int(compare_season) == constants.SEASON else f"_s{compare_season}"
     playerbase_file = Path("src") / "database" / f"playerbase{season_suffix}.json"
+
+    with open(playerbase_file, "r") as f:
+        playerbase = json.load(f)
     general_comments = get_comments.main(
-        response, detailed_matches, elo, player_season, compare_season, rank_filter, playerbase_file
+        response, detailed_matches, elo, player_season, compare_season, rank_filter, playerbase["stats"]
     )
     then = process_split(then, "Generating insights")
     split_comm, split_polygon, split_chart = split_insights.main(
-        uuid, detailed_matches, elo, player_season, num_comps, rank_filter, playerbase_file
+        uuid, detailed_matches, elo, player_season, num_comps, rank_filter, playerbase["split"]
     )
     then = process_split(then, "Recognising split performance")
     ow_comm, ow_polygon = ow_insights.main(
-        uuid, detailed_matches, rank_filter, playerbase_file
+        uuid, detailed_matches, rank_filter, playerbase["ow"]
     )
     then = process_split(then, "Recognising OW performance")
     if int(player_season) >= 5 and int(compare_season) >= 5:
         bastion_comm, bastion_polygon = bastion_insights.main(
-            uuid, detailed_matches, elo, player_season, rank_filter, playerbase_file
+            uuid, detailed_matches, elo, player_season, rank_filter, playerbase["bastion"]
         )
         then = process_split(then, "Recognising bastion performance")
     else:
