@@ -3,7 +3,7 @@ from os import path
 import math
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageColor, ImageDraw, ImageFont
 
 from rankedutils import constants, word, numb, rank, insight
 from analysis_functions.bastion_insights import add_rank_img
@@ -32,6 +32,8 @@ SPLIT_NAMING = {
 EMPTY_SPLITS = {split: 0 for split in SPLIT_NAMING}
 EMPTY_SPLITS_ENDLESS = {split: 0 for split in SPLIT_NAMING if split != "end"}
 NULL_SPLITS_ENDLESS = {split: None for split in SPLIT_NAMING if split != "end"}
+PERCENTILES = [0.3, 0.5, 0.7, 0.9, 0.95, 1.0]
+PERCENTILE_COLOURS = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#3f82ff", "#ffd700"]
 
 
 def main(uuid, detailed_matches, elo, player_season, num_comps, rank_filter, splits_final_boss):
@@ -266,7 +268,22 @@ def get_polygon(ranked_splits):
                 (math.sin(angle) + proportion) * polygon_size + OFFSET_Y,
             )
         )
-    stats_draw.polygon(xy, fill="#716388", outline="#a1d3f8", width=4)
+
+    # Polygonal gradient
+    xs, ys = np.meshgrid(np.arange(IMG_SIZE_X) - (MIDDLE + OFFSET_X), np.arange(IMG_SIZE_Y) - (MIDDLE + OFFSET_Y))
+    edge_angles = [angle + math.pi / SIDES for angle in ANGLES]
+    edge_distance = MIDDLE / INIT_PROP * math.cos(math.pi / SIDES)
+    distance = np.max([xs * math.cos(angle) + ys * math.sin(angle) for angle in edge_angles], axis=0) / edge_distance
+
+    stops = {0: PERCENTILE_COLOURS[1], 0.5: PERCENTILE_COLOURS[2], 1: PERCENTILE_COLOURS[4]}
+    rgb = np.array([ImageColor.getrgb(colour) for colour in stops.values()])
+    gradient = np.dstack([np.interp(distance, list(stops), rgb[:, channel]) for channel in range(3)])
+
+    # Fill with gradient
+    mask = Image.new("L", (IMG_SIZE_X, IMG_SIZE_Y))
+    ImageDraw.Draw(mask).polygon(xy, fill=255)
+    polygon_frame.paste(Image.fromarray(gradient.astype(np.uint8)), mask=mask)
+    stats_draw.polygon(xy, outline="#a1d3f8", width=4)
 
     polygon = Image.blend(polygon_frame, polygon_stats, 0.4)
 
@@ -276,15 +293,6 @@ def get_polygon(ranked_splits):
 def add_text(polygon, average_splits, ranked_splits, rank_filter):
     text_prop = INIT_PROP * 0.95
     xy = []
-    percentiles = [0.3, 0.5, 0.7, 0.9, 0.95, 1.0]
-    percentile_colour = [
-        "#888888",
-        "#b3c4c9",
-        "#86b8db",
-        "#50fe50",
-        "#3f82ff",
-        "#ffd700",
-    ]
     titles = ["Overworld", "Nether", "Bastion", "Fortress", "Blind", "Stronghold", "The End"]
 
     big_size = 50
@@ -343,11 +351,10 @@ def add_text(polygon, average_splits, ranked_splits, rank_filter):
             )
 
     for i in range(SIDES):
-
-        s_colour = percentile_colour[0]
-        for j in range(len(percentiles)):
-            if ranked_splits[constants.SPLITS[i]] <= percentiles[j]:
-                s_colour = percentile_colour[j]
+        s_colour = PERCENTILE_COLOURS[0]
+        for j in range(len(PERCENTILES)):
+            if ranked_splits[constants.SPLITS[i]] <= PERCENTILES[j]:
+                s_colour = PERCENTILE_COLOURS[j]
                 break
         if average_splits[constants.SPLITS[i]] == 1000000000000:
             stat = "No data"
