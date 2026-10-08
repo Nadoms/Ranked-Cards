@@ -402,12 +402,15 @@ def get_chart(timesaves, self_wins, opp_wins, avg_opp_elo):
     half_height = (bottom - top) / 2
     col_width = (right - left) / len(EMPTY_SPLITS_ENDLESS)
     muted = "#b3c4c9"
-    self_colour = "#4f7fd9"
-    opp_colour = "#d9823b"
+    self_colour = "#3f82ff"
+    opp_colour = "#f12d2d"
+    bar_stroke = "#a1d3f8"
     winrate_colour = "#ffff40A0"
+    bg_colour = "#413348"
+    bg__stroke = "#515368"
     outline = {"stroke_fill": "#000000", "stroke_width": 2}
 
-    label_font = ImageFont.truetype("minecraft_font.ttf", 21)
+    label_font = ImageFont.truetype("minecraft_font.ttf", 20)
     small_font = ImageFont.truetype("minecraft_font.ttf", 18)
     big_font = ImageFont.truetype("minecraft_font.ttf", 50)
 
@@ -429,17 +432,25 @@ def get_chart(timesaves, self_wins, opp_wins, avg_opp_elo):
             return f"{sign}{round(time / 1000)}s"
         return f"{sign}{time / 1000:.1f}s"
 
+    # Gradients
+    plot_size = (IMG_SIZE_X, bottom - top + 1)
+    gradient = Image.composite(
+        Image.new("RGBA", plot_size, self_colour),
+        Image.new("RGBA", plot_size, opp_colour),
+        Image.linear_gradient("L").resize(plot_size),
+    )
+
     chart_frame = Image.new("RGBA", (IMG_SIZE_X, IMG_SIZE_Y))
     frame_draw = ImageDraw.Draw(chart_frame)
 
     # Footprint
-    frame_draw.rectangle((left, top, right, bottom), fill="#413348")
+    frame_draw.rectangle((left, top, right, bottom), fill=bg_colour)
     for i in (-2, -1, 1, 2):
         y = zero_y - i / 2 * half_height
-        frame_draw.line([(left, y), (right, y)], fill="#515368", width=3)
+        frame_draw.line([(left, y), (right, y)], fill=bg__stroke, width=3)
     for i in range(1, len(EMPTY_SPLITS_ENDLESS)):
         x = left + i * col_width
-        frame_draw.line([(x, top), (x, bottom)], fill="#515368", width=3)
+        frame_draw.line([(x, top), (x, bottom)], fill=bg__stroke, width=3)
 
     chart_stats = chart_frame.copy()
 
@@ -447,13 +458,14 @@ def get_chart(timesaves, self_wins, opp_wins, avg_opp_elo):
     for i, timesave in enumerate(timesaves.values()):
         if not timesave:
             continue
+        x0 = left + i * col_width
+        x1 = x0 + col_width
         y = zero_y - timesave / timesave_limit * half_height
-        frame_draw.rectangle(
-            (left + i * col_width, min(y, zero_y), left + (i + 1) * col_width, max(y, zero_y)),
-            fill=self_colour if timesave < 0 else opp_colour,
-            outline=muted,
-            width=4,
-        )
+        y0 = min(zero_y, y)
+        y1 = max(zero_y, y)
+        box = tuple(round(v) for v in (x0, y0, x1, y1))
+        chart_frame.paste(gradient.crop((box[0], box[1] - top, box[2], box[3] - top)), box)
+        frame_draw.rectangle(box, outline=bar_stroke, width=2)
 
     chart = Image.blend(chart_frame, chart_stats, 0.4)
     draw = ImageDraw.Draw(chart)
@@ -493,7 +505,15 @@ def get_chart(timesaves, self_wins, opp_wins, avg_opp_elo):
             draw.text((centre_x, zero_y - 2), "No data", muted, small_font, "mm", **outline)
         else:
             y = zero_y - timesave / timesave_limit * half_height
-            draw.text((centre_x, y - 2), format_time(timesave), font=label_font, anchor="mm", **outline)
+            colour = tuple(min(col + 100, 255) for col in gradient.getpixel((centre_x, y - top)))
+            draw.text(
+                (centre_x, y - 2),
+                format_time(timesave),
+                colour,
+                label_font,
+                "mm",
+                **outline
+            )
 
     draw.text((IMG_SIZE_X / 2, OFFSET_Y), "Split Timesaves", font=big_font, anchor="ma", **outline)
     draw.text((IMG_SIZE_X / 2, OFFSET_Y + 85), f"vs opponents averaging {avg_opp_elo} elo", muted, label_font, "mm", **outline)
