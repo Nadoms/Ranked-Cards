@@ -628,7 +628,7 @@ async def analysis(
         update_records(interaction, "analysis", input_name, False)
         return
 
-    head, comments, split_polygon, ow_polygon, bastion_polygon = anal
+    head, comments, split_polygon, split_chart, ow_polygon, ow_chart, bastion_polygon, bastion_chart = anal
 
     embed_general = Embed(
         title=comments["general"]["title"],

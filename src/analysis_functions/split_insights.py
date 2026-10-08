@@ -115,6 +115,7 @@ def get_avg_splits(uuid, detailed_matches):
 
         prev_event_persistent = {"self": "ow", "opp": "ow"}
         prev_time_persistent = {"self": 0, "opp": 0}
+        seen_splits = {"self": [], "opp": []}
         split_times_persistent = {"self": NULL_SPLITS_ENDLESS.copy(), "opp": NULL_SPLITS_ENDLESS.copy()}
 
         for event in reversed(match["timelines"]):
@@ -128,14 +129,20 @@ def get_avg_splits(uuid, detailed_matches):
 
             elif event["type"] in event_mapping:
                 split_length = event["time"] - prev_time[player_type]
-                split_length_persistent = event["time"] - prev_time_persistent[player_type]
 
                 info_splits[player_type]["time"][prev_event[player_type]] += split_length
                 info_splits[player_type]["completions"][prev_event[player_type]] += 1
-                split_times_persistent[player_type][prev_event_persistent[player_type]] = split_length_persistent
 
-                prev_time_persistent[player_type] = prev_time[player_type] = event["time"]
-                prev_event_persistent[player_type] = prev_event[player_type] = event_mapping[event["type"]]
+                prev_time[player_type] = event["time"]
+                prev_event[player_type] = event_mapping[event["type"]]
+
+                if event["type"] not in seen_splits[player_type]:
+                    seen_splits[player_type].append(event["type"])
+                    split_length_persistent = event["time"] - prev_time_persistent[player_type]
+                    split_times_persistent[player_type][prev_event_persistent[player_type]] = split_length_persistent
+                    prev_time_persistent[player_type] = event["time"]
+                    prev_event_persistent[player_type] = event_mapping[event["type"]]
+
                 death_splits[player_type]["enters"][prev_event[player_type]] += 1
                 death_opportunities[prev_event[player_type]] += 1
 

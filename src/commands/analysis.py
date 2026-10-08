@@ -38,17 +38,17 @@ def main(response, num_comps, detailed_matches, player_season, compare_season, r
         uuid, detailed_matches, elo, player_season, num_comps, rank_filter, playerbase["split"]
     )
     then = process_split(then, "Recognising split performance")
-    ow_comm, ow_polygon = ow_insights.main(
+    ow_comm, ow_polygon, ow_chart = ow_insights.main(
         uuid, detailed_matches, rank_filter, playerbase["ow"]
     )
     then = process_split(then, "Recognising OW performance")
     if int(player_season) >= 5 and int(compare_season) >= 5:
-        bastion_comm, bastion_polygon = bastion_insights.main(
+        bastion_comm, bastion_polygon, bastion_chart = bastion_insights.main(
             uuid, detailed_matches, elo, player_season, rank_filter, playerbase["bastion"]
         )
         then = process_split(then, "Recognising bastion performance")
     else:
-        bastion_comm = bastion_polygon = None
+        bastion_comm = bastion_polygon = bastion_chart = None
 
     comments = {
         "general": general_comments,
@@ -57,7 +57,7 @@ def main(response, num_comps, detailed_matches, player_season, compare_season, r
         "bastion": bastion_comm,
     }
 
-    return skin, comments, split_polygon, split_chart, ow_polygon, bastion_polygon
+    return skin, comments, split_polygon, split_chart, ow_polygon, ow_chart, bastion_polygon, bastion_chart
 
 
 if __name__ == "__main__":
