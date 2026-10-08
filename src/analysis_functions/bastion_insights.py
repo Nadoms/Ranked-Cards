@@ -492,7 +492,7 @@ def get_chart(timesaves, self_wins, opp_wins, avg_opp_elo):
     sideways = Image.new("RGBA", (IMG_SIZE_Y, IMG_SIZE_X))
     sideways_draw = ImageDraw.Draw(sideways)
     sideways_draw.text((IMG_SIZE_Y - zero_y, 35), "Median Timesave", font=label_font, anchor="mm", **outline)
-    sideways_draw.text((IMG_SIZE_Y - zero_y, IMG_SIZE_X - 30), "Winrate", font=label_font, anchor="mm", **outline)
+    sideways_draw.text((IMG_SIZE_Y - zero_y, IMG_SIZE_X - 30), "Split Winrate", font=label_font, anchor="mm", **outline)
     chart.alpha_composite(sideways.rotate(90, expand=True))
 
     # Timesave and axis labels
