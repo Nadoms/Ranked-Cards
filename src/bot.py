@@ -873,11 +873,10 @@ async def leaderboard_elo(
         return
 
     leaderboard_size = math.ceil(len(response["users"]) / 20)
-    leaderboard_embeds = []
 
     try:
-        for page in range(0, leaderboard_size):
-            leaderboard_embeds.append(leading.elo_leaderboard(response, input_name, season, country, page))
+        lb_embeds = leading.EloLBEmbeds(leaderboard_size, season, country)
+        leaderboard_embeds = lb_embeds.extract_lb(response, input_name)
     except Exception:
         print("Error caught!")
         traceback.print_exc()
@@ -934,11 +933,10 @@ async def leaderboard_phasepoints(
         return
 
     leaderboard_size = math.ceil(len(response["users"]) / 20)
-    leaderboard_embeds = []
 
     try:
-        for page in range(0, leaderboard_size):
-            leaderboard_embeds.append(leading.phase_points_leaderboard(response, input_name, season, country, page))
+        lb_embeds = leading.PhasePointsLBEmbeds(leaderboard_size, season, country)
+        leaderboard_embeds = lb_embeds.extract_lb(response, input_name)
     except Exception:
         print("Error caught!")
         traceback.print_exc()
@@ -999,11 +997,10 @@ async def leaderboard_completion(
         return
 
     leaderboard_size = math.ceil(len(response) / 20)
-    leaderboard_embeds = []
 
     try:
-        for page in range(0, leaderboard_size):
-            leaderboard_embeds.append(leading.completion_time_leaderboard(response, input_name, season, page))
+        lb_embeds = leading.CompletionTimeLBEmbeds(leaderboard_size, season)
+        leaderboard_embeds = lb_embeds.extract_lb(response, input_name)
     except Exception:
         print("Error caught!")
         traceback.print_exc()
@@ -1053,46 +1050,24 @@ async def leaderboard_split(
     ),
 ):
     lb_type = "split"
-    input_name = get_name(interaction)
     await interaction.response.defer()
-
     print(f"---\nFetching {split} Avg Leaderboard for rank {rank_filter}")
-
-    season_suffix = "" if int(season) == constants.SEASON else f"_s{season}"
-    with open(DATABASE_DIR / f"playerbase{season_suffix}.json") as f:
-        lb = json.load(f)[lb_type][split]
-    lower, upper = rank.get_boundaries(rank.str_to_rank(rank_filter))
-    lb = [
-        entry for entry in lb
-        if (
-            (rank.str_to_rank(rank_filter) is None or (entry[1] and lower <= entry[1] < upper))
-            and (entry[3] >= sample_size)
-        )
-    ]
-
-    leaderboard_size = min(math.ceil(len(lb) / 20), MAX_CUSTOM_LB)
-    leaderboard_embeds = []
     lb_name = f"Average {split.capitalize()} Split S{season}"
     lb_desc = (
         f"These are the fastest players in the {split} split during S{season}"
         f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
         f" ({sample_size}+ samples)"
     )
-
-    try:
-        lb_embeds = leading.CustomLBEmbeds(leaderboard_size, lb_name, lb_desc, lb_type)
-        leaderboard_embeds = lb_embeds.extract_lb(lb, input_name)
-    except Exception:
-        print("Error caught!")
-        traceback.print_exc()
-        await interaction.followup.send(f"{GENERIC_ERROR_MSG}\n```{traceback.format_exc()}```")
-        update_records(interaction, "leaderboard", lb_type, False)
-        return
-
-    view = LBPage(interaction, leaderboard_embeds)
-
-    await interaction.followup.send(embed=leaderboard_embeds[0], view=view)
-    update_records(interaction, "leaderboard", lb_type, True)
+    await generic_lb_response(
+        interaction,
+        season,
+        rank_filter,
+        lb_type,
+        lb_name,
+        lb_desc,
+        lb_subtype=split,
+        sample_size=sample_size,
+    )
 
 
 @leaderboard.subcommand(
@@ -1131,46 +1106,24 @@ async def leaderboard_bastion(
     ),
 ):
     lb_type = "bastion"
-    input_name = get_name(interaction)
     await interaction.response.defer()
-
     print(f"---\nFetching {bastion} Avg Leaderboard for rank {rank_filter}")
-
-    season_suffix = "" if int(season) == constants.SEASON else f"_s{season}"
-    with open(DATABASE_DIR / f"playerbase{season_suffix}.json") as f:
-        lb = json.load(f)[lb_type][bastion]
-    lower, upper = rank.get_boundaries(rank.str_to_rank(rank_filter))
-    lb = [
-        entry for entry in lb
-        if (
-            (rank.str_to_rank(rank_filter) is None or (entry[1] and lower <= entry[1] < upper))
-            and (entry[3] >= sample_size)
-        )
-    ]
-
-    leaderboard_size = min(math.ceil(len(lb) / 20), MAX_CUSTOM_LB)
-    leaderboard_embeds = []
     lb_name = f"Average {bastion.capitalize()} Bastion Split S{season}"
     lb_desc = (
-        f"These are the fastest players at routing {bastion} bastions during  S{season}"
+        f"These are the fastest players at routing {bastion} bastions during S{season}"
         f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
         f" ({sample_size}+ samples)"
     )
-
-    try:
-        lb_embeds = leading.CustomLBEmbeds(leaderboard_size, lb_name, lb_desc, lb_type)
-        leaderboard_embeds = lb_embeds.extract_lb(lb, input_name)
-    except Exception:
-        print("Error caught!")
-        traceback.print_exc()
-        await interaction.followup.send(f"{GENERIC_ERROR_MSG}\n```{traceback.format_exc()}```")
-        update_records(interaction, "leaderboard", lb_type, False)
-        return
-
-    view = LBPage(interaction, leaderboard_embeds)
-
-    await interaction.followup.send(embed=leaderboard_embeds[0], view=view)
-    update_records(interaction, "leaderboard", lb_type, True)
+    await generic_lb_response(
+        interaction,
+        season,
+        rank_filter,
+        lb_type,
+        lb_name,
+        lb_desc,
+        lb_subtype=bastion,
+        sample_size=sample_size,
+    )
 
 
 @leaderboard.subcommand(
@@ -1209,47 +1162,25 @@ async def leaderboard_overworld(
     ),
 ):
     lb_type = "ow"
-    input_name = get_name(interaction)
     await interaction.response.defer()
-    ow_name = overworld.replace("_", " ")
-
     print(f"---\nFetching {overworld} Avg Leaderboard for rank {rank_filter}")
-
-    season_suffix = "" if int(season) == constants.SEASON else f"_s{season}"
-    with open(DATABASE_DIR / f"playerbase{season_suffix}.json") as f:
-        lb = json.load(f)[lb_type][constants.OW_MAPPING[overworld.upper()]]
-    lower, upper = rank.get_boundaries(rank.str_to_rank(rank_filter))
-    lb = [
-        entry for entry in lb
-        if (
-            (rank.str_to_rank(rank_filter) is None or (entry[1] and lower <= entry[1] < upper))
-            and (entry[3] >= sample_size)
-        )
-    ]
-
-    leaderboard_size = min(math.ceil(len(lb) / 20), MAX_CUSTOM_LB)
-    leaderboard_embeds = []
+    ow_name = overworld.replace("_", " ")
     lb_name = f"Average {ow_name.capitalize()} Overworld S{season}"
     lb_desc = (
         f"These are the fastest players at running {ow_name} overworlds during S{season}"
         f"{' in ' + rank_filter if rank_filter != 'All' else ''}."
         f" ({sample_size}+ samples)"
     )
-
-    try:
-        lb_embeds = leading.CustomLBEmbeds(leaderboard_size, lb_name, lb_desc, lb_type)
-        leaderboard_embeds = lb_embeds.extract_lb(lb, input_name)
-    except Exception:
-        print("Error caught!")
-        traceback.print_exc()
-        await interaction.followup.send(f"{GENERIC_ERROR_MSG}\n```{traceback.format_exc()}```")
-        update_records(interaction, "leaderboard", lb_type, False)
-        return
-
-    view = LBPage(interaction, leaderboard_embeds)
-
-    await interaction.followup.send(embed=leaderboard_embeds[0], view=view)
-    update_records(interaction, "leaderboard", lb_type, True)
+    await generic_lb_response(
+        interaction,
+        season,
+        rank_filter,
+        lb_type,
+        lb_name,
+        lb_desc,
+        lb_subtype=constants.OW_MAPPING[overworld.upper()],
+        sample_size=sample_size,
+    )
 
 
 @leaderboard.subcommand(
@@ -1719,12 +1650,17 @@ async def generic_lb_response(
     lb_type: str,
     lb_name: str,
     lb_desc: str,
+    lb_subtype: str | None = None,
     sample_size: int | None = None,
 ):
     input_name = get_name(interaction)
     season_suffix = "" if int(season) == constants.SEASON else f"_s{season}"
     with open(DATABASE_DIR / f"playerbase{season_suffix}.json") as f:
-        lb = json.load(f)["stats"][lb_type]
+        lb = json.load(f)
+        if lb_subtype:
+            lb = lb[lb_type][lb_subtype]
+        else:
+            lb = lb["stats"][lb_type]
     lower, upper = rank.get_boundaries(rank.str_to_rank(rank_filter))
     lb = [
         entry for entry in lb
@@ -1735,7 +1671,6 @@ async def generic_lb_response(
     ]
 
     leaderboard_size = min(math.ceil(len(lb) / 20), MAX_CUSTOM_LB)
-    leaderboard_embeds = []
 
     try:
         lb_embeds = leading.CustomLBEmbeds(leaderboard_size, lb_name, lb_desc, lb_type)

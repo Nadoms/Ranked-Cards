@@ -366,7 +366,7 @@ class CompletionTimeLBEmbeds(LBEmbeds):
             title += f" in Season {season}"
         else:
             title = "Lifetime " + title
-        header = " rank  | username         | time  (age)"
+        header = "  rank | username         | time  (age)"
         description = "These are the fastest completions."
         super().__init__(max_page, title, description, header)
 
@@ -405,7 +405,7 @@ class EloLBEmbeds(LBEmbeds):
         title = f"Elo Leaderboard in Season {season}"
         if country:
             title += f" - {country}"
-        header = " rank  | username         | elo "
+        header = "  rank | username         | elo "
         description = "This is taken from the very end of the season."
         super().__init__(max_page, title, description, header)
 
@@ -440,7 +440,7 @@ class PhasePointsLBEmbeds(LBEmbeds):
         title = f"Phase Points Leaderboard in Season {season}"
         if country:
             title += f" - {country}"
-        header = " rank  | username         | pts "
+        header = "  rank | username         | pts "
         description = "This is taken from the very end of the season."
         super().__init__(max_page, title, description, header)
 
