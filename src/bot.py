@@ -1960,7 +1960,6 @@ async def disconnect(interaction: Interaction):
             users["users"].remove(user)
 
             with open(file, "w") as f:
-                print(users)
                 users_json = json.dumps(users, indent=4)
                 f.write(users_json)
             await interaction.response.send_message(
