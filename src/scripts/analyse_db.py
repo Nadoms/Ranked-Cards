@@ -22,12 +22,12 @@ SPLIT_MAPPING = {
 
 def collect_matches(season, cursor):
     times = {
-        "split": {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}},
+        "split": {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}, "fortblind": {}},
         "bastion": {"bridge": {}, "housing": {}, "stables": {}, "treasure": {}},
         "ow": {"bt": {}, "dt": {}, "rp": {}, "ship": {}, "village": {}},
     }
     nums = {
-        "split": {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}},
+        "split": {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}, "fortblind": {}},
         "bastion": {"bridge": {}, "housing": {}, "stables": {}, "treasure": {}},
         "ow": {"bt": {}, "dt": {}, "rp": {}, "ship": {}, "village": {}},
     }
@@ -79,6 +79,8 @@ def collect_matches(season, cursor):
         prev_time = 0
         bastion_entry = bastion_exit = 0
         choked = False
+        in_fort = False
+        fort_time = 0
         won = result_uuid == uuid
 
         for event in reversed(timeline):
@@ -86,6 +88,7 @@ def collect_matches(season, cursor):
                 prev_time = event["time"]
                 curr_split = "ow"
                 bastion_entry = bastion_exit = 0
+                in_fort = False
                 choked = True
             if event["type"] == "projectelo.timeline.death":
                 choked = True
@@ -126,9 +129,18 @@ def collect_matches(season, cursor):
                 if uuid not in times["split"][curr_split]:
                     times["split"][curr_split][uuid] = 0
                     nums["split"][curr_split][uuid] = 0
-
                 times["split"][curr_split][uuid] += split_length
                 nums["split"][curr_split][uuid] += 1
+
+                if event["type"] == "nether.find_fortress":
+                    in_fort = True
+                    fort_time = event["time"]
+                elif event["type"] == "story.follow_ender_eye" and in_fort:
+                    if uuid not in times["split"]["fortblind"]:
+                        times["split"]["fortblind"][uuid] = 0
+                        nums["split"]["fortblind"][uuid] = 0
+                    times["split"]["fortblind"][uuid] += event["time"] - fort_time
+                    nums["split"]["fortblind"][uuid] += 1
 
                 prev_time = event["time"]
                 curr_split = SPLIT_MAPPING[event["type"]]
@@ -203,7 +215,7 @@ def collect_matches(season, cursor):
 async def analyse(season, filename="playerbase.json"):
     print(f"\n***\nAnalysing database (S{season}) - {datetime.now()}\n***")
     ranked = {
-        "split": {"ow": [], "nether": [], "bastion": [], "fortress": [], "blind": [], "stronghold": [], "end": []},
+        "split": {"ow": [], "nether": [], "bastion": [], "fortress": [], "blind": [], "stronghold": [], "end": [], "fortblind": []},
         "bastion": {"bridge": [], "housing": [], "stables": [], "treasure": []},
         "ow": {"bt": [], "dt": [], "rp": [], "ship": [], "village": []},
         "stats": {

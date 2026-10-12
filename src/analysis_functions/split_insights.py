@@ -29,6 +29,8 @@ ANGLES_F.insert(0, ANGLES_F.pop())
 SPLITS_NE = [split for split in constants.SPLITS if split != "end"]
 SPLITS_F = constants.SPLITS + ["fortblind"]
 SPLITS_FNE = SPLITS_NE + ["fortblind"]
+SPLITS_C = constants.SPLITS[:3] + ["fortblind"] + constants.SPLITS[5:]
+SPLITS_C_NE = [split for split in SPLITS_C if split != "end"]
 SPLIT_NAMING = {
     "ow": "Overworld",
     "nether": "Nether",
@@ -260,7 +262,7 @@ def get_ranked_splits(average_splits, rank_filter, splits_final_boss):
 
 def get_polygon(ranked_splits, combine_fortblind=False):
     angles = ANGLES_F if combine_fortblind else ANGLES
-    splits = SPLITS_F if combine_fortblind else constants.SPLITS
+    splits = SPLITS_C if combine_fortblind else constants.SPLITS
     sides = SIDES_F if combine_fortblind else SIDES
 
     proportions = [INIT_PROP, INIT_PROP * 4 / 3, INIT_PROP * 2, INIT_PROP * 4, 10000]
@@ -350,7 +352,7 @@ def get_polygon(ranked_splits, combine_fortblind=False):
 
 def add_text(polygon, average_splits, ranked_splits, rank_filter, combine_fortblind=False):
     angles = ANGLES_F if combine_fortblind else ANGLES
-    splits = SPLITS_F if combine_fortblind else constants.SPLITS
+    splits = SPLITS_C if combine_fortblind else constants.SPLITS
     sides = SIDES_F if combine_fortblind else SIDES
     titles = [SPLIT_NAMING[split] for split in splits]
 
@@ -415,14 +417,14 @@ def add_text(polygon, average_splits, ranked_splits, rank_filter, combine_fortbl
     for i in range(sides):
         s_colour = PERCENTILE_COLOURS[0]
         for j in range(len(PERCENTILES)):
-            if ranked_splits[constants.SPLITS[i]] <= PERCENTILES[j]:
+            if ranked_splits[splits[i]] <= PERCENTILES[j]:
                 s_colour = PERCENTILE_COLOURS[j]
                 break
-        if average_splits[constants.SPLITS[i]] == 1000000000000:
+        if average_splits[splits[i]] == 1000000000000:
             stat = "No data"
         else:
-            time = numb.digital_time(average_splits[constants.SPLITS[i]])
-            stat = f"{time} / {word.percentify(ranked_splits[constants.SPLITS[i]])}"
+            time = numb.digital_time(average_splits[splits[i]])
+            stat = f"{time} / {word.percentify(ranked_splits[splits[i]])}"
 
         xy[i][0] -= word.calc_length(titles[i], title_size) / 2
         text_draw.text(
@@ -452,13 +454,9 @@ def add_text(polygon, average_splits, ranked_splits, rank_filter, combine_fortbl
 
 
 def get_chart(timesaves, self_wins, opp_wins, avg_opp_elo, combine_fortblind=False):
-    splits = SPLITS_FNE if combine_fortblind else SPLITS_NE
+    splits = SPLITS_C_NE if combine_fortblind else SPLITS_NE
     titles = [SPLIT_NAMING[split] for split in splits]
-    if combine_fortblind:
-        timesaves.pop("fortress")
-        timesaves.pop("blind")
-    else:
-        timesaves.pop("fortblind")
+    timesaves = {split: timesaves[split] for split in splits}
 
     left, right = 120, IMG_SIZE_X - 110
     top, bottom = 160, 700
@@ -513,7 +511,7 @@ def get_chart(timesaves, self_wins, opp_wins, avg_opp_elo, combine_fortblind=Fal
     for i in (-2, -1, 1, 2):
         y = zero_y - i / 2 * half_height
         frame_draw.line([(left, y), (right, y)], fill=bg_stroke, width=3)
-    for i in range(1, len(EMPTY_SPLITS_ENDLESS)):
+    for i in range(1, len(splits)):
         x = left + i * col_width
         frame_draw.line([(x, top), (x, bottom)], fill=bg_stroke, width=3)
 
@@ -600,7 +598,7 @@ def get_sample_size(num_comps):
 def get_count(number_splits):
     names = " OW   / NETH / BAST / FORT / BLND / SH   / END  "
     count = ""
-    for split in number_splits:
+    for split in constants.SPLITS:
         num = number_splits[split]
         count += " " * (5 - len(str(num)))
         count += f"{num} "
@@ -622,7 +620,7 @@ def get_best_worst(ranked_splits, avg_splits):
     min_key = ""
     min_val = 1000000000000000000
 
-    for key in ranked_splits:
+    for key in constants.SPLITS:
         if ranked_splits[key] > max_val:
             max_val = ranked_splits[key]
             max_key = key
