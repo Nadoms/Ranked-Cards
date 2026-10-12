@@ -49,8 +49,10 @@ class Topics(nextcord.ui.View):
         super().__init__(timeout=840)
         self.tab = "split"
         self.mode = "performance"
+        self.fortblind = "separate"
         self.tabs = ["split", "ow", "bastion"]
         self.modes = ["performance", "timesaves"]
+        self.fortblinds = ["separate", "combined"]
         self.interaction = interaction
         self.general_embed = embeds["general"]
         self.embeds = embeds
@@ -59,6 +61,8 @@ class Topics(nextcord.ui.View):
             "performance": "Performance",
             "timesaves": "Timesaves",
             "split": "Splits",
+            "separate": "Fort / blind",
+            "combined": "Fort + blind",
             "ow": "Overworlds",
             "bastion": "Bastions",
         }
@@ -66,6 +70,8 @@ class Topics(nextcord.ui.View):
             "performance": nextcord.ButtonStyle.red,
             "timesaves": nextcord.ButtonStyle.red,
             "split": nextcord.ButtonStyle.blurple,
+            "separate": nextcord.ButtonStyle.blurple,
+            "combined": nextcord.ButtonStyle.blurple,
             "ow": nextcord.ButtonStyle.green,
             "bastion": nextcord.ButtonStyle.gray,
         }
@@ -79,6 +85,14 @@ class Topics(nextcord.ui.View):
             button.callback = self._make_callback(mode=mode)
             self.buttons[mode] = button
 
+        for fortblind in self.fortblinds:
+            button = nextcord.ui.Button(
+                label=self.button_labels[fortblind],
+                style=self.button_styles[fortblind],
+            )
+            button.callback = self._make_callback(fortblind=fortblind)
+            self.buttons[fortblind] = button
+
         for tab in self.tabs:
             if self.embeds[tab] is None:
                 continue
@@ -91,16 +105,23 @@ class Topics(nextcord.ui.View):
 
         self.update_buttons()
 
-    def _make_callback(self, tab: str | None = None, mode: str | None = None):
+    def _make_callback(
+        self,
+        tab: str | None = None,
+        mode: str | None = None,
+        fortblind: str | None = None,
+    ):
         async def callback(interaction: Interaction):
-            await self.switch_to(interaction, tab=tab, mode=mode)
+            await self.switch_to(interaction, tab=tab, mode=mode, fortblind=fortblind)
 
         return callback
 
     def update_buttons(self):
         self.clear_items()
         for key in self.buttons:
-            if key != self.tab and key != self.mode:
+            if key != self.tab and key != self.mode and key != self.fortblind:
+                if key in self.fortblinds and self.tab != "split":
+                    continue
                 self.add_item(self.buttons[key])
 
     async def switch_to(
@@ -108,12 +129,15 @@ class Topics(nextcord.ui.View):
         interaction: Interaction,
         tab: str | None,
         mode: str | None,
+        fortblind: str | None,
     ):
         self.tab = tab if tab else self.tab
         self.mode = mode if mode else self.mode
-        print(f"Flipping to {self.tab} / {self.mode} for {interaction.user.name}")
+        self.fortblind = fortblind if fortblind else self.fortblind
+        print(f"Flipping to {self.tab} / {self.mode} / {self.fortblind} for {interaction.user.name}")
         self.update_buttons()
-        file = self.set_embed_image(self.embeds[self.tab], self.images[self.tab][self.mode])
+        image = self.images[self.tab][self.mode] if self.tab != "split" else self.images[self.tab][self.mode][self.fortblind]
+        file = self.set_embed_image(self.embeds[self.tab], image)
         await interaction.response.edit_message(
             embeds=[self.general_embed, self.embeds[self.tab]],
             file=file,
@@ -129,7 +153,7 @@ class Topics(nextcord.ui.View):
                     self.images[tab][mode].close()
 
     def set_embed_image(self, embed, image):
-        filename = f"{self.tab}_{self.mode[0]}.png"
+        filename = f"{self.tab}{('_' + self.fortblind[0]) if self.tab == 'split' else ''}_{self.mode[0]}.png"
         file = image_to_file(image, filename, close=False)
         embed.set_image(url=f"attachment://{filename}")
         return file
@@ -650,7 +674,7 @@ async def analysis(
         update_records(interaction, "analysis", input_name, False)
         return
 
-    head, comments, split_polygon, split_chart, ow_polygon, ow_chart, bastion_polygon, bastion_chart = anal
+    head, comments, images = anal
 
     embed_general = Embed(
         title=comments["general"]["title"],
@@ -674,8 +698,8 @@ async def analysis(
         name=interaction.user.name, icon_url=interaction.user.display_avatar.url
     )
 
-    split_file = image_to_file(split_polygon, f"split_{input_name}.png", close=False)
-    embed_split.set_image(url=f"attachment://split_{input_name}.png")
+    split_file = image_to_file(images["split"]["performance"]["separate"], f"split_s_p_{input_name}.png", close=False)
+    embed_split.set_image(url=f"attachment://split_s_p_{input_name}.png")
 
     field_no = 0
     gen_comms = comments["general"]
@@ -740,11 +764,6 @@ async def analysis(
                 icon_url=constants.FOOTER_ICON,
             )
 
-    images = {
-        "split": {"performance": split_polygon, "timesaves": split_chart},
-        "ow": {"performance": ow_polygon, "timesaves": ow_chart},
-        "bastion": {"performance": bastion_polygon, "timesaves": bastion_chart}
-    }
     view = Topics(interaction, embeds, images)
 
     await interaction.followup.send(

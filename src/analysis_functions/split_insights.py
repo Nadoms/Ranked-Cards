@@ -9,6 +9,7 @@ from rankedutils import constants, word, numb, rank, insight
 from analysis_functions.bastion_insights import add_rank_img
 
 SIDES = 7
+SIDES_F = SIDES - 1
 INIT_PROP = 1.8
 IMG_SIZE_X = 960
 IMG_SIZE_Y = 760
@@ -20,18 +21,30 @@ ANGLES = [
     for i in range(SIDES)
 ]
 ANGLES.insert(0, ANGLES.pop())
+ANGLES_F = [
+    (i * (2 * math.pi)) / SIDES_F - math.pi / 2 + 2 * math.pi / SIDES_F
+    for i in range(SIDES_F)
+]
+ANGLES_F.insert(0, ANGLES_F.pop())
+SPLITS_NE = [split for split in constants.SPLITS if split != "end"]
+SPLITS_F = constants.SPLITS + ["fortblind"]
+SPLITS_FNE = SPLITS_NE + ["fortblind"]
 SPLIT_NAMING = {
     "ow": "Overworld",
     "nether": "Nether",
     "bastion": "Bastion",
     "fortress": "Fortress",
     "blind": "Blind",
+    "fortblind": "Fort-blind",
     "stronghold": "Stronghold",
     "end": "The End",
 }
-EMPTY_SPLITS = {split: 0 for split in SPLIT_NAMING}
-EMPTY_SPLITS_ENDLESS = {split: 0 for split in SPLIT_NAMING if split != "end"}
-NULL_SPLITS_ENDLESS = {split: None for split in SPLIT_NAMING if split != "end"}
+EMPTY_SPLITS = {split: 0 for split in constants.SPLITS}
+EMPTY_SPLITS_ENDLESS = {split: 0 for split in SPLITS_NE}
+NULL_SPLITS_ENDLESS = {split: None for split in SPLITS_NE}
+EMPTY_SPLITS_F = {split: 0 for split in SPLITS_F}
+EMPTY_SPLITS_ENDLESS_F = {split: 0 for split in SPLITS_FNE}
+NULL_SPLITS_ENDLESS_F = {split: None for split in SPLITS_FNE}
 PERCENTILES = [0.3, 0.5, 0.7, 0.9, 0.95, 1.0]
 PERCENTILE_COLOURS = ["#888888", "#b3c4c9", "#86b8db", "#50fe50", "#3f82ff", "#ffd700"]
 
@@ -50,6 +63,16 @@ def main(uuid, detailed_matches, elo, player_season, num_comps, rank_filter, spl
         insight.get_avg_opponent_elo(uuid, detailed_matches)
     )
 
+    fortblind_polygon = get_polygon(ranked_splits, combine_fortblind=True)
+    fortblind_polygon = add_text(fortblind_polygon, info_splits["self"]["avg"], ranked_splits, rank_filter, combine_fortblind=True)
+    fortblind_chart = get_chart(
+        info_splits["timesaves"],
+        info_splits["self"]["wins"],
+        info_splits["opp"]["wins"],
+        insight.get_avg_opponent_elo(uuid, detailed_matches),
+        combine_fortblind=True,
+    )
+
     comments = {}
     comments["title"] = f"Split Performance"
     comments["description"] = (
@@ -62,22 +85,22 @@ def main(uuid, detailed_matches, elo, player_season, num_comps, rank_filter, spl
         )
     comments["best"], comments["worst"] = get_best_worst(ranked_splits, info_splits["self"]["avg"])
 
-    return comments, polygon, chart
+    return comments, polygon, chart, fortblind_polygon, fortblind_chart
 
 
 def get_avg_splits(uuid, detailed_matches):
     info_splits = {
         "self": {
-            "completions": EMPTY_SPLITS.copy(),
-            "time": EMPTY_SPLITS.copy(),
-            "avg": EMPTY_SPLITS.copy(),
-            "wins": EMPTY_SPLITS_ENDLESS.copy(),
+            "completions": EMPTY_SPLITS_F.copy(),
+            "time": EMPTY_SPLITS_F.copy(),
+            "avg": EMPTY_SPLITS_F.copy(),
+            "wins": EMPTY_SPLITS_ENDLESS_F.copy(),
         },
         "opp": {
-            "completions": EMPTY_SPLITS.copy(),
-            "time": EMPTY_SPLITS.copy(),
-            "avg": EMPTY_SPLITS.copy(),
-            "wins": EMPTY_SPLITS_ENDLESS.copy(),
+            "completions": EMPTY_SPLITS_F.copy(),
+            "time": EMPTY_SPLITS_F.copy(),
+            "avg": EMPTY_SPLITS_F.copy(),
+            "wins": EMPTY_SPLITS_ENDLESS_F.copy(),
         },
         "timesaves": None
     }
@@ -94,7 +117,7 @@ def get_avg_splits(uuid, detailed_matches):
         }
     }
     death_opportunities = EMPTY_SPLITS.copy()
-    timesaves = {split: [] for split in NULL_SPLITS_ENDLESS}
+    timesaves = {split: [] for split in SPLITS_FNE}
     event_mapping = {
         "story.enter_the_nether": "nether",
         "nether.find_bastion": "bastion",
@@ -115,8 +138,13 @@ def get_avg_splits(uuid, detailed_matches):
 
         prev_event_persistent = {"self": "ow", "opp": "ow"}
         prev_time_persistent = {"self": 0, "opp": 0}
-        seen_splits = {"self": [], "opp": []}
-        split_times_persistent = {"self": NULL_SPLITS_ENDLESS.copy(), "opp": NULL_SPLITS_ENDLESS.copy()}
+        seen_splits = {"self": set(), "opp": set()}
+        split_times_persistent = {"self": NULL_SPLITS_ENDLESS_F.copy(), "opp": NULL_SPLITS_ENDLESS_F.copy()}
+
+        in_fort = {"self": False, "opp": False}
+        fort_time = {"self": 0, "opp": 0}
+        entered_fort = {"self": False, "opp": False}
+        first_fort_time = {"self": 0, "opp": 0}
 
         for event in reversed(match["timelines"]):
             player_type = "self" if event["uuid"] == uuid else "opp"
@@ -126,6 +154,7 @@ def get_avg_splits(uuid, detailed_matches):
                 prev_event[player_type] = "ow"
                 death_splits[player_type]["enters"][prev_event[player_type]] += 1
                 death_opportunities[prev_event[player_type]] += 1
+                in_fort[player_type] = False
 
             elif event["type"] in event_mapping:
                 split_length = event["time"] - prev_time[player_type]
@@ -137,7 +166,6 @@ def get_avg_splits(uuid, detailed_matches):
                 prev_event[player_type] = event_mapping[event["type"]]
 
                 if event["type"] not in seen_splits[player_type]:
-                    seen_splits[player_type].append(event["type"])
                     split_length_persistent = event["time"] - prev_time_persistent[player_type]
                     split_times_persistent[player_type][prev_event_persistent[player_type]] = split_length_persistent
                     prev_time_persistent[player_type] = event["time"]
@@ -145,6 +173,23 @@ def get_avg_splits(uuid, detailed_matches):
 
                 death_splits[player_type]["enters"][prev_event[player_type]] += 1
                 death_opportunities[prev_event[player_type]] += 1
+
+                # Fortblind stuff
+                if event["type"] == "nether.find_fortress":
+                    in_fort[player_type] = True
+                    fort_time[player_type] = event["time"]
+                    if not entered_fort[player_type]:
+                        entered_fort[player_type] = True
+                        first_fort_time[player_type] = event["time"]
+
+                if event["type"] == "story.follow_ender_eye":
+                    if in_fort[player_type]:
+                        info_splits[player_type]["completions"]["fortblind"] += 1
+                        info_splits[player_type]["time"]["fortblind"] += event["time"] - fort_time[player_type]
+                    if entered_fort[player_type] and "story.follow_ender_eye" not in seen_splits[player_type]:
+                        split_times_persistent[player_type]["fortblind"] = event["time"] - first_fort_time[player_type]
+
+                seen_splits[player_type].add(event["type"])
 
             elif event["type"] == "projectelo.timeline.death":
                 death_splits[player_type]["count"][prev_event[player_type]] += 1
@@ -155,7 +200,7 @@ def get_avg_splits(uuid, detailed_matches):
             info_splits[player_type]["time"][prev_event[player_type]] += split_length
             info_splits[player_type]["completions"][prev_event[player_type]] += 1
 
-        for split in NULL_SPLITS_ENDLESS:
+        for split in SPLITS_FNE:
             self_time = split_times_persistent["self"][split]
             opp_time = split_times_persistent["opp"][split]
             if self_time is None or opp_time is None:
@@ -173,11 +218,13 @@ def get_avg_splits(uuid, detailed_matches):
     }
 
     for player_type in ("self", "opp"):
-        for split in SPLIT_NAMING:
+        for split in SPLITS_F:
             if info_splits[player_type]["completions"][split] == 0:
                 info_splits[player_type]["avg"][split] = 1000000000000
             else:
                 info_splits[player_type]["avg"][split] = round(info_splits[player_type]["time"][split] / info_splits[player_type]["completions"][split])
+
+        for split in constants.SPLITS:
             if death_splits[player_type]["enters"][split] == 0:
                 death_splits[player_type]["rate"][split] = 0
             else:
@@ -187,7 +234,7 @@ def get_avg_splits(uuid, detailed_matches):
 
 
 def get_ranked_splits(average_splits, rank_filter, splits_final_boss):
-    ranked_splits = EMPTY_SPLITS.copy()
+    ranked_splits = EMPTY_SPLITS_F.copy()
 
     lower, upper = rank.get_boundaries(rank_filter)
 
@@ -211,7 +258,11 @@ def get_ranked_splits(average_splits, rank_filter, splits_final_boss):
     return ranked_splits
 
 
-def get_polygon(ranked_splits):
+def get_polygon(ranked_splits, combine_fortblind=False):
+    angles = ANGLES_F if combine_fortblind else ANGLES
+    splits = SPLITS_F if combine_fortblind else constants.SPLITS
+    sides = SIDES_F if combine_fortblind else SIDES
+
     proportions = [INIT_PROP, INIT_PROP * 4 / 3, INIT_PROP * 2, INIT_PROP * 4, 10000]
 
     polygon_frame = Image.new("RGBA", (IMG_SIZE_X, IMG_SIZE_Y), (0, 0, 0, 0))
@@ -224,12 +275,12 @@ def get_polygon(ranked_splits):
             (math.cos(th) + INIT_PROP) * polygon_size + OFFSET_X,
             (math.sin(th) + INIT_PROP) * polygon_size + OFFSET_Y,
         )
-        for th in ANGLES
+        for th in angles
     ]
     frame_draw.polygon(xy, fill="#413348")
 
     # Drawing the outward lines of the polygon
-    for th in ANGLES:
+    for th in angles:
         polygon_size = MIDDLE / INIT_PROP
         # th = (i * (2 * math.pi) - 0.5 * math.pi) / SIDES
         xy = [
@@ -249,7 +300,7 @@ def get_polygon(ranked_splits):
                 (math.cos(th) + proportion) * polygon_size + OFFSET_X,
                 (math.sin(th) + proportion) * polygon_size + OFFSET_Y,
             )
-            for th in ANGLES
+            for th in angles
         ]
         if proportion == INIT_PROP:
             frame_draw.polygon(xy, outline="#ffffff", width=6)
@@ -261,8 +312,8 @@ def get_polygon(ranked_splits):
 
     # Drawing the player's polygon
     xy = []
-    for i, angle in enumerate(ANGLES):
-        val = ranked_splits[constants.SPLITS[i]]
+    for i, angle in enumerate(angles):
+        val = ranked_splits[splits[i]]
         if val == 0:
             proportion = 100000
         else:
@@ -278,8 +329,8 @@ def get_polygon(ranked_splits):
 
     # Polygonal gradient
     xs, ys = np.meshgrid(np.arange(IMG_SIZE_X) - (MIDDLE + OFFSET_X), np.arange(IMG_SIZE_Y) - (MIDDLE + OFFSET_Y))
-    edge_angles = [angle + math.pi / SIDES for angle in ANGLES]
-    edge_distance = MIDDLE / INIT_PROP * math.cos(math.pi / SIDES)
+    edge_angles = [angle + math.pi / sides for angle in angles]
+    edge_distance = MIDDLE / INIT_PROP * math.cos(math.pi / sides)
     distance = np.max([xs * math.cos(angle) + ys * math.sin(angle) for angle in edge_angles], axis=0) / edge_distance
 
     stops = {0: PERCENTILE_COLOURS[1], 0.25: PERCENTILE_COLOURS[2], 1: PERCENTILE_COLOURS[4]}
@@ -297,10 +348,14 @@ def get_polygon(ranked_splits):
     return polygon
 
 
-def add_text(polygon, average_splits, ranked_splits, rank_filter):
+def add_text(polygon, average_splits, ranked_splits, rank_filter, combine_fortblind=False):
+    angles = ANGLES_F if combine_fortblind else ANGLES
+    splits = SPLITS_F if combine_fortblind else constants.SPLITS
+    sides = SIDES_F if combine_fortblind else SIDES
+    titles = [SPLIT_NAMING[split] for split in splits]
+
     text_prop = INIT_PROP * 0.95
     xy = []
-    titles = ["Overworld", "Nether", "Bastion", "Fortress", "Blind", "Stronghold", "The End"]
 
     big_size = 50
     big_font = ImageFont.truetype("minecraft_font.ttf", big_size)
@@ -326,7 +381,7 @@ def add_text(polygon, average_splits, ranked_splits, rank_filter):
         stroke_width=3,
     )
 
-    for angle in ANGLES:
+    for angle in angles:
         polygon_size = MIDDLE / text_prop
         xy.append(
             [
@@ -335,29 +390,29 @@ def add_text(polygon, average_splits, ranked_splits, rank_filter):
             ]
         )
 
-    for i in range(SIDES):
+    for i in range(sides):
         if i == 0:
             xy[i][1] -= word.horiz_to_vert(title_size) + word.horiz_to_vert(stat_size)
 
-        elif i < math.floor(SIDES / 2):
+        elif i < math.floor(sides / 2):
             xy[i][0] += word.calc_length("Strongholdddld", title_size) / 2
             xy[i][1] -= (
                 word.horiz_to_vert(title_size) / 2 + word.horiz_to_vert(stat_size) / 2
             )
 
-        elif i == math.ceil(SIDES / 2) and SIDES % 2 == 1:
+        elif i == math.ceil(sides / 2) and sides % 2 == 1:
             xy[i][0] -= word.calc_length("Strongholddld", title_size) / 8
 
-        elif i == math.floor(SIDES / 2) and SIDES % 2 == 1:
+        elif i == math.floor(sides / 2) and sides % 2 == 1:
             xy[i][0] += word.calc_length("Strongholddld", title_size) / 8
 
-        elif math.ceil(SIDES / 2) < i:
+        elif math.ceil(sides / 2) < i:
             xy[i][0] -= word.calc_length("Strongholddld", title_size) / 2
             xy[i][1] -= (
                 word.horiz_to_vert(title_size) / 2 + word.horiz_to_vert(stat_size) / 2
             )
 
-    for i in range(SIDES):
+    for i in range(sides):
         s_colour = PERCENTILE_COLOURS[0]
         for j in range(len(PERCENTILES)):
             if ranked_splits[constants.SPLITS[i]] <= PERCENTILES[j]:
@@ -396,19 +451,27 @@ def add_text(polygon, average_splits, ranked_splits, rank_filter):
     return polygon
 
 
-def get_chart(timesaves, self_wins, opp_wins, avg_opp_elo):
+def get_chart(timesaves, self_wins, opp_wins, avg_opp_elo, combine_fortblind=False):
+    splits = SPLITS_FNE if combine_fortblind else SPLITS_NE
+    titles = [SPLIT_NAMING[split] for split in splits]
+    if combine_fortblind:
+        timesaves.pop("fortress")
+        timesaves.pop("blind")
+    else:
+        timesaves.pop("fortblind")
+
     left, right = 120, IMG_SIZE_X - 110
     top, bottom = 160, 700
     zero_y = (top + bottom) / 2
     half_height = (bottom - top) / 2
-    col_width = (right - left) / len(EMPTY_SPLITS_ENDLESS)
+    col_width = (right - left) / len(splits)
     muted = "#b3c4c9"
     self_colour = "#3f82ff"
     opp_colour = "#f12d2d"
     bar_stroke = "#c0e4ff"
     winrate_colour = "#ffff40A0"
     bg_colour = "#413348"
-    bg__stroke = "#515368"
+    bg_stroke = "#515368"
     outline = {"stroke_fill": "#000000", "stroke_width": 2}
 
     label_font = ImageFont.truetype("minecraft_font.ttf", 20)
@@ -416,8 +479,9 @@ def get_chart(timesaves, self_wins, opp_wins, avg_opp_elo):
     big_font = ImageFont.truetype("minecraft_font.ttf", 50)
 
     winrates = {
-        split: self_wins[split] / (self_wins[split] + opp_wins[split]) if self_wins[split] + opp_wins[split] else None
-        for split in EMPTY_SPLITS_ENDLESS
+        split: self_wins[split] / (self_wins[split] + opp_wins[split])
+        if self_wins[split] + opp_wins[split] else None
+        for split in splits
     }
 
     max_timesave = max((abs(timesave) for timesave in timesaves.values() if timesave is not None), default=0)
@@ -448,10 +512,10 @@ def get_chart(timesaves, self_wins, opp_wins, avg_opp_elo):
     frame_draw.rectangle((left, top, right, bottom), fill=bg_colour)
     for i in (-2, -1, 1, 2):
         y = zero_y - i / 2 * half_height
-        frame_draw.line([(left, y), (right, y)], fill=bg__stroke, width=3)
+        frame_draw.line([(left, y), (right, y)], fill=bg_stroke, width=3)
     for i in range(1, len(EMPTY_SPLITS_ENDLESS)):
         x = left + i * col_width
-        frame_draw.line([(x, top), (x, bottom)], fill=bg__stroke, width=3)
+        frame_draw.line([(x, top), (x, bottom)], fill=bg_stroke, width=3)
 
     chart_stats = chart_frame.copy()
 
@@ -490,7 +554,7 @@ def get_chart(timesaves, self_wins, opp_wins, avg_opp_elo):
     chart.alpha_composite(sideways.rotate(90, expand=True))
 
     # Timesave and axis labels
-    for i, split in enumerate(EMPTY_SPLITS_ENDLESS):
+    for i, split in enumerate(splits):
         x0, x1 = left + i * col_width, left + (i + 1) * col_width
         centre_x = (x0 + x1) / 2
         timesave = timesaves[split]

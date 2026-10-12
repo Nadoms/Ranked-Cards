@@ -34,7 +34,7 @@ def main(response, num_comps, detailed_matches, player_season, compare_season, r
         response, detailed_matches, elo, player_season, compare_season, rank_filter, playerbase["stats"]
     )
     then = process_split(then, "Generating insights")
-    split_comm, split_polygon, split_chart = split_insights.main(
+    split_comm, split_polygon, split_chart, fortblind_polygon, fortblind_chart = split_insights.main(
         uuid, detailed_matches, elo, player_season, num_comps, rank_filter, playerbase["split"]
     )
     then = process_split(then, "Recognising split performance")
@@ -57,7 +57,28 @@ def main(response, num_comps, detailed_matches, player_season, compare_season, r
         "bastion": bastion_comm,
     }
 
-    return skin, comments, split_polygon, split_chart, ow_polygon, ow_chart, bastion_polygon, bastion_chart
+    images = {
+        "split": {
+            "performance": {
+                "separate": split_polygon,
+                "combined": fortblind_polygon,
+            },
+            "timesaves": {
+                "separate": split_chart,
+                "combined": fortblind_chart,
+            },
+        },
+        "ow": {
+            "performance": ow_polygon,
+            "timesaves": ow_chart,
+        },
+        "bastion": {
+            "performance": bastion_polygon,
+            "timesaves": bastion_chart,
+        }
+    }
+
+    return skin, comments, images
 
 
 if __name__ == "__main__":
