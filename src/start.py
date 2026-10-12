@@ -1,6 +1,7 @@
 from pathlib import Path
 import subprocess
 import sys
+import threading
 import time
 from datetime import datetime
 
@@ -14,12 +15,23 @@ LOG_DIR.mkdir(exist_ok=True)
 load_dotenv(ROOT.parent / ".env")
 
 
+def log_memory():
+    while True:
+        time.sleep(60)
+        subprocess.run(
+            f"(date +%T; ps -o rss=,vsz= -p $(pgrep -f '^{sys.executable} -u {BOT}'); free -m | tail -2) | paste -sd' ' >> {LOG_DIR}/mem.log",
+            shell=True,
+        )
+
+
 def main():
     subprocess.run(
         f"{sys.executable} -m pip uninstall rankedutils -y && {sys.executable} -m pip install git+https://github.com/Nadoms/ranked-utils.git",
         text=True,
         shell=True,
     )
+
+    threading.Thread(target=log_memory, daemon=True).start()
 
     while True:
         log_path = LOG_DIR / f"bot_{datetime.now().strftime('%m%d-%H%M')}.log"
