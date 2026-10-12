@@ -41,8 +41,8 @@ def main(response, detailed_matches, elo, player_season, compare_season, rank_fi
     general_comments["description"] = (
         f"This is how `{response['nickname']}` stacks up against the {season_str}{rank_filter_str} playerbase. "
         f"Each comparison references at most {get_player_count(rank_filter, stats['elo'])} players."
-        "\nClick [here](https://docs.google.com/document/d/e/2PACX-1vQvNO1Mmf7T2zfaij_rxDsOMUwaVavJcZG68Bfp8-9CkeGyJHoPrvBFxU69apix4E7gVsaV51BiCVwC/pub) for an explanation of what's below. "
-        "[<3](https://ko-fi.com/naddy_mc)"
+        "\nClick [here](https://docs.google.com/document/d/e/2PACX-1vQvNO1Mmf7T2zfaij_rxDsOMUwaVavJcZG68Bfp8-9CkeGyJHoPrvBFxU69apix4E7gVsaV51BiCVwC/pub) for an explanation of what's below."
+        "\n[Support the project <3](https://ko-fi.com/naddy_mc)"
     )
     sb = int(response["statistics"]["season"]["bestTime"]["ranked"])
     avg = games.get_avg_completion(response, "season")
