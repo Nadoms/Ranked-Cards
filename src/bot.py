@@ -1043,7 +1043,7 @@ async def leaderboard_split(
         "split",
         required=True,
         description="The split to display the leaderboard for.",
-        choices=constants.SPLITS,
+        choices=constants.SPLITS + ["fortblind"],
     ),
     season: str = SlashOption(
         "season",
