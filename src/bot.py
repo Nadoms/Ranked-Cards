@@ -85,14 +85,6 @@ class Topics(nextcord.ui.View):
             button.callback = self._make_callback(mode=mode)
             self.buttons[mode] = button
 
-        for fortblind in self.fortblinds:
-            button = nextcord.ui.Button(
-                label=self.button_labels[fortblind],
-                style=self.button_styles[fortblind],
-            )
-            button.callback = self._make_callback(fortblind=fortblind)
-            self.buttons[fortblind] = button
-
         for tab in self.tabs:
             if self.embeds[tab] is None:
                 continue
@@ -102,6 +94,14 @@ class Topics(nextcord.ui.View):
             )
             button.callback = self._make_callback(tab=tab)
             self.buttons[tab] = button
+
+        for fortblind in self.fortblinds:
+            button = nextcord.ui.Button(
+                label=self.button_labels[fortblind],
+                style=self.button_styles[fortblind],
+            )
+            button.callback = self._make_callback(fortblind=fortblind)
+            self.buttons[fortblind] = button
 
         self.update_buttons()
 
