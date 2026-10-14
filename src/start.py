@@ -7,6 +7,8 @@ from datetime import datetime
 
 from dotenv import load_dotenv
 
+from rankedutils import db
+
 ROOT = Path(__file__).resolve().parent
 BOT = ROOT / "bot.py"
 LOG_DIR = ROOT / "logs"
@@ -31,6 +33,8 @@ def main():
         shell=True,
     )
 
+    print(f"Initialising database...")
+    db.main()
     threading.Thread(target=log_memory, daemon=True).start()
 
     while True:

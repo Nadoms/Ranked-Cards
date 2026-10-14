@@ -6,12 +6,12 @@ import sys
 package = path.join("src")
 sys.path.insert(1, package)
 
-from rankedutils import api
+from rankedutils import api, db
 
 
 async def spam_redlime(start, limit):
     print(f"\n***\nLoading latest matches - {datetime.now()}\n***\n")
-    step_size = 100
+    batch_size = 100
     i = start
     old_additions = api.Match._additions
     new_additions = 0
@@ -29,18 +29,18 @@ async def spam_redlime(start, limit):
             return
 
     while True:
-        print(f"Loading matches {i} to {i + step_size} / Total: {new_additions}")
+        print(f"Loading matches {i} to {i + batch_size} / Total: {new_additions}")
         k = 0
 
         try:
             matches = await asyncio.gather(
                 *[
                     safe_get_async(j)
-                    for j in range(i, i + step_size)
+                    for j in range(i, i + batch_size)
                 ]
             )
             matches = [m for m in matches if m is not None]
-            k += step_size
+            k += batch_size
             if new_additions >= limit:
                 new_additions = api.Match.commit() - old_additions
                 print("Limit reached, total loaded:", new_additions)
@@ -55,7 +55,59 @@ async def spam_redlime(start, limit):
         if matches == []:
             print("Up-to-date, total loaded:", new_additions)
             return i
-        i += step_size
+        i += batch_size
+
+
+async def spam_redlime_more(start, limit):
+    print(f"\n***\nReloading matches - {datetime.now()}\n***\n")
+    conn, cursor = api.Match._conn, api.Match._cursor
+    batch_size = 10
+    count_size = 100
+    i = start
+    last_id = start - 1
+    new_additions = 0
+
+    while True:
+        print(f"Updating matches {i} to {i + count_size * batch_size} / Total: {new_additions}")
+
+        try:
+            matches_collection = await asyncio.gather(
+                *[
+                    api.RecentMatches(before=j, excludedecay=False).get_async()
+                    for j in range(i, i + count_size * batch_size, count_size)
+                ]
+            )
+            matches = [m for ms in matches_collection for m in ms if m["id"] >= i]
+            matches.sort(key=lambda m: m["id"])
+
+            for match in matches:
+                db.update_match_lite(cursor, match)
+                for id in range(last_id + 1, match["id"]):
+                    try:
+                        await api.Match(id).get_async(force_request=True)
+                        await api.Match(id).get_async()
+                        print(f"Located missing match ({id})")
+                    except api.APINotFoundError:
+                        db.delete_match(cursor, id)
+                        print(f"Deleted cheated match ({id})")
+                last_id = match["id"]
+
+            conn.commit()
+            new_additions += len(matches)
+            if new_additions >= limit:
+                print("Limit reached, total updated:", new_additions)
+                return last_id
+        except (api.APIError) as e:
+            conn.commit()
+            print(e)
+            print("Error occurred, total updated:", new_additions)
+            return last_id
+
+        if matches == []:
+            print("Up-to-date, total updated:", new_additions)
+            return last_id
+        i += count_size * batch_size
+
 
 def main():
     asyncio.run(spam_redlime(1499237, 1000))
