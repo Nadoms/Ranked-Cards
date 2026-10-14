@@ -6,7 +6,7 @@ import sys
 package = path.join("src")
 sys.path.insert(1, package)
 
-from rankedutils import api, db
+from rankedutils import api, db, games
 
 
 async def spam_redlime(start, limit):
@@ -71,22 +71,26 @@ async def spam_redlime_more(start, limit):
         print(f"Updating matches {i} to {i + count_size * batch_size} / Total: {new_additions}")
 
         try:
-            matches_collection = await asyncio.gather(
-                *[
-                    api.RecentMatches(before=j, excludedecay=False).get_async()
-                    for j in range(i, i + count_size * batch_size, count_size)
-                ]
-            )
-            matches = [m for ms in matches_collection for m in ms if m["id"] >= i]
+            start_season = games.id_to_season(i)
+            end_season = games.id_to_season(i + count_size * batch_size)
+            matches_collection = []
+            for season in range(start_season, end_season + 1):
+                matches_collection += await asyncio.gather(
+                    *[
+                        api.RecentMatches(before=j, excludedecay=False, season=season).get_async()
+                        for j in range(i, i + count_size * batch_size, count_size)
+                    ]
+                )
+            matches = [m for ms in matches_collection for m in ms]
             matches.sort(key=lambda m: m["id"])
 
             for match in matches:
                 db.update_match_lite(cursor, match)
                 for id in range(last_id + 1, match["id"]):
                     try:
-                        await api.Match(id).get_async(force_request=True)
-                        await api.Match(id).get_async()
-                        print(f"Located missing match ({id})")
+                        match_api = api.Match(id)
+                        if match_api.exists_db():
+                            await match_api.get_async(force_request=True)
                     except api.APINotFoundError:
                         db.delete_match(cursor, id)
                         print(f"Deleted cheated match ({id})")

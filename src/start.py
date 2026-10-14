@@ -27,11 +27,11 @@ def log_memory():
 
 
 def main():
-    subprocess.run(
-        f"{sys.executable} -m pip uninstall rankedutils -y && {sys.executable} -m pip install git+https://github.com/Nadoms/ranked-utils.git",
-        text=True,
-        shell=True,
-    )
+    # subprocess.run(
+    #     f"{sys.executable} -m pip uninstall rankedutils -y && {sys.executable} -m pip install git+https://github.com/Nadoms/ranked-utils.git",
+    #     text=True,
+    #     shell=True,
+    # )
 
     print(f"Initialising database...")
     db.main()
