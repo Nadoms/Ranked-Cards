@@ -1,11 +1,11 @@
 {
     "stats": {
-        "totalCommands": 311171,
-        "totalGenerated": 299691,
+        "totalCommands": 311210,
+        "totalGenerated": 299730,
         "connectedUsers": 5439,
         "totalHidden": 2070,
         "cards": {
-            "success": 28483,
+            "success": 28484,
             "fail": 1964
         },
         "plots": {
@@ -17,7 +17,7 @@
             "fail": 464
         },
         "analyses": {
-            "success": 206176,
+            "success": 206210,
             "fail": 22953
         },
         "races": {
@@ -25,7 +25,7 @@
             "fail": 1
         },
         "leaderboards": {
-            "success": 17764,
+            "success": 17768,
             "fail": 57
         },
         "lives": {
