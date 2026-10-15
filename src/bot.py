@@ -153,8 +153,9 @@ class Topics(nextcord.ui.View):
                     for fortblind in self.fortblinds:
                         if self.images[tab][mode] is not None:
                             self.images[tab][mode][fortblind].close()
-                if self.images[tab][mode] is not None:
-                    self.images[tab][mode].close()
+                else:
+                    if self.images[tab][mode] is not None:
+                        self.images[tab][mode].close()
 
     def set_embed_image(self, embed, image):
         filename = f"{self.tab}{('_' + self.fortblind[0]) if self.tab == 'split' else ''}_{self.mode[0]}.png"
