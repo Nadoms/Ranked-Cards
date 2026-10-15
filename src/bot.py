@@ -1,7 +1,3 @@
-import tracemalloc
-
-tracemalloc.start(10)
-
 import asyncio
 from io import BytesIO
 import math
@@ -2161,17 +2157,7 @@ async def analysis_loop():
         await asyncio.sleep(86400)
 
 
-async def trace_loop():
-    base = tracemalloc.take_snapshot()
-    while True:
-        await asyncio.sleep(600)
-        print("[trace] top growth since start:")
-        for stat in tracemalloc.take_snapshot().compare_to(base, "lineno")[:10]:
-            print(f"[trace] {stat}")
-
-
 if not TESTING_MODE:
-    bot.loop.create_task(trace_loop())
     bot.loop.create_task(fetch_loop())
     bot.loop.create_task(suggestions_loop())
     bot.loop.create_task(analysis_loop())
