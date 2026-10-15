@@ -149,8 +149,9 @@ class Topics(nextcord.ui.View):
         await self.interaction.edit_original_message(view=self)
         for tab in self.images:
             for mode in self.images[tab]:
-                if self.images[tab][mode] is not None:
-                    self.images[tab][mode].close()
+                image = self.images[tab][mode] if tab != "split" else self.images[tab][mode][fortblind]
+                if image is not None:
+                    image.close()
 
     def set_embed_image(self, embed, image):
         filename = f"{self.tab}{('_' + self.fortblind[0]) if self.tab == 'split' else ''}_{self.mode[0]}.png"
