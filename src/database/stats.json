@@ -1,7 +1,7 @@
 {
     "stats": {
-        "totalCommands": 311210,
-        "totalGenerated": 299730,
+        "totalCommands": 311225,
+        "totalGenerated": 299745,
         "connectedUsers": 5439,
         "totalHidden": 2070,
         "cards": {
@@ -17,8 +17,8 @@
             "fail": 464
         },
         "analyses": {
-            "success": 206210,
-            "fail": 22953
+            "success": 206224,
+            "fail": 22954
         },
         "races": {
             "success": 210,
