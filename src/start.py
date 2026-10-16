@@ -40,7 +40,7 @@ def main():
     while True:
         log_path = LOG_DIR / f"bot_{datetime.now().strftime('%m%d-%H%M')}.log"
         process = subprocess.run(
-            f"{sys.executable} -u {BOT} 2>&1 | tee {log_path}",
+            f"MALLOC_MMAP_THRESHOLD_=131072 {sys.executable} -u {BOT} 2>&1 | tee {log_path}",
             text=True,
             shell=True,
         )

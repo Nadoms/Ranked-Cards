@@ -1,4 +1,5 @@
 import asyncio
+import ctypes
 from io import BytesIO
 import math
 from pathlib import Path
@@ -2135,6 +2136,7 @@ async def fetch_loop():
         with open(DATABASE_DIR / "last_id.txt", "w") as f:
             f.write(f"{latest_reload}\n{latest_load}")
         await asyncio.sleep(repeat)
+        # ctypes.CDLL("libc.so.6").malloc_trim(0)
 
 
 async def suggestions_loop():
