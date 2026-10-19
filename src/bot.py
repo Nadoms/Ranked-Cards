@@ -144,6 +144,7 @@ class Topics(nextcord.ui.View):
             file=file,
             view=self,
         )
+        self._View__timeout_expiry -= self.timeout
 
     async def on_timeout(self):
         self.clear_items()
