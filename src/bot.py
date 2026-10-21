@@ -46,7 +46,12 @@ bot = commands.Bot(
 
 
 class Topics(nextcord.ui.View):
-    def __init__(self, interaction, embeds, images):
+    def __init__(
+        self,
+        interaction: Interaction,
+        embeds: dict[str, Embed],
+        images: dict[str, any]
+    ):
         super().__init__(timeout=840)
         self.tab = "split"
         self.mode = "performance"
@@ -132,6 +137,7 @@ class Topics(nextcord.ui.View):
         mode: str | None,
         fortblind: str | None,
     ):
+        self.interaction.response.defer()
         self.tab = tab if tab else self.tab
         self.mode = mode if mode else self.mode
         self.fortblind = fortblind if fortblind else self.fortblind
@@ -139,7 +145,7 @@ class Topics(nextcord.ui.View):
         self.update_buttons()
         image = self.images[self.tab][self.mode] if self.tab != "split" else self.images[self.tab][self.mode][self.fortblind]
         file = self.set_embed_image(self.embeds[self.tab], image)
-        await interaction.response.edit_message(
+        await self.interaction.edit_original_message(
             embeds=[self.general_embed, self.embeds[self.tab]],
             file=file,
             view=self,
