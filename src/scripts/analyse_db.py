@@ -158,12 +158,14 @@ def collect_matches(season, cursor):
                 stats["cmptime"][uuid] = 0
                 stats["completions"][uuid] = 0
                 stats["sb"][uuid] = result_time
-                completion_history[uuid] = []
+                if seed_id:
+                    completion_history[uuid] = []
             stats["cmptime"][uuid] += result_time
             stats["completions"][uuid] += 1
             if result_time < stats["sb"][uuid]:
                 stats["sb"][uuid] = result_time
-            completion_history[uuid].append((seed_id, result_time))
+            if seed_id:
+                completion_history[uuid].append((seed_id, result_time))
 
         if uuid not in last_ids:
             last_ids[uuid] = 0
@@ -218,6 +220,9 @@ def collect_matches(season, cursor):
 
 
 def compute_seed_scores(completion_history):
+    if not completion_history:
+        return {}
+
     seed_run_scores = {}
     seed_scores = {}
     for uuid in completion_history:
