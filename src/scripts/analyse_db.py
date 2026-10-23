@@ -53,12 +53,13 @@ def collect_matches(season, cursor):
     last_runs_processed = 0
     runs_processed = 0
     then = datetime.now()
+    completion_history = {}
 
     run_info = db.query_db(
         cursor=cursor,
         table="matches m",
         items=(
-            "m.id, m.seedType, m.bastionType, m.result_uuid, m.forfeited, m.time,"
+            "m.id, m.seedType, m.bastionType, m.result_uuid, m.forfeited, m.time, m.seed_id,"
             "r.player_uuid, r.timeline, r.eloRate, r.change"
         ),
         join="runs r ON r.match_id = m.id",
@@ -73,7 +74,7 @@ def collect_matches(season, cursor):
             then = now
             last_runs_processed = runs_processed
 
-        match_id, seed_type, bastion_type, result_uuid, forfeited, result_time, uuid, timeline, old_elo, change = run
+        match_id, seed_type, bastion_type, result_uuid, forfeited, result_time, seed_id, uuid, timeline, old_elo, change = run
         timeline = json.loads(timeline)
         curr_split = "ow"
         prev_time = 0
@@ -157,10 +158,12 @@ def collect_matches(season, cursor):
                 stats["cmptime"][uuid] = 0
                 stats["completions"][uuid] = 0
                 stats["sb"][uuid] = result_time
+                completion_history[uuid] = []
             stats["cmptime"][uuid] += result_time
             stats["completions"][uuid] += 1
             if result_time < stats["sb"][uuid]:
                 stats["sb"][uuid] = result_time
+            completion_history[uuid].append((seed_id, result_time))
 
         if uuid not in last_ids:
             last_ids[uuid] = 0
@@ -209,7 +212,69 @@ def collect_matches(season, cursor):
 
         runs_processed += 1
 
-    return times, nums, stats, runs_processed
+    seed_scores = compute_seed_scores(completion_history)
+
+    return times, nums, stats, runs_processed, seed_scores
+
+
+def compute_seed_scores(completion_history):
+    seed_run_scores = {}
+    seed_scores = {}
+    for uuid in completion_history:
+        for i, (seed_id, _) in enumerate(sorted(completion_history[uuid], key=lambda x: x[1])):
+            if len(completion_history[uuid]) == 1:
+                run_score = 0.5
+            else:
+                run_score = 1 - (i / (len(completion_history[uuid]) - 1))
+            if seed_id not in seed_run_scores:
+                seed_run_scores[seed_id] = []
+            seed_run_scores[seed_id].append(run_score)
+    seed_scores = {
+        seed_id: {
+            "score": round(sum(seed_run_scores[seed_id]) / len(seed_run_scores[seed_id]), 3),
+            "count": len(seed_run_scores[seed_id])
+        }
+        for seed_id in seed_run_scores
+    }
+
+    return seed_scores
+
+
+def update_seed(seed_id, seed_score, season, cursor):
+    seed_info = db.query_db(
+        cursor=cursor,
+        table="seeds",
+        items=(
+            "past_score, past_count, current_score, current_count, seasons"
+        ),
+        id=seed_id,
+    )
+
+    past_score, past_count, current_score, current_count, seasons = seed_info
+    seasons_analysed = json.loads(seasons)
+    if season in seasons_analysed:
+        return
+
+    if season != constants.SEASON:
+        past_score += (seed_score["score"] * seed_score["count"] + past_score * past_count) / past_count + seed_score["count"]
+        past_count += seed_score["count"]
+        seasons_analysed.append(season)
+        seasons_analysed.sort()
+    else:
+        current_score = seed_score["score"]
+        current_count = seed_score["count"]
+
+    db.update_seed(
+        cursor,
+        seed_id,
+        {
+            "past_score": past_score,
+            "past_count": past_count,
+            "current_score": current_score,
+            "current_count": current_count,
+            "seasons": json.dumps(seasons_analysed),
+        }
+    )
 
 
 async def analyse(season, filename="playerbase.json"):
@@ -242,7 +307,7 @@ async def analyse(season, filename="playerbase.json"):
 
     conn, cursor = db.start(PROJECT_DIR / "database" / "ranked.db")
     print(f"\nCollecting runs - {datetime.now()}")
-    times, nums, stats, runs = collect_matches(season, cursor)
+    times, nums, stats, runs, seed_scores = collect_matches(season, cursor)
     print(f"Finished collecting {runs} runs")
 
     training_data = {
@@ -361,6 +426,9 @@ async def analyse(season, filename="playerbase.json"):
             filename
         )
         await asyncio.sleep(1)
+
+    for seed_id in seed_scores:
+        update_seed(seed_id, seed_scores[seed_id], season, cursor)
 
     conn.close()
 
