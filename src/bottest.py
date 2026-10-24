@@ -48,8 +48,17 @@ async def analysis_command(args):
     rank_filter = rank.str_to_rank(args.rank_filter)
     images = analysing.main(
         response, num_comps, detailed_matches, args.season, compare_season, rank_filter
-    )[2:]
-    return [image for image in images if image is not None]
+    )[2]
+    return [
+        images["split"]["performance"]["separate"],
+        images["split"]["performance"]["combined"],
+        images["split"]["timesaves"]["separate"],
+        images["split"]["timesaves"]["combined"],
+        images["ow"]["performance"],
+        images["ow"]["timesaves"],
+        images["bastion"]["performance"],
+        images["bastion"]["timesaves"],
+    ]
 
 
 def main():
@@ -85,7 +94,6 @@ def main():
 
     for i, image in enumerate(asyncio.run(command_map[args.command](args))):
         image.save(f"test{i}.png")
-        image.show()
 
 
 if __name__ == "__main__":
