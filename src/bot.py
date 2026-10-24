@@ -137,7 +137,7 @@ class Topics(nextcord.ui.View):
         mode: str | None,
         fortblind: str | None,
     ):
-        self.interaction.response.defer()
+        # interaction.response.defer()
         self.tab = tab if tab else self.tab
         self.mode = mode if mode else self.mode
         self.fortblind = fortblind if fortblind else self.fortblind
@@ -150,7 +150,7 @@ class Topics(nextcord.ui.View):
             file=file,
             view=self,
         )
-        self._View__timeout_expiry -= self.timeout
+        # self._View__timeout_expiry -= self.timeout
 
     async def on_timeout(self):
         self.clear_items()
