@@ -440,6 +440,7 @@ async def analyse(season, filename="playerbase.json"):
         )
         await asyncio.sleep(1)
 
+    print(f"\nUpdating seed scores - {datetime.now()}")
     for seed_id in seed_scores:
         update_seed(seed_id, seed_scores[seed_id], season, cursor)
 
@@ -449,4 +450,11 @@ async def analyse(season, filename="playerbase.json"):
 
 
 if __name__ == "__main__":
-    asyncio.run(analyse(constants.SEASON))
+    asyncio.run(analyse(5))
+    asyncio.run(analyse(6))
+    asyncio.run(analyse(7))
+    asyncio.run(analyse(4))
+    asyncio.run(analyse(3))
+    asyncio.run(analyse(11))
+    asyncio.run(analyse(12))
+    asyncio.run(analyse(10))
