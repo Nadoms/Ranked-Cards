@@ -158,13 +158,13 @@ def collect_matches(season, cursor):
                 stats["cmptime"][uuid] = 0
                 stats["completions"][uuid] = 0
                 stats["sb"][uuid] = result_time
-                if seed_id:
-                    completion_history[uuid] = []
             stats["cmptime"][uuid] += result_time
             stats["completions"][uuid] += 1
             if result_time < stats["sb"][uuid]:
                 stats["sb"][uuid] = result_time
             if seed_id:
+                if uuid not in completion_history:
+                    completion_history[uuid] = []
                 completion_history[uuid].append((seed_id, result_time))
 
         if uuid not in last_ids:
@@ -253,15 +253,22 @@ def update_seed(seed_id, seed_score, season, cursor):
             "past_score, past_count, current_score, current_count, seasons"
         ),
         id=seed_id,
-    )
+    ).fetchone()
+
+    if seed_info is None:
+        return
 
     past_score, past_count, current_score, current_count, seasons = seed_info
+    if past_score is None:
+        past_score = past_count = current_score = current_count = 0
+        seasons = "[]"
+
     seasons_analysed = json.loads(seasons)
     if season in seasons_analysed:
         return
 
     if season != constants.SEASON:
-        past_score += (seed_score["score"] * seed_score["count"] + past_score * past_count) / past_count + seed_score["count"]
+        past_score = (seed_score["score"] * seed_score["count"] + past_score * past_count) / (past_count + seed_score["count"])
         past_count += seed_score["count"]
         seasons_analysed.append(season)
         seasons_analysed.sort()
@@ -278,7 +285,8 @@ def update_seed(seed_id, seed_score, season, cursor):
             "current_score": current_score,
             "current_count": current_count,
             "seasons": json.dumps(seasons_analysed),
-        }
+        },
+        overwrite=True
     )
 
 
@@ -435,7 +443,7 @@ async def analyse(season, filename="playerbase.json"):
     for seed_id in seed_scores:
         update_seed(seed_id, seed_scores[seed_id], season, cursor)
 
-    conn.close()
+    db.finish(conn)
 
     print(f"\n***\nAnalysis and Training Complete (S{season}) - {datetime.now()}\n***\n")
 
