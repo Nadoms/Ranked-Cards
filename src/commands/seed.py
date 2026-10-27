@@ -1,27 +1,16 @@
 from datetime import datetime, time, timedelta, timezone
 import json
+import math
 
 from nextcord import Embed, Colour
 
-from rankedutils import rank, constants, db, insight
+from rankedutils import rank, constants, db, insight, numb
+
+MATCHES_PER_PAGE = 15
+MATCH_TYPES = {1: "Casual", 2: "Ranked", 3: "Private", 4: "Other"}
 
 
-def main(seed_identifier: str):
-    conn, cursor = db.start()
-
-    if seed_identifier.isnumeric():
-        (seed_identifier,) = db.query_db(
-            cursor,
-            items="seed_id",
-            id=int(seed_identifier)
-        ).fetchone()
-
-    seed_info = db.query_db(
-        cursor,
-        table="seeds",
-        items="id, overworld, bastion, structure_type, structure_contents, triples, singles, small_singles, good_gaps, past_score, past_count, current_score, current_count, word_id",
-        where=f"id == {seed_identifier} or word_id == {seed_identifier}"
-    ).fetchone()
+def main(seed_info: tuple, cursor):
     (
         seed_id,
         overworld,
@@ -43,16 +32,14 @@ def main(seed_identifier: str):
         cursor,
         items="id, type, category, result_uuid, time, forfeited, season, date",
         seed_id=seed_id,
-        order="type, forfeited, time"
-    )
+        order="id"
+    ).fetchall()
     seed_score = insight.get_seed_score(past_score, past_count, current_score, current_count)
 
     seed_embed = Embed(
         title=f"Seed Info: `{word_id}`",
         description=(
             f"`{word_id}` has been played in {len(matches_info)} matches."
-            f"Overworld type: `{overworld.lower().replace('_', ' ').capitalize()}`"
-            f"\nBastion type: `{bastion.lower().replace('_', ' ').capitalize()}`"
         ),
         colour=Colour.brand_red()
     )
@@ -61,6 +48,27 @@ def main(seed_identifier: str):
         value="",
         inline=True,
     )
+
+    completions = [match[4] for match in matches_info if not match[5] and match[3] and match[1] == 2]
+
+    if matches_info:
+        played_dates = [match[7] for match in matches_info]
+        seed_history = (
+            f"First played: <t:{min(played_dates)}:f>"
+            f"\nLast played: <t:{max(played_dates)}:f>"
+            f"\nTimes played: `{len(matches_info)}`"
+            f"\nCompletions (Ranked): `{len(completions)}`"
+        )
+        if completions:
+            seed_history += (
+                f"\nAverage completion (Ranked): `{numb.digital_time(round(sum(completions) / len(completions)))}`"
+                f"\nFastest completion (Ranked): `{numb.digital_time(min(completions))}`"
+            )
+        seed_embed.add_field(
+            name="Seed history",
+            value=seed_history,
+            inline=False,
+        )
 
     item_mapping = {
         "egap": "a notch apple",
@@ -83,7 +91,7 @@ def main(seed_identifier: str):
         ow_info_list.append("Contains " + ", ".join(structure_contents[:-1]) + " and " + structure_contents[-1])
     ow_info = "\n".join(ow_info_list)
     seed_embed.add_field(
-        name=f"Overworld type: {overworld.lower().capitalize()}",
+        name=f"Overworld type: {overworld.lower().replace('_', ' ').capitalize()}",
         value=ow_info,
         inline=True,
     )
@@ -100,52 +108,71 @@ def main(seed_identifier: str):
         inline=True,
     )
 
-    for match_id, type, category, result_uuid, time, forfeited, season, date in matches_info:
+    matches_embeds = []
+    page_count = math.ceil(len(matches_info) / MATCHES_PER_PAGE)
+
+    if len(matches_info) == 0:
+        matches_embeds.append(
+            Embed(
+                title=f"`{word_id}`'s match history",
+                colour=Colour.brand_red()
+            ).set_footer(
+                text=constants.FOOTER_TEXT,
+                icon_url=constants.FOOTER_ICON,
+            ).add_field(name="No matches have ever been played on this seed.", value="", inline=False)
+        )
+
+    for i, (match_id, match_type, category, result_uuid, match_time, forfeited, season, date) in enumerate(matches_info):
+        if i % MATCHES_PER_PAGE == 0:
+            matches_embed = Embed(
+                title=f"`{word_id}`'s match history ({i // MATCHES_PER_PAGE + 1}/{page_count})",
+                colour=Colour.brand_red()
+            ).set_footer(
+                text=constants.FOOTER_TEXT,
+                icon_url=constants.FOOTER_ICON,
+            )
+            matches_embeds.append(matches_embed)
+
         runs_info = db.query_db(
             cursor,
             table="runs",
-            items="uuid",
+            items="players.nickname, runs.eloRate, runs.player_uuid",
+            join="players ON players.uuid = runs.player_uuid",
             match_id=match_id
-        )
-        nick = db.query_db(
-            cursor,
-            table="players",
-            items="nickname",
-            uuid=uuid
-        ).fetchone()
-        name = ""
-        value = ""
+        ).fetchall()
 
-        # none of this works atm its just copied over
-        player_tags = []
-        player_links = []
-        for player in sorted(
-            match["players"],
-            key=lambda x: x["eloRate"] if x["eloRate"] is not None else 0,
-            reverse=True
-        ):
-            player_rank = rank.get_rank(player["eloRate"])
-            rank_emote = rank.get_emote(player_rank)
-            player_tags.append(
-                f"{rank_emote} "
-                f"#{player['eloRank']} "
-                f"{player['nickname']}"
-            )
-            player_links.append(
-                f"[{player['nickname']}]"
-                f"({match['data'][player['uuid']]['liveUrl']})"
-            )
-        name = " vs ".join(player_tags)
-        value = ", ".join(player_links)
+        match_type_txt = MATCH_TYPES[match_type]
+        if match_type == 3 and category != "ANY":
+            match_type_txt += f" ({category.lower().replace('_', ' ').capitalize()})"
+        name = f"Match {match_id} • S{season} • {match_type_txt}"
 
-        timestamp = int(time() - match["currentTime"] / 1000)
-        value += f"\nMatch began <t:{timestamp}:R>."
+        if match_type == 3:
+            player_names = [f"`{nickname}`" for nickname, elo, player_uuid in runs_info]
+            players_line = ", ".join(player_names[:-1]) + " and " + player_names[-1] if len(player_names) > 1 else "".join(player_names)
+        else:
+            player_tags = [
+                f"`{nickname}`" + (f" ({elo})" if elo else "")
+                for nickname, elo, player_uuid in runs_info
+            ]
+            emotes = [
+                "🤝" if not result_uuid else "👑" if player_uuid == result_uuid else "🥀"
+                for nickname, elo, player_uuid in runs_info
+            ]
+            players_line = f"{player_tags[0]} {emotes[0]} vs {emotes[1]} {player_tags[1]}"
 
-        embed.add_field(name=name, value=value, inline=False)
+        if forfeited:
+            result_line = f"Forfeited at {numb.digital_time(match_time)}"
+        elif result_uuid:
+            result_line = f"Completed in {numb.digital_time(match_time)}"
+        else:
+            result_line = f"Drawn at {numb.digital_time(match_time)}"
+        value = f"{players_line}\n{result_line}\n[Match link](https://mcsrranked.com/stats/{match_id})"
 
-    embed.set_footer(
+        matches_embed.add_field(name=name, value=value, inline=False)
+
+    seed_embed.set_footer(
         text=constants.FOOTER_TEXT,
         icon_url=constants.FOOTER_ICON,
     )
 
-    return embed
+    return seed_embed, matches_embeds
