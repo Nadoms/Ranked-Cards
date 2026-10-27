@@ -1,4 +1,5 @@
 from datetime import datetime, time, timedelta, timezone
+import json
 
 from nextcord import Embed, Colour
 
@@ -37,9 +38,10 @@ def main(seed_identifier: str):
         current_count,
         word_id
     ) = seed_info
+    structure_contents = json.loads(structure_contents)
     matches_info = db.query_db(
         cursor,
-        items="id, type, category, result_uuid, time, forfeited, decayed, season, date",
+        items="id, type, category, result_uuid, time, forfeited, season, date",
         seed_id=seed_id,
         order="type, forfeited, time"
     )
@@ -59,32 +61,46 @@ def main(seed_identifier: str):
         value="",
         inline=True,
     )
-    if overworld != "TREASURE":
-        bastion_info = (
-            f"Triples: `{triples if triples else 0}`"
-            f"\n{'Doubles' if bastion == 'STABLES' else 'Singles'}: `{singles if singles else 0}`"
-            f"\n{'Singles' if bastion == 'STABLES' else 'Ruins'}: `{small_singles if small_singles else 0}`"
-            f"\nGood gaps: `{good_gaps if good_gaps else 0}`" if bastion == "STABLES" else ""
-        ),
-        seed_embed.add_field(
-            name="Bastion info",
-            value=bastion_info,
-            inline=True,
-        )
-    if bastion != "TREASURE":
-        bastion_info = (
-            f"Triples: `{triples if triples else 0}`"
-            f"\n{'Doubles' if bastion == 'STABLES' else 'Singles'}: `{singles if singles else 0}`"
-            f"\n{'Singles' if bastion == 'STABLES' else 'Ruins'}: `{small_singles if small_singles else 0}`"
-            f"\nGood gaps: `{good_gaps if good_gaps else 0}`" if bastion == "STABLES" else ""
-        ),
-        seed_embed.add_field(
-            name="Bastion info",
-            value=bastion_info,
-            inline=True,
-        )
 
-    for match_id, type, category, result_uuid, time, forfeited, decayed, season, date in matches_info:
+    item_mapping = {
+        "egap": "a notch apple",
+        "looting_sword": "a looting sword (!!)",
+        "obsidian": "obsidian",
+        "golden_carrot": "golden carrots",
+        "diamond": "diamonds",
+        "carrot": "carrots",
+        "completable": "Obsidian-completable",
+        "lava": "Lava-completable",
+        "full": "Regular ship w/ mast",
+        "upsidedown": "Upside down ship",
+        "sideways": "Sideways ship",
+        "normal": "Regular ship",
+    }
+    ow_info_list = []
+    if structure_type:
+        ow_info_list.append(item_mapping[structure_type])
+    if structure_contents:
+        ow_info_list.append("Contains " + ", ".join(structure_contents[:-1]) + " and " + structure_contents[-1])
+    ow_info = "\n".join(ow_info_list)
+    seed_embed.add_field(
+        name=f"Overworld type: {overworld.lower().capitalize()}",
+        value=ow_info,
+        inline=True,
+    )
+
+    bastion_info = (
+        f"Triples: `{triples if triples else 0}`"
+        f"\n{'Doubles' if bastion == 'STABLES' else 'Singles'}: `{singles if singles else 0}`"
+        f"\n{'Singles' if bastion == 'STABLES' else 'Ruins'}: `{small_singles if small_singles else 0}`"
+        f"\nGood gaps: `{good_gaps if good_gaps else 0}`" if bastion == "STABLES" else ""
+    ) if bastion != "TREASURE" else ""
+    seed_embed.add_field(
+        name=f"Bastion type: {bastion.lower().capitalize()}",
+        value=bastion_info,
+        inline=True,
+    )
+
+    for match_id, type, category, result_uuid, time, forfeited, season, date in matches_info:
         runs_info = db.query_db(
             cursor,
             table="runs",
@@ -100,6 +116,7 @@ def main(seed_identifier: str):
         name = ""
         value = ""
 
+        # none of this works atm its just copied over
         player_tags = []
         player_links = []
         for player in sorted(
@@ -126,11 +143,6 @@ def main(seed_identifier: str):
 
         embed.add_field(name=name, value=value, inline=False)
 
-    embed.add_field(
-        name="Want to show up when you're live?",
-        value="Link your twitch to MCSR Ranked in-game.\nTurn the 'Public Stream: Twitch' option on in Ranked settings.",
-        inline=False,
-    )
     embed.set_footer(
         text=constants.FOOTER_TEXT,
         icon_url=constants.FOOTER_ICON,
