@@ -21,8 +21,9 @@ from commands import (
     analysis as analysing,
     race as racing,
     leaderboard as leading,
+    seed as seeding,
 )
-from rankedutils import games, api, rank, constants, word, numb
+from rankedutils import games, api, rank, constants, word, numb, db
 from scripts import analyse_db, construct_players, load_matches
 
 TESTING_MODE = getenv("TESTING_MODE", "true").lower() == "true"
@@ -172,12 +173,13 @@ class Topics(nextcord.ui.View):
         return file
 
 
-class LBPage(nextcord.ui.View):
-    def __init__(self, interaction: Interaction, embeds: list):
+class Pages(nextcord.ui.View):
+    def __init__(self, interaction: Interaction, perma_embeds: list = [], page_embeds: list = []):
         super().__init__(timeout=840)
         self.interaction = interaction
-        self.embeds = embeds
-        self.size = len(embeds)
+        self.perma_embeds = perma_embeds
+        self.page_embeds = page_embeds
+        self.size = len(page_embeds)
         self.page = 0
 
     async def on_timeout(self):
@@ -228,7 +230,7 @@ class LBPage(nextcord.ui.View):
         interaction: Interaction,
     ):
         print(f"Flipping to page {self.page} for {interaction.user.name}")
-        await interaction.response.edit_message(embeds=[self.embeds[self.page]])
+        await interaction.response.edit_message(embeds=[*self.perma_embeds, self.page_embeds[self.page]])
         self._View__timeout_expiry -= self.timeout
 
 
@@ -247,6 +249,7 @@ class MatchAgo(nextcord.ui.View):
         self.ids = []
         self.name_matches(matches[:25])
         self.matches_seen = [0]
+        self.latest_id = None
         self.select = nextcord.ui.Select(
                 placeholder="Select a match...",
                 options=[
@@ -291,9 +294,13 @@ class MatchAgo(nextcord.ui.View):
         selected_id = int(self.select.values[0])
         print(f"Switching to match {selected_id} for {interaction.user.name}")
 
-        response = api.Match(id=selected_id).get()
+        self.latest_id = selected_id
         await interaction.response.defer()
-        img = matching.main(response)
+        response = await api.Match(id=selected_id).get_async()
+        img = await asyncio.to_thread(matching.main, response)
+        if selected_id != self.latest_id:
+            img.close()
+            return
 
         file = image_to_file(img, f"chart_{selected_id}.png")
         await self.interaction.edit_original_message(file=file)
@@ -512,7 +519,7 @@ async def match(
 
         if recent_matches == []:
             await interaction.response.send_message(
-                f"Player has no matches from this season. ({input_name})"
+                f"Player has no ranked matches from this season. (`{input_name}`)"
             )
             update_records(interaction, "match", "Unknown", False)
             return
@@ -662,7 +669,7 @@ async def analysis(
     if detailed_matches == -1:
         print("Player does not have enough completions.")
         await interaction.followup.send(
-            f"{input_name} needs a minimum of 3 completions from their last {target_games} games of season {player_season} to analyse. (Has {num_comps})",
+            f"`{input_name}` needs a minimum of 3 completions from their last {target_games} games of season {player_season} to analyse. (Has {num_comps})",
         )
         update_records(interaction, "analysis", input_name, False)
         return
@@ -916,7 +923,7 @@ async def leaderboard_elo(
         update_records(interaction, "leaderboard", lb_type, False)
         return
 
-    view = LBPage(interaction, leaderboard_embeds)
+    view = Pages(interaction, page_embeds=leaderboard_embeds)
 
     await interaction.followup.send(embed=leaderboard_embeds[0], view=view)
     update_records(interaction, "leaderboard", lb_type, True)
@@ -976,7 +983,7 @@ async def leaderboard_phasepoints(
         update_records(interaction, "leaderboard", lb_type, False)
         return
 
-    view = LBPage(interaction, leaderboard_embeds)
+    view = Pages(interaction, page_embeds=leaderboard_embeds)
 
     await interaction.followup.send(embed=leaderboard_embeds[0], view=view)
     update_records(interaction, "leaderboard", lb_type, True)
@@ -1040,7 +1047,7 @@ async def leaderboard_completion(
         update_records(interaction, "leaderboard", lb_type, False)
         return
 
-    view = LBPage(interaction, leaderboard_embeds)
+    view = Pages(interaction, page_embeds=leaderboard_embeds)
 
     await interaction.followup.send(embed=leaderboard_embeds[0], view=view)
     update_records(interaction, "leaderboard", lb_type, True)
@@ -1714,7 +1721,7 @@ async def generic_lb_response(
         update_records(interaction, "leaderboard", lb_type, False)
         return
 
-    view = LBPage(interaction, leaderboard_embeds)
+    view = Pages(interaction, page_embeds=leaderboard_embeds)
 
     await interaction.followup.send(embed=leaderboard_embeds[0], view=view)
     update_records(interaction, "leaderboard", lb_type, True)
@@ -1790,6 +1797,111 @@ async def live(interaction: Interaction):
 
     await interaction.followup.send(embed=embed)
     update_records(interaction, "live", type, True)
+
+
+@bot.slash_command(
+    name="seed",
+    description="Provides stats about a particular seed",
+)
+async def seed(
+    interaction: Interaction,
+    seed_id: str = SlashOption(
+        "seed_id",
+        required=False,
+        description="The seed ID to dive into (also can take a match ID).",
+        default=None,
+    )
+):
+    await interaction.response.defer()
+
+    if not seed_id:
+        input_name = get_name(interaction)
+        if not input_name:
+            await interaction.followup.send(
+                "Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a match / seed ID.",
+            )
+            update_records(interaction, "seed", "Unknown", False)
+            return
+
+        try:
+            recent_matches = api.UserMatches(
+                name=input_name, count=1, excludedecay=True
+            ).get()
+
+            if recent_matches == []:
+                await interaction.followup.send(
+                    f"Player has no matches from this season to take a seed from. (`{input_name}`)"
+                )
+                update_records(interaction, "seed", "Unknown", False)
+                return
+
+            api.Match(id=recent_matches[0]["id"]).get()
+            api.Match.commit()
+        except api.APIRateLimitError as e:
+            print(e)
+            await interaction.followup.send(API_COOLDOWN_MSG)
+            update_records(interaction, "seed", "Unknown", False)
+            return
+
+        seed_id = str(recent_matches[0]["id"])
+
+    conn, cursor = db.start()
+
+    if seed_id.isnumeric():
+        match_info = db.query_db(
+            cursor,
+            items="seed_id",
+            id=int(seed_id)
+        ).fetchone()
+        if match_info is None or match_info[0] is None:
+            await interaction.followup.send(
+                f"This match ID doesn't have an associated seed. (`{seed_id}`)"
+            )
+            update_records(interaction, "seed", "Unknown", False)
+            conn.close()
+            return
+        seed_id = match_info[0]
+
+    print(f"---\nObserving seed {seed_id}")
+
+    seed_items = "id, overworld, bastion, structure_type, structure_contents, triples, singles, small_singles, good_gaps, past_score, past_count, current_score, current_count, word_id"
+    seed_info = (
+        db.query_db(
+            cursor,
+            table="seeds",
+            items=seed_items,
+            id=seed_id
+        ).fetchone()
+        or db.query_db(
+            cursor,
+            table="seeds",
+            items=seed_items,
+            word_id=seed_id
+        ).fetchone()
+    )
+    if seed_info is None:
+        await interaction.followup.send(
+            f"This seed does not exist. (`{seed_id}`)"
+        )
+        update_records(interaction, "seed", "Unknown", False)
+        conn.close()
+        return
+
+    try:
+        seed_embed, matches_embeds = seeding.main(seed_info, cursor)
+    except Exception:
+        print("Error caught!")
+        traceback.print_exc()
+        await interaction.followup.send(f"{GENERIC_ERROR_MSG}\n```{traceback.format_exc()}```")
+        update_records(interaction, "seed", seed_id, False)
+        conn.close()
+        return
+
+    conn.close()
+    view = Pages(interaction, perma_embeds=[seed_embed], page_embeds=matches_embeds)
+
+    await interaction.followup.send(embeds=[seed_embed, matches_embeds[0]], view=view)
+    update_records(interaction, "seed", seed_id, True)
 
 
 @bot.slash_command(
