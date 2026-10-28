@@ -142,7 +142,7 @@ def get_matches_embeds(cursor, matches_info):
         match_type_txt = MATCH_TYPES[match_type]
         if match_type == 3 and category != "ANY":
             match_type_txt += f" ({category.lower().replace('_', ' ').capitalize()})"
-        name = f"{match_type_txt} Match {match_id} • S{season}"
+        name = f"{match_type_txt} Match • S{season} • `{match_id}`"
 
         if match_type == 3:
             player_names = [
@@ -163,23 +163,25 @@ def get_matches_embeds(cursor, matches_info):
                 if player_uuid == result_uuid
             ), None)
             player_tags = [
-                f"`{nickname}`"
+                f"`{nickname}` "
                 + ("🤝" if not winner else "👑" if nickname == winner else "🥀")
                 + (f" ({elo})" if elo else "")
                 for nickname, elo, _ in runs_info
             ]
             players_line = " vs ".join(player_tags)
-        if forfeited:
-            result_line = f"Forfeited at {numb.digital_time(match_time)}"
-        elif result_uuid:
-            result_line = f"Completed in {numb.digital_time(match_time)}"
+        if not result_uuid:
+            result_line = f"Drawn at `{numb.digital_time(match_time)}` <t:{date}:R>"
+        elif forfeited:
+            result_line = f"Forfeited at `{numb.digital_time(match_time)}` <t:{date}:R>"
         else:
-            result_line = f"Drawn at {numb.digital_time(match_time)}"
+            result_line = f"Completed in `{numb.digital_time(match_time)}` <t:{date}:R>"
+        url_player = winner if winner else runs_info[0][0]
 
         value = (
             f"{players_line}"
             f"\n{result_line}"
-            f"\n[mcsrranked.com/stats/{winner}/{match_id}](https://mcsrranked.com/stats/{winner}/{match_id})"
+            f"\n[mcsrranked.com/stats/{url_player}/{match_id}](https://mcsrranked.com/stats/{url_player}/{match_id})"
+            "\n"
         )
         matches_embed.add_field(name=name, value=value, inline=False)
 
@@ -191,7 +193,7 @@ def main(seed_info: tuple, cursor):
         cursor,
         items="id, type, category, result_uuid, time, forfeited, season, date",
         seed_id=seed_info[0],
-        order="id"
+        order="id DESC"
     ).fetchall()
 
     seed_embed = get_seed_embed(cursor, seed_info, matches_info)
