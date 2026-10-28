@@ -37,6 +37,7 @@ MAX_CUSTOM_LB = 50
 token = "TEST_TOKEN" if TESTING_MODE else "DISCORD_TOKEN"
 default_guild_ids = [735859906434957392] if TESTING_MODE else None
 player_list = []
+match_cache: dict[str, dict] = {}
 
 intents = nextcord.Intents.default()
 bot = commands.Bot(
@@ -234,79 +235,6 @@ class Pages(nextcord.ui.View):
         self._View__timeout_expiry -= self.timeout
 
 
-class MatchAgo(nextcord.ui.View):
-    def __init__(
-        self,
-        interaction: Interaction,
-        matches: list[dict],
-        input_uuid: str,
-    ):
-        super().__init__(timeout=840)
-        self.interaction = interaction
-        self.charts = []
-        self.input_uuid = input_uuid
-        self.names = []
-        self.ids = []
-        self.name_matches(matches[:25])
-        self.matches_seen = [0]
-        self.latest_id = None
-        self.select = nextcord.ui.Select(
-                placeholder="Select a match...",
-                options=[
-                    nextcord.SelectOption(label=name, value=str(self.ids[i]))
-                    for i, name in enumerate(self.names)
-                ],
-            )
-        self.select.callback = self.select_match
-        self.add_item(
-            self.select
-        )
-
-    def name_matches(self, matches):
-        self.ids = [match["id"] for match in matches]
-        for i, match in enumerate(matches):
-            duration = match["result"]["time"]
-            forfeited = match["forfeited"]
-            won = match["result"]["uuid"] == self.input_uuid
-            days_ago = word.get_ago(match["date"])
-            opponent = next(
-                player["nickname"]
-                for player in match["players"]
-                if player["uuid"].lower() != self.input_uuid.lower()
-            )
-            self.names.append(
-                f"{(i + 1):2d}. {'🏆' if won else '🥀'}"
-                f"{'🏳️' if forfeited else ' ' + numb.digital_time(duration)} vs {opponent} "
-                f"({days_ago})"
-            )
-
-    async def on_timeout(self):
-        for item in self.children:
-            if isinstance(item, nextcord.ui.Button):
-                item.style = nextcord.ButtonStyle.grey
-                item.disabled = True
-        await self.interaction.edit_original_message(view=self)
-
-    async def select_match(
-        self,
-        interaction: Interaction,
-    ):
-        selected_id = int(self.select.values[0])
-        print(f"Switching to match {selected_id} for {interaction.user.name}")
-
-        self.latest_id = selected_id
-        await interaction.response.defer()
-        response = await api.Match(id=selected_id).get_async()
-        img = await asyncio.to_thread(matching.main, response)
-        if selected_id != self.latest_id:
-            img.close()
-            return
-
-        file = image_to_file(img, f"chart_{selected_id}.png")
-        await self.interaction.edit_original_message(file=file)
-        self._View__timeout_expiry -= self.timeout
-
-
 @bot.event
 async def on_ready():
     print("Bot is running")
@@ -496,7 +424,6 @@ async def match(
         default=None,
     ),
 ):
-    view = nextcord.utils.MISSING
     if not match_id:
         input_name = get_name(interaction)
         if not input_name:
@@ -509,7 +436,7 @@ async def match(
         print(f"---\nFinding {input_name}'s last match")
         try:
             recent_matches = api.UserMatches(
-                name=input_name, count=25, type=2, excludedecay=True
+                name=input_name, count=1, type=2, excludedecay=True
             ).get()
         except api.APIRateLimitError as e:
             print(e)
@@ -530,11 +457,6 @@ async def match(
             player["uuid"]
             for player in recent_matches[0]["players"]
             if player["nickname"].lower() == input_name.lower()
-        )
-        view = MatchAgo(
-            interaction,
-            recent_matches,
-            input_uuid,
         )
 
     async def fail_get(msg):
@@ -572,7 +494,7 @@ async def match(
         return
 
     file = image_to_file(img, f"chart_{match_id}.png")
-    await interaction.followup.send(file=file, view=view)
+    await interaction.followup.send(file=file)
     update_records(interaction, "match", match_id, True)
 
 
@@ -587,7 +509,6 @@ async def analysis(
         required=False,
         description="The player to analyse.",
         default="",
-        autocomplete=True,
     ),
     player_season: str = SlashOption(
         "player_season",
@@ -887,7 +808,6 @@ async def leaderboard_elo(
         required=False,
         description="The country to filter the leaderboard by.",
         default="",
-        autocomplete=True
     ),
 ):
     lb_type = "elo"
@@ -947,7 +867,6 @@ async def leaderboard_phasepoints(
         required=False,
         description="The country to filter the leaderboard by.",
         default="",
-        autocomplete=True
     ),
 ):
     lb_type = "phase"
@@ -1904,6 +1823,72 @@ async def seed(
     update_records(interaction, "seed", seed_id, True)
 
 
+def update_match_cache(matches, player):
+    choices = {}
+    ranked_choices = {}
+
+    for match in matches:
+        opponent = next(
+            (p["nickname"] for p in match["players"] if p["uuid"] != player["uuid"]),
+            "Unknown",
+        )
+        result_uuid = match["result"]["uuid"]
+        emoji = "🤝" if not result_uuid else "🏆" if result_uuid == player["uuid"] else "🥀"
+        outcome = "🏳️" if match["forfeited"] else " " + numb.digital_time(match["result"]["time"])
+        match_txt = f"{emoji}{outcome} vs {opponent} ({word.get_ago(match['date'])})"
+
+        if len(choices) < 25:
+            choices[f"{(len(choices) + 1):2d}. {match_txt}"] = str(match["id"])
+        if match["type"] == 2:
+            ranked_choices[f"{(len(ranked_choices) + 1):2d}. {match_txt}"] = str(match["id"])
+        if len(ranked_choices) >= 25:
+            break
+
+    match_cache[player["nickname"].lower()] = {
+        "choices": choices,
+        "ranked_choices": ranked_choices,
+    }
+
+
+@match.on_autocomplete("match_id")
+@seed.on_autocomplete("seed_id")
+async def match_autocomplete(interaction: Interaction, current: str):
+    input_name = get_name(interaction)
+    if not input_name:
+        await interaction.response.send_autocomplete([])
+        return
+
+    choices_type = "ranked_choices" if interaction.data["name"] == "match" else "choices"
+
+    cached = match_cache.get(input_name.lower())
+    if cached:
+        await interaction.response.send_autocomplete(cached[choices_type])
+        return
+
+    try:
+        matches = await api.UserMatches(
+            name=input_name, count=100, excludedecay=True
+        ).get_async()
+    except api.APIRateLimitError as e:
+        print(e)
+        await interaction.response.send_autocomplete([])
+        return
+    if not matches:
+        await interaction.response.send_autocomplete([])
+        return
+
+    player = next(
+        (p for p in matches[0]["players"] if p["nickname"].lower() == input_name.lower()),
+        None
+    )
+    if not player:
+        await interaction.response.send_autocomplete([])
+        return
+
+    update_match_cache(matches, player)
+    await interaction.response.send_autocomplete(match_cache[player["nickname"].lower()][choices_type])
+
+
 @bot.slash_command(
     name="customise",
     description="Allows you to personalise your card. Only applies to connected users.",
@@ -2244,6 +2229,13 @@ def image_to_file(image, filename, close=True):
     return file
 
 
+async def clear_loop():
+    repeat = 45
+    while True:
+        await asyncio.sleep(repeat)
+        match_cache.clear()
+
+
 async def fetch_loop():
     with open(DATABASE_DIR / "last_id.txt") as f:
         latest_reload = int(f.readline())
@@ -2255,6 +2247,7 @@ async def fetch_loop():
         with open(DATABASE_DIR / "last_id.txt", "w") as f:
             f.write(f"{latest_reload}\n{latest_load}")
         await asyncio.sleep(repeat)
+
         ctypes.CDLL("libc.so.6").malloc_trim(0)
 
 
@@ -2280,6 +2273,7 @@ async def analysis_loop():
 
 
 if not TESTING_MODE:
+    bot.loop.create_task(clear_loop())
     bot.loop.create_task(fetch_loop())
     bot.loop.create_task(suggestions_loop())
     bot.loop.create_task(analysis_loop())
