@@ -139,16 +139,23 @@ def get_matches_embeds(cursor, matches_info):
         runs_info = db.query_db(
             cursor,
             table="runs",
-            items="players.nickname, runs.eloRate, runs.player_uuid",
+            items="players.nickname, runs.eloRate, runs.player_uuid, runs.score",
             join="players ON players.uuid = runs.player_uuid",
             match_id=match_id
         ).fetchall()
 
         winner = next((
             nickname
-            for nickname, _, player_uuid
+            for nickname, _, player_uuid, _
             in runs_info
             if player_uuid == result_uuid
+        ), None)
+
+        run_score = next((
+            run_score
+            for _, _, _, run_score
+            in runs_info
+            if run_score is not None
         ), None)
 
         match_type_txt = MATCH_TYPES[match_type]
@@ -159,7 +166,7 @@ def get_matches_embeds(cursor, matches_info):
         if match_type == 3:
             player_names = [
                 f"`{nickname}` {'👑' if nickname == winner else ''}"
-                for nickname, _, _
+                for nickname, _, _, _
                 in runs_info
             ]
             players_line = (
@@ -172,7 +179,7 @@ def get_matches_embeds(cursor, matches_info):
                 f"`{nickname}` "
                 + ("🤝" if not winner else "👑" if nickname == winner else "🥀")
                 + (f" ({elo})" if elo else "")
-                for nickname, elo, _ in runs_info
+                for nickname, elo, _, _ in runs_info
             ]
             players_line = " vs ".join(player_tags)
         if not result_uuid:
@@ -182,10 +189,12 @@ def get_matches_embeds(cursor, matches_info):
         else:
             result_line = f"Completed in `{numb.digital_time(match_time)}`, <t:{date}:R>"
         url_player = winner if winner else runs_info[0][0]
+        score_line = f"\nRun score: `{run_score:.1%}`" if run_score else ""
 
         value = (
             f"{players_line}"
             f"\n{result_line}"
+            f"{score_line}"
             f"\n[mcsrranked.com/stats/{url_player}/{match_id}](https://mcsrranked.com/stats/{url_player}/{match_id})"
             "\n"
         )
