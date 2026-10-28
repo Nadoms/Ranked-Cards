@@ -59,12 +59,17 @@ def get_seed_embed(cursor, seed_info, matches_info):
         "sideways": "Sideways ship",
         "normal": "Regular ship",
     }
-    ow_info_list = []
+    ow_info = ""
     if structure_type:
-        ow_info_list.append(item_mapping[structure_type])
+        ow_info += item_mapping[structure_type]
     if structure_contents:
-        ow_info_list.append("Contains " + ", ".join(structure_contents[:-1]) + " and " + structure_contents[-1])
-    ow_info = "\n".join(ow_info_list)
+        content_names = [item_mapping[content] for content in structure_contents]
+        ow_info += (
+            (", containing " if structure_type else "Containing ")
+            + ", ".join(content_names[:-1])
+            + (" and " if len(content_names) > 1 else "")
+            + content_names[-1]
+        )
     seed_embed.add_field(
         name=f"Overworld type: {overworld.lower().replace('_', ' ').capitalize()}",
         value=ow_info,
@@ -74,8 +79,8 @@ def get_seed_embed(cursor, seed_info, matches_info):
     bastion_info = (
         f"Triples: `{triples if triples else 0}`"
         f"\n{'Doubles' if bastion == 'STABLES' else 'Singles'}: `{singles if singles else 0}`"
-        f"\n{'Singles' if bastion == 'STABLES' else 'Ruins'}: `{small_singles if small_singles else 0}`"
-        f"\nGood gaps: `{good_gaps if good_gaps else 0}`" if bastion == "STABLES" else ""
+        + (f"\n{'Singles' if bastion == 'STABLES' else 'Ruins'}: `{small_singles if small_singles else 0}`" if bastion != "BRIDGE" else "")
+        + (f"\nGood gaps: `{good_gaps if good_gaps else 0}`" if bastion == "STABLES" else "")
     ) if bastion != "TREASURE" else ""
     seed_embed.add_field(
         name=f"Bastion type: {bastion.lower().capitalize()}",
@@ -139,6 +144,13 @@ def get_matches_embeds(cursor, matches_info):
             match_id=match_id
         ).fetchall()
 
+        winner = next((
+            nickname
+            for nickname, _, player_uuid
+            in runs_info
+            if player_uuid == result_uuid
+        ), None)
+
         match_type_txt = MATCH_TYPES[match_type]
         if match_type == 3 and category != "ANY":
             match_type_txt += f" ({category.lower().replace('_', ' ').capitalize()})"
@@ -146,8 +158,8 @@ def get_matches_embeds(cursor, matches_info):
 
         if match_type == 3:
             player_names = [
-                f"`{nickname}` {'👑' if result_uuid == player_uuid else ''}"
-                for nickname, elo, player_uuid
+                f"`{nickname}` {'👑' if nickname == winner else ''}"
+                for nickname, _, _
                 in runs_info
             ]
             players_line = (
@@ -156,12 +168,6 @@ def get_matches_embeds(cursor, matches_info):
                 + player_names[-1]
             )
         else:
-            winner = next((
-                nickname
-                for nickname, _, player_uuid
-                in runs_info
-                if player_uuid == result_uuid
-            ), None)
             player_tags = [
                 f"`{nickname}` "
                 + ("🤝" if not winner else "👑" if nickname == winner else "🥀")
@@ -170,11 +176,11 @@ def get_matches_embeds(cursor, matches_info):
             ]
             players_line = " vs ".join(player_tags)
         if not result_uuid:
-            result_line = f"Drawn at `{numb.digital_time(match_time)}` <t:{date}:R>"
+            result_line = f"Drawn at `{numb.digital_time(match_time)}`, <t:{date}:R>"
         elif forfeited:
-            result_line = f"Forfeited at `{numb.digital_time(match_time)}` <t:{date}:R>"
+            result_line = f"Forfeited at `{numb.digital_time(match_time)}`, <t:{date}:R>"
         else:
-            result_line = f"Completed in `{numb.digital_time(match_time)}` <t:{date}:R>"
+            result_line = f"Completed in `{numb.digital_time(match_time)}`, <t:{date}:R>"
         url_player = winner if winner else runs_info[0][0]
 
         value = (
