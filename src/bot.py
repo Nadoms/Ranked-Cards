@@ -175,6 +175,8 @@ class Topics(nextcord.ui.View):
 
 
 class Pages(nextcord.ui.View):
+    STEPS = {"<<": -5, "<": -1, ">": 1, ">>": 5}
+
     def __init__(self, interaction: Interaction, perma_embeds: list = [], page_embeds: list = []):
         super().__init__(timeout=840)
         self.interaction = interaction
@@ -182,6 +184,38 @@ class Pages(nextcord.ui.View):
         self.page_embeds = page_embeds
         self.size = len(page_embeds)
         self.page = 0
+        self.buttons = {}
+
+        for label in self.STEPS:
+            if abs(self.STEPS[label]) > 1 and self.size <= abs(self.STEPS[label]):
+                continue
+            button = nextcord.ui.Button(label=label, style=nextcord.ButtonStyle.blurple)
+            button.callback = self._make_callback(self.STEPS[label])
+            self.buttons[label] = button
+            self.add_item(button)
+
+        self.update_buttons()
+
+    def _make_callback(self, step: int):
+        async def callback(interaction: Interaction):
+            new_page = min(max(self.page + step, 0), self.size - 1)
+            await self.switch_to(interaction, new_page)
+
+        return callback
+
+    def update_buttons(self):
+        for label, button in self.buttons.items():
+            button.disabled = self.page == 0 if self.STEPS[label] < 0 else self.page == self.size - 1
+
+    async def switch_to(self, interaction: Interaction, page: int):
+        self.page = page
+        print(f"Flipping to page {self.page} for {interaction.user.name}")
+        self.update_buttons()
+        await interaction.response.edit_message(
+            embeds=[*self.perma_embeds, self.page_embeds[self.page]],
+            view=self,
+        )
+        self._View__timeout_expiry -= self.timeout
 
     async def on_timeout(self):
         for item in self.children:
@@ -189,50 +223,6 @@ class Pages(nextcord.ui.View):
                 item.style = nextcord.ButtonStyle.grey
                 item.disabled = True
         await self.interaction.edit_original_message(view=self)
-
-    @nextcord.ui.button(label="<<", style=nextcord.ButtonStyle.blurple)
-    async def previous_5(
-        self,
-        button: nextcord.ui.Button,
-        interaction: Interaction,
-    ):
-        self.page = max((self.page - 5), 0)
-        await self.update(interaction)
-
-    @nextcord.ui.button(label="<", style=nextcord.ButtonStyle.blurple)
-    async def previous(
-        self,
-        button: nextcord.ui.Button,
-        interaction: Interaction,
-    ):
-        self.page = max((self.page - 1), 0)
-        await self.update(interaction)
-
-    @nextcord.ui.button(label=">", style=nextcord.ButtonStyle.blurple)
-    async def next(
-        self,
-        button: nextcord.ui.Button,
-        interaction: Interaction,
-    ):
-        self.page = min((self.page + 1), self.size)
-        await self.update(interaction)
-
-    @nextcord.ui.button(label=">>", style=nextcord.ButtonStyle.blurple)
-    async def next_5(
-        self,
-        button: nextcord.ui.Button,
-        interaction: Interaction,
-    ):
-        self.page = min((self.page + 5), self.size)
-        await self.update(interaction)
-
-    async def update(
-        self,
-        interaction: Interaction,
-    ):
-        print(f"Flipping to page {self.page} for {interaction.user.name}")
-        await interaction.response.edit_message(embeds=[*self.perma_embeds, self.page_embeds[self.page]])
-        self._View__timeout_expiry -= self.timeout
 
 
 @bot.event
@@ -1838,9 +1828,9 @@ def update_match_cache(matches, player):
         match_txt = f"{emoji}{outcome} vs {opponent} ({word.get_ago(match['date'])})"
 
         if len(choices) < 25:
-            choices[f"{(len(choices) + 1):2d}. {match_txt}"] = str(match["id"])
+            choices[match_txt] = str(match["id"])
         if match["type"] == 2:
-            ranked_choices[f"{(len(ranked_choices) + 1):2d}. {match_txt}"] = str(match["id"])
+            ranked_choices[match_txt] = str(match["id"])
         if len(ranked_choices) >= 25:
             break
 
