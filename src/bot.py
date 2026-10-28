@@ -195,7 +195,7 @@ class Pages(nextcord.ui.View):
         button: nextcord.ui.Button,
         interaction: Interaction,
     ):
-        self.page = (self.page - 5) % self.size
+        self.page = max((self.page - 5), 0)
         await self.update(interaction)
 
     @nextcord.ui.button(label="<", style=nextcord.ButtonStyle.blurple)
@@ -204,7 +204,7 @@ class Pages(nextcord.ui.View):
         button: nextcord.ui.Button,
         interaction: Interaction,
     ):
-        self.page = (self.page - 1) % self.size
+        self.page = max((self.page - 1), 0)
         await self.update(interaction)
 
     @nextcord.ui.button(label=">", style=nextcord.ButtonStyle.blurple)
@@ -213,7 +213,7 @@ class Pages(nextcord.ui.View):
         button: nextcord.ui.Button,
         interaction: Interaction,
     ):
-        self.page = (self.page + 1) % self.size
+        self.page = min((self.page + 1), self.size)
         await self.update(interaction)
 
     @nextcord.ui.button(label=">>", style=nextcord.ButtonStyle.blurple)
@@ -222,7 +222,7 @@ class Pages(nextcord.ui.View):
         button: nextcord.ui.Button,
         interaction: Interaction,
     ):
-        self.page = (self.page + 5) % self.size
+        self.page = min((self.page + 5), self.size)
         await self.update(interaction)
 
     async def update(
