@@ -89,7 +89,8 @@ def get_seed_embed(cursor, seed_info, matches_info):
     )
 
     ranked_matches = [match for match in matches_info if match[1] == 2]
-    completions = [match[4] for match in ranked_matches if not match[5] and match[3]]
+    completions = [match for match in ranked_matches if not match[5] and match[3]]
+    completion_times = [completion[4] for completion in completions]
     if matches_info:
         played_dates = [match[7] for match in matches_info]
         seed_history = (
@@ -103,13 +104,15 @@ def get_seed_embed(cursor, seed_info, matches_info):
             inline=False,
         )
 
-        ranked_stats = (
-            f"Completions: `{len(completions)}`"
-            f"Completion rate: `{(len(completions) / len(ranked_matches)):.1%}`"
-            f"\nAverage completion: `{numb.digital_time(round(sum(completions) / len(completions)))}`"
-            f"\nFastest completion: `{numb.digital_time(min(completions))}`"
-        )
         if completions:
+            record_uuid = min(completions, key=lambda m : m[4])[3]
+            ranked_stats = (
+                f"Record holder: `{db.get_nick(cursor, record_uuid)}`"
+                f"\nFastest completion: `{numb.digital_time(min(completion_times))}`"
+                f"\nAverage completion: `{numb.digital_time(round(sum(completion_times) / len(completion_times)))}`"
+                f"\nCompletions: `{len(completions)}`"
+                f"\nCompletion rate: `{(len(completions) / len(ranked_matches)):.1%}`"
+            )
             seed_embed.add_field(
                 name="Ranked stats",
                 value=ranked_stats,
