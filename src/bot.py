@@ -187,7 +187,7 @@ class Pages(nextcord.ui.View):
         self.buttons = {}
 
         for label in self.STEPS:
-            if self.size < abs(self.STEPS[label]):
+            if self.size <= abs(self.STEPS[label]):
                 continue
             button = nextcord.ui.Button(label=label, style=nextcord.ButtonStyle.blurple)
             button.callback = self._make_callback(self.STEPS[label])
