@@ -6,7 +6,7 @@ from nextcord import Embed, Colour
 
 from rankedutils import rank, constants, db, insight, numb
 
-MATCHES_PER_PAGE = 15
+MATCHES_PER_PAGE = 10
 MATCH_TYPES = {1: "Casual", 2: "Ranked", 3: "Private", 4: "Event"}
 
 
@@ -38,7 +38,7 @@ def get_seed_embed(cursor, seed_info, matches_info):
         colour=Colour.brand_red()
     )
 
-    seed_score_txt = f"{seed_score:.1%}" if seed_score is not None else "-"
+    seed_score_txt = f"{seed_score:.3f}" if seed_score is not None else "-"
     seed_embed.add_field(
         name=f"Seed score: `{seed_score_txt}`",
         value="",
@@ -88,23 +88,33 @@ def get_seed_embed(cursor, seed_info, matches_info):
         inline=True,
     )
 
-    completions = [match[4] for match in matches_info if not match[5] and match[3] and match[1] == 2]
+    ranked_matches = [match for match in matches_info if match[1] == 2]
+    completions = [match[4] for match in ranked_matches if not match[5] and match[3]]
     if matches_info:
         played_dates = [match[7] for match in matches_info]
-        seed_stats = (
+        seed_history = (
             f"First played: <t:{min(played_dates)}:R>"
             f"\nLast played: <t:{max(played_dates)}:R>"
             f"\nTimes played: `{len(matches_info)}`"
-            f"\nCompletions: `{len(completions)}`"
-            f"\nAverage completion: `{numb.digital_time(round(sum(completions) / len(completions))) if completions else '-'}`"
-            f"\nFastest completion: `{numb.digital_time(min(completions)) if completions else '-'}`"
-            f"\n*Note: Completion stats are Ranked-mode only.*"
         )
         seed_embed.add_field(
-            name="Seed stats",
-            value=seed_stats,
+            name="Seed history",
+            value=seed_history,
             inline=False,
         )
+
+        ranked_stats = (
+            f"Completions: `{len(completions)}`"
+            f"Completion rate: `{(len(completions) / len(ranked_matches)):.1%}`"
+            f"\nAverage completion: `{numb.digital_time(round(sum(completions) / len(completions)))}`"
+            f"\nFastest completion: `{numb.digital_time(min(completions))}`"
+        )
+        if completions:
+            seed_embed.add_field(
+                name="Ranked stats",
+                value=ranked_stats,
+                inline=False,
+            )
 
     return seed_embed
 
@@ -117,7 +127,7 @@ def get_matches_embeds(cursor, matches_info):
     if len(matches_info) == 0:
         matches_embeds.append(
             Embed(
-                title=f"Match history",
+                title=f"Match History",
                 colour=Colour.brand_red()
             ).set_footer(
                 text=constants.FOOTER_TEXT,
@@ -128,7 +138,7 @@ def get_matches_embeds(cursor, matches_info):
     for i, (match_id, match_type, category, result_uuid, match_time, forfeited, season, date) in enumerate(matches_info):
         if i % MATCHES_PER_PAGE == 0:
             matches_embed = Embed(
-                title=f"Match history{' (' + str(i // MATCHES_PER_PAGE + 1) + '/' + str(page_count) + ')' if page_count > 1 else ''}",
+                title=f"Match History{' (' + str(i // MATCHES_PER_PAGE + 1) + '/' + str(page_count) + ')' if page_count > 1 else ''}",
                 colour=Colour.brand_red()
             ).set_footer(
                 text=constants.FOOTER_TEXT,
@@ -163,39 +173,27 @@ def get_matches_embeds(cursor, matches_info):
             match_type_txt += f" ({category.lower().replace('_', ' ').capitalize()})"
         name = f"{match_type_txt} Match • S{season} • `{match_id}`"
 
-        if match_type == 3:
-            player_names = [
-                f"`{nickname}` {'👑' if nickname == winner else ''}"
-                for nickname, _, _, _
-                in runs_info
-            ]
-            players_line = (
-                ", ".join(player_names[:-1])
-                + (" and " if len(player_names) > 1 else "")
-                + player_names[-1]
-            )
-        else:
-            player_tags = [
-                f"`{nickname}` "
-                + ("🤝" if not winner else "👑" if nickname == winner else "🥀")
-                + (f" ({elo})" if elo else "")
-                for nickname, elo, _, _ in runs_info
-            ]
-            players_line = " vs ".join(player_tags)
+        player_tags = [
+            f"`{nickname}` "
+            + ("🤝" if not winner else "👑" if nickname == winner else "🥀")
+            + (f" ({elo})" if elo else "")
+            for nickname, elo, _, _ in runs_info
+        ]
+        players_line = " vs ".join(player_tags) + ("\n" if match_type == 2 else "")
         if not result_uuid:
             result_line = f"Drawn at `{numb.digital_time(match_time)}`, <t:{date}:R>"
         elif forfeited:
             result_line = f"Forfeited at `{numb.digital_time(match_time)}`, <t:{date}:R>"
         else:
             result_line = f"Completed in `{numb.digital_time(match_time)}`, <t:{date}:R>"
-        url_player = winner if winner else runs_info[0][0]
-        score_line = f"\nRun score: `{run_score:.1%}`" if run_score else ""
+        url_player = winner if winner else result_uuid if result_uuid else "Nadoms"
+        score_line = f"\nRun score: `{run_score:.3f}`" if run_score else ""
 
         value = (
             f"{players_line}"
-            f"\n{result_line}"
+            f"{result_line}"
             f"{score_line}"
-            f"\n[mcsrranked.com/stats/{url_player}/{match_id}](https://mcsrranked.com/stats/{url_player}/{match_id})"
+            f"\n[Match stats](https://mcsrranked.com/stats/{url_player}/{match_id})"
             "\n"
         )
         matches_embed.add_field(name=name, value=value, inline=False)
