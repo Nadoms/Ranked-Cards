@@ -54,7 +54,7 @@ async def spam_redlime(start, limit):
         new_additions = api.Match.commit() - old_additions
         if matches == []:
             print("Up-to-date, total loaded:", new_additions)
-            return i
+            return i - 100  # LOAD BEARING!!!! do not remove
         i += batch_size
 
 
