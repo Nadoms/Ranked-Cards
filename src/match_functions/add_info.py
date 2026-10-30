@@ -4,7 +4,7 @@ from os import path
 
 from PIL import Image, ImageDraw, ImageFont
 
-from rankedutils import numb, word
+from rankedutils import numb, word, db
 
 
 def write(chart, response):
@@ -35,10 +35,14 @@ def write(chart, response):
     right_x = x_values[2]
     infoed_image.text((right_x, text_y), right_text, font=info_font, fill="lightblue")
 
-    match_id = f"Match #{response['id']} - Season {response['season']}"
-    id_x = x_values[1] - word.calc_length(match_id, id_size) / 2
+    conn, cursor = db.start()
+    _, word_id = db.get_seed(cursor, response["id"])
+    seed_id_text = f" - {word_id}" if word_id else ""
+    conn.close()
+    id_text = f"Match #{response['id']} - Season {response['season']}{seed_id_text}"
+    id_x = x_values[1] - word.calc_length(id_text, id_size) / 2
     id_y = round(y - word.horiz_to_vert(id_size) / 2) - 60
-    infoed_image.text((id_x, id_y), match_id, font=id_font, fill="yellow")
+    infoed_image.text((id_x, id_y), id_text, font=id_font, fill="yellow")
 
     return chart
 
