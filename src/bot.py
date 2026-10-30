@@ -1710,49 +1710,17 @@ async def live(interaction: Interaction):
 
 @bot.slash_command(
     name="seed",
-    description="Provides stats about a particular seed",
+    description="Provides stats and history for a particular seed",
 )
 async def seed(
     interaction: Interaction,
     seed_id: str = SlashOption(
         "seed_id",
-        required=False,
-        description="The seed ID to dive into (also can take a match ID).",
-        default=None,
+        required=True,
+        description="The seed ID to dive into (also can take a match ID)."
     )
 ):
     await interaction.response.defer()
-
-    if not seed_id:
-        input_name = get_name(interaction)
-        if not input_name:
-            await interaction.followup.send(
-                "Please connect your minecraft account to your discord with </connect:1149442234513637448> or specify a match / seed ID.",
-            )
-            update_records(interaction, "seed", "Unknown", False)
-            return
-
-        try:
-            recent_matches = api.UserMatches(
-                name=input_name, count=1, excludedecay=True
-            ).get()
-
-            if recent_matches == []:
-                await interaction.followup.send(
-                    f"Player has no matches from this season to take a seed from. (`{input_name}`)"
-                )
-                update_records(interaction, "seed", "Unknown", False)
-                return
-
-            api.Match(id=recent_matches[0]["id"]).get()
-            api.Match.commit()
-        except api.APIRateLimitError as e:
-            print(e)
-            await interaction.followup.send(API_COOLDOWN_MSG)
-            update_records(interaction, "seed", "Unknown", False)
-            return
-
-        seed_id = str(recent_matches[0]["id"])
 
     conn, cursor = db.start()
 
@@ -2054,12 +2022,17 @@ async def help(
     )
     embed.add_field(
         name="/match",
-        value="`Options: Match ID`\n`Defaults: Last ranked match played`\n***Draws a chart*** visualising two player's splits in a game.",
+        value="`Options: Match ID`\n`Defaults: Last ranked match played`\n***Draws a chart*** visualising two player's splits in a game and how they performed on it.",
         inline=False,
     )
     embed.add_field(
         name="/analysis",
-        value="`Options: Minecraft username, season data for player, season data for comparisons, number of games, rank filter`\n`Defaults: Connected user, current season, player season selection, up to last 300 games, any rank`\n***Analyses your games*** to give feedback about splits, bastions and overworlds.",
+        value=(
+            "`Options: Minecraft username, season data for player, season data for comparisons, number of games, rank filter`"
+            "\n`Defaults: Connected user, current season, player season selection, up to last 300 games, any rank`"
+            "\n***Analyses your games*** to give feedback about splits, bastions and overworlds. Use the buttons to flip between them."
+            "\nClick [here](https://docs.google.com/document/d/e/2PACX-1vQvNO1Mmf7T2zfaij_rxDsOMUwaVavJcZG68Bfp8-9CkeGyJHoPrvBFxU69apix4E7gVsaV51BiCVwC/pub) for a more in-depth explanation."
+        ),
         inline=False,
     )
     embed.add_field(
@@ -2069,12 +2042,27 @@ async def help(
     )
     embed.add_field(
         name="/leaderboard",
-        value="`Options: Leaderboard type, season, country`\n`Defaults: Elo, current season, any country`\n***Returns the leaderboard*** for Elo / Fastest Completion / Phase Points, filtered by the season and country if specified.",
+        value=(
+            "`Subcommands: elo, phase, completion, average, peak, matches, playtime, winrate, "
+            "split, bastion, overworld, forfeit_loss, chokerate, comprate, resilience, momentum`\n"
+            "`Options: Season, country (elo / phase), rank filter and sample size (if applicable)`\n"
+            "`Defaults: Current season, any country, any rank`\n"
+            "***Returns the leaderboard*** for the chosen metric, e.g. Elo, fastest completions, or average split / bastion / overworld times."
+        ),
         inline=False,
     )
     embed.add_field(
         name="/live",
         value="***Lists current live players*** in MCSR Ranked games.",
+        inline=False,
+    )
+    embed.add_field(
+        name="/seed (new!)",
+        value=(
+            "`Options: Seed ID or match ID"
+            "\n***Shows stats about a seed***: its overworld, bastion and structure, and how players have performed on it."
+            "\nClick [here](https://docs.google.com/document/d/e/2PACX-1vQvNO1Mmf7T2zfaij_rxDsOMUwaVavJcZG68Bfp8-9CkeGyJHoPrvBFxU69apix4E7gVsaV51BiCVwC/pub) and scroll down for a more in-depth explanation."
+        ),
         inline=False,
     )
     embed.add_field(
