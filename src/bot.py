@@ -2220,7 +2220,7 @@ async def fetch_loop():
         latest_load = int(f.readline())
     repeat = 900
     while True:
-        latest_reload = await load_matches.spam_redlime_more(latest_reload, 10000)
+        # latest_reload = await load_matches.spam_redlime_more(latest_reload, 10000)
         latest_load = await load_matches.spam_redlime(latest_load, 1000)
         with open(DATABASE_DIR / "last_id.txt", "w") as f:
             f.write(f"{latest_reload}\n{latest_load}")
