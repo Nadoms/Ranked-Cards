@@ -1,7 +1,7 @@
 {
     "stats": {
-        "totalCommands": 322684,
-        "totalGenerated": 311039,
+        "totalCommands": 322702,
+        "totalGenerated": 311051,
         "connectedUsers": 5564,
         "totalHidden": 2070,
         "cards": {
@@ -9,7 +9,7 @@
             "fail": 1990
         },
         "plots": {
-            "success": 13870,
+            "success": 13872,
             "fail": 508
         },
         "matches": {
@@ -17,8 +17,8 @@
             "fail": 470
         },
         "analyses": {
-            "success": 215006,
-            "fail": 23521
+            "success": 215014,
+            "fail": 23522
         },
         "races": {
             "success": 241,
@@ -29,7 +29,7 @@
             "fail": 59
         },
         "lives": {
-            "success": 1364,
+            "success": 1365,
             "fail": 0
         },
         "connects": {
@@ -41,6 +41,6 @@
             "fail": 13
         },
         "backgrounds": 1085,
-        "helps": 1022
+        "helps": 1023
     }
 }

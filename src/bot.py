@@ -2053,7 +2053,7 @@ async def help(
     embed.add_field(
         name="/seed (new!)",
         value=(
-            "`Options: Seed ID or match ID"
+            "`Options: Seed ID or match ID`"
             "\n***Shows stats about a seed***: its overworld, bastion and structure, and how players have performed on it."
             "\nClick [here](https://docs.google.com/document/d/e/2PACX-1vQvNO1Mmf7T2zfaij_rxDsOMUwaVavJcZG68Bfp8-9CkeGyJHoPrvBFxU69apix4E7gVsaV51BiCVwC/pub) and scroll down for a more in-depth explanation."
         ),
