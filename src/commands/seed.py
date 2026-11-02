@@ -41,7 +41,7 @@ def get_seed_embed(cursor, seed_info, matches_info):
     seed_score_txt = f"{seed_score:.3f}" if seed_score is not None else "-"
     seed_embed.add_field(
         name=f"Seed score: `{seed_score_txt}`",
-        value="",
+        value="Click [here](https://docs.google.com/document/d/e/2PACX-1vQvNO1Mmf7T2zfaij_rxDsOMUwaVavJcZG68Bfp8-9CkeGyJHoPrvBFxU69apix4E7gVsaV51BiCVwC/pub) to learn about seed / run scores.",
         inline=True,
     )
 

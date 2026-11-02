@@ -37,7 +37,7 @@ def main(response):
     then = process_split(then, "Comparing splits")
     chart = add_info.write(chart, response)
     then = process_split(then, "Adding seed info")
-    chart = add_other.write(chart)
+    chart = add_other.write(chart, response)
     then = process_split(then, "Final touchups")
 
     return chart

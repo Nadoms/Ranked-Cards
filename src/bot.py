@@ -1722,61 +1722,55 @@ async def seed(
 ):
     await interaction.response.defer()
 
-    conn, cursor = db.start()
+    with db.connect() as c:
+        if seed_id.isnumeric():
+            match_info = db.query_db(
+                c,
+                items="seed_id",
+                id=int(seed_id)
+            ).fetchone()
+            if match_info is None or match_info[0] is None:
+                await interaction.followup.send(
+                    f"This match ID doesn't have an associated seed. (`{seed_id}`)"
+                )
+                update_records(interaction, "seed", "Unknown", False)
+                return
+            seed_id = match_info[0]
 
-    if seed_id.isnumeric():
-        match_info = db.query_db(
-            cursor,
-            items="seed_id",
-            id=int(seed_id)
-        ).fetchone()
-        if match_info is None or match_info[0] is None:
+        print(f"---\nObserving seed {seed_id}")
+
+        seed_items = "id, overworld, bastion, structure_type, structure_contents, triples, singles, small_singles, good_gaps, past_score, past_count, current_score, current_count, word_id"
+        seed_info = (
+            db.query_db(
+                c,
+                table="seeds",
+                items=seed_items,
+                id=seed_id
+            ).fetchone()
+            or db.query_db(
+                c,
+                table="seeds",
+                items=seed_items,
+                word_id=seed_id
+            ).fetchone()
+        )
+        if seed_info is None:
             await interaction.followup.send(
-                f"This match ID doesn't have an associated seed. (`{seed_id}`)"
+                f"This seed does not exist. (`{seed_id}`)"
             )
             update_records(interaction, "seed", "Unknown", False)
-            conn.close()
             return
-        seed_id = match_info[0]
 
-    print(f"---\nObserving seed {seed_id}")
+        try:
+            seed_embed, matches_embeds = seeding.main(seed_info, c)
+        except Exception:
+            print("Error caught!")
+            traceback.print_exc()
+            await interaction.followup.send(f"{GENERIC_ERROR_MSG}\n```{traceback.format_exc()}```")
+            update_records(interaction, "seed", seed_id, False)
+            return
 
-    seed_items = "id, overworld, bastion, structure_type, structure_contents, triples, singles, small_singles, good_gaps, past_score, past_count, current_score, current_count, word_id"
-    seed_info = (
-        db.query_db(
-            cursor,
-            table="seeds",
-            items=seed_items,
-            id=seed_id
-        ).fetchone()
-        or db.query_db(
-            cursor,
-            table="seeds",
-            items=seed_items,
-            word_id=seed_id
-        ).fetchone()
-    )
-    if seed_info is None:
-        await interaction.followup.send(
-            f"This seed does not exist. (`{seed_id}`)"
-        )
-        update_records(interaction, "seed", "Unknown", False)
-        conn.close()
-        return
-
-    try:
-        seed_embed, matches_embeds = seeding.main(seed_info, cursor)
-    except Exception:
-        print("Error caught!")
-        traceback.print_exc()
-        await interaction.followup.send(f"{GENERIC_ERROR_MSG}\n```{traceback.format_exc()}```")
-        update_records(interaction, "seed", seed_id, False)
-        conn.close()
-        return
-
-    conn.close()
     view = Pages(interaction, perma_embeds=[seed_embed], page_embeds=matches_embeds)
-
     await interaction.followup.send(embeds=[seed_embed, matches_embeds[0]], view=view)
     update_records(interaction, "seed", seed_id, True)
 
