@@ -28,7 +28,7 @@ def get_seed_embed(cursor, seed_info, matches_info):
         word_id
     ) = seed_info
     structure_contents = json.loads(structure_contents)
-    seed_score = insight.get_seed_score(past_score, past_count, current_score, current_count)
+    seed_score = insight.get_seed_score(past_score, past_count, current_score, current_count, sample_size=1)
 
     seed_embed = Embed(
         title=f"Seed Info: `{word_id}`",
@@ -55,7 +55,7 @@ def get_seed_embed(cursor, seed_info, matches_info):
         "completable": "Obsidian-completable",
         "lava": "Lava-completable",
         "full": "Regular ship w/ mast",
-        "upsidedown": "Upside down ship",
+        "upsidedown": "Upside-down ship",
         "sideways": "Sideways ship",
         "normal": "Regular ship",
     }
@@ -179,7 +179,7 @@ def get_matches_embeds(cursor, matches_info):
         player_tags = [
             f"`{nickname}` "
             + ("🤝" if not winner else "👑" if nickname == winner else "🥀")
-            + (f" ({elo})" if elo else "")
+            + (f" ({elo})" if elo is not None else "")
             for nickname, elo, _, _ in runs_info
         ]
         players_line = " vs ".join(player_tags) + ("\n" if match_type == 2 else "")
@@ -190,13 +190,13 @@ def get_matches_embeds(cursor, matches_info):
         else:
             result_line = f"Completed in `{numb.digital_time(match_time)}`, <t:{date}:R>"
         url_player = winner if winner else result_uuid if result_uuid else "Nadoms"
-        score_line = f"\nRun score: `{run_score:.3f}`" if run_score else ""
+        score_line = f"\nRun score: `{run_score:.3f}`" if run_score is not None else ""
 
         value = (
             f"{players_line}"
             f"{result_line}"
             f"{score_line}"
-            f"\n[Match stats](https://mcsrranked.com/stats/{url_player}/{match_id})"
+            f"\n[Match link](https://mcsrranked.com/stats/{url_player}/{match_id})"
             "\n"
         )
         matches_embed.add_field(name=name, value=value, inline=False)
