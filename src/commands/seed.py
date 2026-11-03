@@ -42,7 +42,7 @@ def get_seed_embed(cursor, seed_info, matches_info):
     seed_embed.add_field(
         name=f"Seed score: `{seed_score_txt}`",
         value="Click [here](https://docs.google.com/document/d/e/2PACX-1vQvNO1Mmf7T2zfaij_rxDsOMUwaVavJcZG68Bfp8-9CkeGyJHoPrvBFxU69apix4E7gVsaV51BiCVwC/pub) to learn about seed / run scores.",
-        inline=True,
+        inline=False,
     )
 
     item_mapping = {
@@ -73,7 +73,7 @@ def get_seed_embed(cursor, seed_info, matches_info):
     seed_embed.add_field(
         name=f"Overworld type: {overworld.lower().replace('_', ' ').capitalize()}",
         value=ow_info,
-        inline=True,
+        inline=False,
     )
 
     bastion_info = (
@@ -85,7 +85,7 @@ def get_seed_embed(cursor, seed_info, matches_info):
     seed_embed.add_field(
         name=f"Bastion type: {bastion.lower().capitalize()}",
         value=bastion_info,
-        inline=True,
+        inline=False,
     )
 
     ranked_matches = [match for match in matches_info if match[1] == 2]
