@@ -9,7 +9,7 @@ from nextcord import File, Interaction, SlashOption, Embed
 from nextcord.ext import commands
 from os import getenv, path
 from dotenv import load_dotenv
-from time import time
+from time import monotonic, time
 import traceback
 
 load_dotenv()
@@ -55,6 +55,7 @@ class Topics(nextcord.ui.View):
         images: dict[str, any]
     ):
         super().__init__(timeout=840)
+        self.deadline = monotonic() + self.timeout
         self.tab = "split"
         self.mode = "performance"
         self.fortblind = "separate"
@@ -143,7 +144,10 @@ class Topics(nextcord.ui.View):
         self.tab = tab if tab else self.tab
         self.mode = mode if mode else self.mode
         self.fortblind = fortblind if fortblind else self.fortblind
-        print(f"Flipping to {self.tab} / {self.mode} / {self.fortblind} for {interaction.user.name}")
+        print(
+            f"Flipping to {self.tab} / {self.mode} / {self.fortblind} for {interaction.user.name} "
+            f"({self.deadline - monotonic():.0f}s)"
+        )
         self.update_buttons()
         image = self.images[self.tab][self.mode] if self.tab != "split" else self.images[self.tab][self.mode][self.fortblind]
         file = self.set_embed_image(self.embeds[self.tab], image)
@@ -152,7 +156,7 @@ class Topics(nextcord.ui.View):
             file=file,
             view=self,
         )
-        # self._View__timeout_expiry -= self.timeout
+        self._View__timeout_expiry = self.deadline
 
     async def on_timeout(self):
         self.clear_items()
@@ -179,6 +183,7 @@ class Pages(nextcord.ui.View):
 
     def __init__(self, interaction: Interaction, perma_embeds: list = [], page_embeds: list = []):
         super().__init__(timeout=840)
+        self.deadline = monotonic() + self.timeout
         self.interaction = interaction
         self.perma_embeds = perma_embeds
         self.page_embeds = page_embeds
@@ -209,13 +214,16 @@ class Pages(nextcord.ui.View):
 
     async def switch_to(self, interaction: Interaction, page: int):
         self.page = page
-        print(f"Flipping to page {self.page} for {interaction.user.name}")
+        print(
+            f"Flipping to page {self.page} for {interaction.user.name} "
+            f"({self.deadline - monotonic():.0f}s)"
+        )
         self.update_buttons()
         await interaction.response.edit_message(
             embeds=[*self.perma_embeds, self.page_embeds[self.page]],
             view=self,
         )
-        self._View__timeout_expiry -= self.timeout
+        self._View__timeout_expiry = self.deadline
 
     async def on_timeout(self):
         for item in self.children:
