@@ -5,7 +5,7 @@ import math
 from pathlib import Path
 import nextcord
 import json
-from nextcord import File, Interaction, SlashOption, Embed
+from nextcord import File, Interaction, SlashOption, Embed, IntegrationType, InteractionContextType
 from nextcord.ext import commands
 from os import getenv, path
 from dotenv import load_dotenv
@@ -44,6 +44,15 @@ bot = commands.Bot(
     command_prefix="=",
     intents=intents,
     default_guild_ids=default_guild_ids,
+    default_command_integration_types=[
+        IntegrationType.guild_install,
+        IntegrationType.user_install,
+    ],
+    default_command_contexts=[
+        InteractionContextType.guild,
+        InteractionContextType.bot_dm,
+        InteractionContextType.private_channel,
+    ],
 )
 
 
