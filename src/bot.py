@@ -34,6 +34,14 @@ GENERIC_ERROR_MSG = "An error has occurred. <@298936021557706754> fix it pls:"
 ROOT_DIR = Path(__file__).parent
 DATABASE_DIR = ROOT_DIR / "database"
 MAX_CUSTOM_LB = 50
+USABLE_ANYWHERE = dict(
+    integration_types=[IntegrationType.guild_install, IntegrationType.user_install],
+    contexts=[
+        InteractionContextType.guild,
+        InteractionContextType.bot_dm,
+        InteractionContextType.private_channel,
+    ],
+)
 token = "TEST_TOKEN" if TESTING_MODE else "DISCORD_TOKEN"
 default_guild_ids = [735859906434957392] if TESTING_MODE else None
 player_list = []
@@ -44,15 +52,6 @@ bot = commands.Bot(
     command_prefix="=",
     intents=intents,
     default_guild_ids=default_guild_ids,
-    default_command_integration_types=[
-        IntegrationType.guild_install,
-        IntegrationType.user_install,
-    ],
-    default_command_contexts=[
-        InteractionContextType.guild,
-        InteractionContextType.bot_dm,
-        InteractionContextType.private_channel,
-    ],
 )
 
 
@@ -248,13 +247,15 @@ async def on_ready():
 
 
 # SLASH COMMANDS
-@bot.slash_command(name="ping", description="Pong!")
+@bot.slash_command(name="ping", description="Pong!", **USABLE_ANYWHERE)
 async def ping(interaction: Interaction):
     await interaction.response.send_message("Pong!")
 
 
 @bot.slash_command(
-    name="card", description="Generates a card for the player you specify."
+    name="card",
+    description="Generates a card for the player you specify.",
+    **USABLE_ANYWHERE,
 )
 async def card(
     interaction: Interaction,
@@ -329,6 +330,7 @@ async def card(
 @bot.slash_command(
     name="plot",
     description="Illustrates a graph for the player + metric that you choose.",
+    **USABLE_ANYWHERE,
 )
 async def plot(
     interaction: Interaction,
@@ -421,6 +423,7 @@ async def plot(
 @bot.slash_command(
     name="match",
     description="Produces a chart on your most recent match, or the match specified.",
+    **USABLE_ANYWHERE,
 )
 async def match(
     interaction: Interaction,
@@ -508,6 +511,7 @@ async def match(
 @bot.slash_command(
     name="analysis",
     description="Analyses past games to visualise how a player performs throughout their runs.",
+    **USABLE_ANYWHERE,
 )
 async def analysis(
     interaction: Interaction,
@@ -736,6 +740,7 @@ async def name_autocomplete(interaction: Interaction, current: str):
 @bot.slash_command(
     name="race",
     description="Returns a leaderboard for the current weekly race, or the race specified.",
+    **USABLE_ANYWHERE,
 )
 async def race(
     interaction: Interaction,
@@ -788,6 +793,7 @@ async def race(
 @bot.slash_command(
     name="leaderboard",
     description="Returns the leaderboard for the specified metric.",
+    **USABLE_ANYWHERE,
 )
 async def leaderboard(interaction: Interaction):
     await leaderboard_elo(
@@ -1656,6 +1662,7 @@ async def generic_lb_response(
 @bot.slash_command(
     name="live",
     description="Checks which Ranked streamers are live.",
+    **USABLE_ANYWHERE,
 )
 async def live(interaction: Interaction):
     print(f"---\nChecking who's live")
@@ -1728,6 +1735,7 @@ async def live(interaction: Interaction):
 @bot.slash_command(
     name="seed",
     description="Provides stats and history for a particular seed",
+    **USABLE_ANYWHERE,
 )
 async def seed(
     interaction: Interaction,
@@ -1861,6 +1869,7 @@ async def match_autocomplete(interaction: Interaction, current: str):
 @bot.slash_command(
     name="customise",
     description="Allows you to personalise your card. Only applies to connected users.",
+    **USABLE_ANYWHERE,
 )
 async def customise(
     interaction: Interaction,
@@ -1931,6 +1940,7 @@ async def customise(
 @bot.slash_command(
     name="connect",
     description="Connects your minecraft account with your discord account.",
+    **USABLE_ANYWHERE,
 )
 async def connect(interaction: Interaction, input_name: str):
 
@@ -1979,6 +1989,7 @@ async def connect(interaction: Interaction, input_name: str):
 @bot.slash_command(
     name="disconnect",
     description="Disconnects your minecraft account from your discord account.",
+    **USABLE_ANYWHERE,
 )
 async def disconnect(interaction: Interaction):
 
@@ -2007,7 +2018,11 @@ async def disconnect(interaction: Interaction):
     update_records(interaction, "disconnect", "Unknown", False)
 
 
-@bot.slash_command(name="help", description="Don't know where to start?")
+@bot.slash_command(
+    name="help",
+    description="Don't know where to start?",
+    **USABLE_ANYWHERE,
+)
 async def help(
     interaction: Interaction,
 ):
