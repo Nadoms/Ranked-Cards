@@ -5,6 +5,8 @@ from datetime import datetime
 from pathlib import Path
 import sys
 
+import numpy as np
+
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(1, str(PROJECT_DIR))
 from rankedutils import constants, db, insight
@@ -25,24 +27,17 @@ def collect_matches(season, cursor):
         "split": {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}, "fortblind": {}},
         "bastion": {"bridge": {}, "housing": {}, "stables": {}, "treasure": {}},
         "ow": {"bt": {}, "dt": {}, "rp": {}, "ship": {}, "village": {}},
-    }
-    nums = {
-        "split": {"ow": {}, "nether": {}, "bastion": {}, "fortress": {}, "blind": {}, "stronghold": {}, "end": {}, "fortblind": {}},
-        "bastion": {"bridge": {}, "housing": {}, "stables": {}, "treasure": {}},
-        "ow": {"bt": {}, "dt": {}, "rp": {}, "ship": {}, "village": {}},
+        "completion": {},
     }
     stats = {
         "elo": {},
         "peak": {},
-        "sb": {},
         "games": {},
         "playtime": {},
         "wins": {},
         "draws": {},
         "losses": {},
         "forfeits": {},
-        "cmptime": {},
-        "completions": {},
         "chokes": {},
         "comebacks": {},
         "winwin": {},
@@ -75,6 +70,7 @@ def collect_matches(season, cursor):
             last_runs_processed = runs_processed
 
         match_id, seed_type, bastion_type, result_uuid, forfeited, result_time, seed_id, uuid, timeline, old_elo, change = run
+        uuid = sys.intern(uuid)
         timeline = json.loads(timeline)
         curr_split = "ow"
         prev_time = 0
@@ -99,10 +95,8 @@ def collect_matches(season, cursor):
                 if event["type"] == "story.enter_the_nether":
                     ow_length = event["time"] - prev_time
                     if uuid not in times["ow"][constants.OW_MAPPING[seed_type]]:
-                        times["ow"][constants.OW_MAPPING[seed_type]][uuid] = 0
-                        nums["ow"][constants.OW_MAPPING[seed_type]][uuid] = 0
-                    times["ow"][constants.OW_MAPPING[seed_type]][uuid] += ow_length
-                    nums["ow"][constants.OW_MAPPING[seed_type]][uuid] += 1
+                        times["ow"][constants.OW_MAPPING[seed_type]][uuid] = []
+                    times["ow"][constants.OW_MAPPING[seed_type]][uuid].append(ow_length)
 
             # Dealing with bastions
             if bastion_type is not None:
@@ -119,29 +113,23 @@ def collect_matches(season, cursor):
                         bastion_exit = event["time"]
                         bastion_length = bastion_exit - bastion_entry
                         if uuid not in times["bastion"][bastion_type.lower()]:
-                            times["bastion"][bastion_type.lower()][uuid] = 0
-                            nums["bastion"][bastion_type.lower()][uuid] = 0
-                        times["bastion"][bastion_type.lower()][uuid] += bastion_length
-                        nums["bastion"][bastion_type.lower()][uuid] += 1
+                            times["bastion"][bastion_type.lower()][uuid] = []
+                        times["bastion"][bastion_type.lower()][uuid].append(bastion_length)
 
             # Dealing with splits
             if event["type"] in SPLIT_MAPPING:
                 split_length = event["time"] - prev_time
                 if uuid not in times["split"][curr_split]:
-                    times["split"][curr_split][uuid] = 0
-                    nums["split"][curr_split][uuid] = 0
-                times["split"][curr_split][uuid] += split_length
-                nums["split"][curr_split][uuid] += 1
+                    times["split"][curr_split][uuid] = []
+                times["split"][curr_split][uuid].append(split_length)
 
                 if event["type"] == "nether.find_fortress":
                     in_fort = True
                     fort_time = event["time"]
                 elif event["type"] == "story.follow_ender_eye" and in_fort:
                     if uuid not in times["split"]["fortblind"]:
-                        times["split"]["fortblind"][uuid] = 0
-                        nums["split"]["fortblind"][uuid] = 0
-                    times["split"]["fortblind"][uuid] += event["time"] - fort_time
-                    nums["split"]["fortblind"][uuid] += 1
+                        times["split"]["fortblind"][uuid] = []
+                    times["split"]["fortblind"][uuid].append(event["time"] - fort_time)
 
                 prev_time = event["time"]
                 curr_split = SPLIT_MAPPING[event["type"]]
@@ -149,19 +137,12 @@ def collect_matches(season, cursor):
         if won and not forfeited:
             split_length = result_time - prev_time
             if uuid not in times["split"][curr_split]:
-                times["split"][curr_split][uuid] = 0
-                nums["split"][curr_split][uuid] = 0
-            times["split"][curr_split][uuid] += split_length
-            nums["split"][curr_split][uuid] += 1
+                times["split"][curr_split][uuid] = []
+            times["split"][curr_split][uuid].append(split_length)
 
-            if uuid not in stats["completions"]:
-                stats["cmptime"][uuid] = 0
-                stats["completions"][uuid] = 0
-                stats["sb"][uuid] = result_time
-            stats["cmptime"][uuid] += result_time
-            stats["completions"][uuid] += 1
-            if result_time < stats["sb"][uuid]:
-                stats["sb"][uuid] = result_time
+            if uuid not in times["completion"]:
+                times["completion"][uuid] = []
+            times["completion"][uuid].append(result_time)
 
             if uuid not in completion_history:
                 completion_history[uuid] = []
@@ -216,12 +197,12 @@ def collect_matches(season, cursor):
 
     seed_scores, run_scores = compute_scores(completion_history)
 
-    return times, nums, stats, runs_processed, seed_scores, run_scores
+    return times, stats, runs_processed, seed_scores, run_scores
 
 
 def compute_scores(completion_history):
     if not completion_history:
-        return {}
+        return {}, {}
 
     run_scores = {}
     seed_run_scores = {}
@@ -304,10 +285,14 @@ async def analyse(season, filename="playerbase.json"):
         "split": {"ow": [], "nether": [], "bastion": [], "fortress": [], "blind": [], "stronghold": [], "end": [], "fortblind": []},
         "bastion": {"bridge": [], "housing": [], "stables": [], "treasure": []},
         "ow": {"bt": [], "dt": [], "rp": [], "ship": [], "village": []},
+        "split_mdn": {"ow": [], "nether": [], "bastion": [], "fortress": [], "blind": [], "stronghold": [], "end": [], "fortblind": []},
+        "bastion_mdn": {"bridge": [], "housing": [], "stables": [], "treasure": []},
+        "ow_mdn": {"bt": [], "dt": [], "rp": [], "ship": [], "village": []},
         "stats": {
             "elo": [],
             "peak": [],
             "avg": [],
+            "mdn": [],
             "sb": [],
             "games": [],
             "playtime": [],
@@ -328,7 +313,7 @@ async def analyse(season, filename="playerbase.json"):
 
     conn, cursor = db.start(PROJECT_DIR / "database" / "ranked.db")
     print(f"\nCollecting runs - {datetime.now()}")
-    times, nums, stats, runs, seed_scores, run_scores = collect_matches(season, cursor)
+    times, stats, runs, seed_scores, run_scores = collect_matches(season, cursor)
     print(f"Finished collecting {runs} runs")
 
     training_data = {
@@ -389,47 +374,55 @@ async def analyse(season, filename="playerbase.json"):
             ))
 
         # Process completion related info
-        if stats["completions"].get(uuid):
-            avg = round(stats["cmptime"][uuid] / stats["completions"][uuid])
-            sb = stats["sb"][uuid]
+        if uuid in times["completion"]:
+            completion_times = times["completion"][uuid]
+            completions = len(completion_times)
+            avg = round(np.mean(completion_times))
+            mdn = round(np.median(completion_times))
+            sb = min(completion_times)
 
             if elo:
                 training_data["avg"].append((avg * 1e-6, elo * 1e-3))
                 training_data["sb"].append((sb * 1e-6, elo * 1e-3))
 
-            if stats["completions"][uuid] >= 3:
-                ranked["stats"]["avg"].append((avg, elo, uuid, stats["completions"][uuid]))
+            if completions >= 3:
+                ranked["stats"]["avg"].append((avg, elo, uuid, completions))
+                ranked["stats"]["mdn"].append((mdn, elo, uuid, completions))
 
             ranked["stats"]["sb"].append((sb, elo, uuid))
             ranked["stats"]["comprate"].append((
-                round(stats["completions"][uuid] / stats["games"][uuid], 3),
+                round(completions / stats["games"][uuid], 3),
                 elo,
                 uuid,
-                stats["completions"][uuid]
+                completions
             ))
 
     ranked["stats"]["elo"].sort(reverse=True)
     for key in list(ranked["stats"].keys())[1:]:
         reverse = True
-        if key in ("avg", "sb", "ffl", "chokerate"):
+        if key in ("avg", "mdn", "sb", "ffl", "chokerate"):
             reverse = False
         ranked["stats"][key].sort(key=lambda x: x[0], reverse=reverse)
 
     # Construct performance rankings
     for performance in ["split", "bastion", "ow"] if season >= 5 else ["split", "ow"]:
         print(f"\nProcessing {performance}s - {datetime.now()}")
+        performance_mdn = f"{performance}_mdn"
         for item in times[performance]:
-            print(f"Processing {item} {performance}s of {len(nums[performance][item])} players...")
-            for uuid in times[performance][item]:
-                if nums[performance][item][uuid] >= 3:
-                    item_avg = round(
-                        times[performance][item][uuid]
-                        / nums[performance][item][uuid]
-                    )
+            print(f"Processing {item} {performance}s of {len(times[performance][item])} players...")
+            for uuid, player_times in times[performance][item].items():
+                count = len(player_times)
+                if count >= 3:
+                    item_avg = round(np.mean(player_times))
+                    item_mdn = round(np.median(player_times))
                     ranked[performance][item].append(
-                        (item_avg, stats["elo"][uuid], uuid, nums[performance][item][uuid])
+                        (item_avg, stats["elo"][uuid], uuid, count)
+                    )
+                    ranked[performance_mdn][item].append(
+                        (item_mdn, stats["elo"][uuid], uuid, count)
                     )
             ranked[performance][item] = sorted(ranked[performance][item], key=lambda x: x[0])
+            ranked[performance_mdn][item] = sorted(ranked[performance_mdn][item], key=lambda x: x[0])
 
     print(f"\nDumping insights into playerbase file - {datetime.now()}")
     playerbase_file = PROJECT_DIR / "database" / filename
@@ -448,9 +441,11 @@ async def analyse(season, filename="playerbase.json"):
         )
         await asyncio.sleep(0.1)
 
-    print(f"\nUpdating seed and run scores - {datetime.now()}")
+    print(f"\nUpdating seed scores - {datetime.now()}")
     for seed_id in seed_scores:
         update_seed(seed_id, seed_scores[seed_id], season, cursor)
+
+    print(f"\nUpdating run scores - {datetime.now()}")
     for match_id in run_scores:
         db.update_run(
             cursor,
